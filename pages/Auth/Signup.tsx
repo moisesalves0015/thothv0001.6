@@ -1,0 +1,131 @@
+
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Mail, Lock, User, ArrowRight, ShieldCheck, Loader2, AlertCircle } from 'lucide-react';
+import { AuthService } from '../../modules/auth/auth.service';
+
+const Signup: React.FC = () => {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    try {
+      await AuthService.register(name.trim(), email.trim(), password);
+      navigate('/');
+    } catch (err: any) {
+      console.error("Signup error:", err);
+      if (err.code === 'auth/email-already-in-use') {
+        setError('Este e-mail já está sendo utilizado.');
+      } else if (err.code === 'auth/weak-password') {
+        setError('A senha deve conter ao menos 6 caracteres.');
+      } else {
+        setError('Falha ao cadastrar. Verifique os dados ou tente mais tarde.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen w-full flex items-center justify-center p-4">
+      <div className="w-full max-w-[420px] glass-panel rounded-[32px] p-8 md:p-10 shadow-2xl animate-in fade-in zoom-in-95 duration-500">
+        <div className="flex flex-col items-center mb-6">
+          <div className="text-[40px] font-black text-[#006c55] tracking-tighter leading-none mb-2">thoth</div>
+          <p className="text-[10px] uppercase tracking-[0.3em] font-black text-slate-400">Junte-se a nós</p>
+        </div>
+
+        <div className="space-y-1 mb-8 text-center">
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Criar Nova Conta</h2>
+          <p className="text-sm text-slate-500">Comece sua jornada criativa hoje.</p>
+        </div>
+
+        {error && (
+          <div className="mb-6 p-4 rounded-2xl bg-red-50 border border-red-100 flex items-start gap-3">
+            <AlertCircle className="text-red-500 shrink-0 mt-0.5" size={16} />
+            <p className="text-red-600 text-[11px] font-bold uppercase tracking-tight">{error}</p>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Nome Completo</label>
+            <div className="relative group">
+              <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-[#006c55] transition-colors" size={18} />
+              <input 
+                type="text" 
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Seu nome"
+                className="w-full h-12 pl-12 pr-4 bg-white/50 border border-white/60 rounded-2xl text-[16px] font-medium text-slate-900 placeholder:text-slate-300 focus:outline-none focus:ring-4 focus:ring-[#006c55]/10 focus:border-[#006c55] focus:bg-white transition-all"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">E-mail</label>
+            <div className="relative group">
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-[#006c55] transition-colors" size={18} />
+              <input 
+                type="email" 
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="seu@email.com"
+                className="w-full h-12 pl-12 pr-4 bg-white/50 border border-white/60 rounded-2xl text-[16px] font-medium text-slate-900 placeholder:text-slate-300 focus:outline-none focus:ring-4 focus:ring-[#006c55]/10 focus:border-[#006c55] focus:bg-white transition-all"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Senha Forte</label>
+            <div className="relative group">
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-[#006c55] transition-colors" size={18} />
+              <input 
+                type="password" 
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Mínimo 8 caracteres"
+                className="w-full h-12 pl-12 pr-4 bg-white/50 border border-white/60 rounded-2xl text-[16px] font-medium text-slate-900 placeholder:text-slate-300 focus:outline-none focus:ring-4 focus:ring-[#006c55]/10 focus:border-[#006c55] focus:bg-white transition-all"
+              />
+            </div>
+          </div>
+
+          <div className="py-2">
+            <label className="flex items-center gap-3 cursor-pointer group">
+              <div className="relative flex items-center">
+                <input type="checkbox" required className="peer sr-only" />
+                <div className="w-5 h-5 border-2 border-slate-200 rounded-lg bg-white peer-checked:bg-[#006c55] peer-checked:border-[#006c55] transition-all"></div>
+                <ShieldCheck className="absolute inset-0 m-auto text-white scale-0 peer-checked:scale-100 transition-transform" size={12} strokeWidth={3} />
+              </div>
+              <span className="text-[11px] font-bold text-slate-500 leading-tight">Eu concordo com os Termos de Serviço e a Política de Privacidade.</span>
+            </label>
+          </div>
+
+          <button 
+            type="submit"
+            disabled={loading}
+            className="w-full h-14 bg-[#006c55] hover:bg-[#005a46] text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-all shadow-xl shadow-[#006c55]/20 active:scale-[0.98] flex items-center justify-center gap-2 mt-4"
+          >
+            {loading ? <Loader2 className="animate-spin" size={18} /> : <>Cadastrar no Thoth <ArrowRight size={18} /></>}
+          </button>
+        </form>
+
+        <p className="mt-8 text-center text-sm text-slate-500">
+          Já possui uma conta?{' '}
+          <Link to="/login" className="font-black text-[#006c55] hover:underline uppercase tracking-tighter text-xs">Entrar agora</Link>
+        </p>
+      </div>
+    </div>
+  );
+};
+
+export default Signup;
