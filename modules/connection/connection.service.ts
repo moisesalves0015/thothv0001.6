@@ -86,7 +86,7 @@ export class ConnectionService {
     /**
      * Busca conexões aceitas e hidrata com dados frescos.
      */
-    static async getConnections(uid: string): Promise<Author[]> {
+    static async getConnections(uid: string): Promise<(Author & { connectedAt?: string })[]> {
         const ref = collection(db, "users", uid, "connections");
         const q = query(ref, where("status", "==", "accepted"));
         const snap = await getDocs(q);

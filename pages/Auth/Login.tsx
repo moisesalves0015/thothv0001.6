@@ -19,9 +19,10 @@ const Login: React.FC = () => {
     try {
       await AuthService.login(email, password);
       navigate('/');
-    } catch (err: any) {
-      console.error("Auth Error:", err.code);
-      if (err.code === 'auth/invalid-credential') {
+    } catch (err) {
+      const error = err as { code?: string; message?: string };
+      console.error("Auth Error:", error.code);
+      if (error.code === 'auth/invalid-credential') {
         setError('E-mail ou senha incorretos.');
       } else {
         setError('Erro ao conectar com o Thoth. Tente novamente.');

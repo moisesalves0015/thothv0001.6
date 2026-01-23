@@ -194,9 +194,10 @@ const Signup: React.FC = () => {
       });
 
       navigate('/onboarding');
-    } catch (err: any) {
-      console.error("Signup error:", err);
-      if (err.code === 'auth/email-already-in-use') {
+    } catch (err) {
+      const error = err as { code?: string; message?: string };
+      console.error("Signup error:", error);
+      if (error.code === 'auth/email-already-in-use') {
         setError('Este e-mail já está sendo utilizado.');
         setStep(1); // Voltar para corrigir email
       } else {

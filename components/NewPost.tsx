@@ -1,4 +1,17 @@
+import React, { useState, useRef } from 'react';
+import { X, FileText, Image as ImageIcon, Link as LinkIcon, Send, Loader2 } from 'lucide-react';
 import { StorageService } from '../modules/storage/storage.service';
+import { PostService } from '../modules/post/post.service';
+import { auth } from '../firebase';
+import { Author } from '../types';
+
+type AttachmentType = 'none' | 'image' | 'file' | 'link';
+
+interface NewPostProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onPostCreated?: () => void;
+}
 
 const NewPost: React.FC<NewPostProps> = ({ isOpen, onClose, onPostCreated }) => {
   const [text, setText] = useState('');

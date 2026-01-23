@@ -3,6 +3,17 @@ import React, { useState, useEffect } from 'react';
 import { GoogleGenAI } from '@google/genai';
 import { GeneratedVideo } from '../types';
 
+interface AIStudio {
+  hasSelectedApiKey?: () => Promise<boolean>;
+  openSelectKey?: () => Promise<void>;
+}
+
+declare global {
+  interface Window {
+    aistudio?: AIStudio;
+  }
+}
+
 const MotionLab: React.FC = () => {
   const [prompt, setPrompt] = useState('');
   const [videos, setVideos] = useState<GeneratedVideo[]>([]);
@@ -12,9 +23,7 @@ const MotionLab: React.FC = () => {
 
   useEffect(() => {
     const checkKey = async () => {
-      // @ts-ignore
       if (window.aistudio?.hasSelectedApiKey) {
-        // @ts-ignore
         const isSelected = await window.aistudio.hasSelectedApiKey();
         setHasKey(isSelected);
       }
@@ -23,9 +32,7 @@ const MotionLab: React.FC = () => {
   }, []);
 
   const handleSelectKey = async () => {
-    // @ts-ignore
     if (window.aistudio?.openSelectKey) {
-      // @ts-ignore
       await window.aistudio.openSelectKey();
       // Assume success due to race condition guidance
       setHasKey(true);
@@ -39,8 +46,13 @@ const MotionLab: React.FC = () => {
     setStatusMessage('Initiating video generation pipeline...');
 
     try {
+      const apiKey = import.meta.env.VITE_API_KEY || '';
+      if (!apiKey) {
+        throw new Error("API Key não configurada. Configure VITE_API_KEY nas variáveis de ambiente.");
+      }
+
       // Create new GoogleGenAI instance right before API call as per Veo guidelines
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const ai = new GoogleGenAI({ apiKey });
       
       setStatusMessage('Consulting Veo intelligence... (can take up to 2 mins)');
       
@@ -59,8 +71,7 @@ const MotionLab: React.FC = () => {
         pollCount++;
         setStatusMessage(`Directing the scene... Step ${pollCount} (Processing)`);
         await new Promise(resolve => setTimeout(resolve, 10000));
-        // @ts-ignore
-        operation = await ai.operations.getVideosOperation({ operation: operation });
+        operation = await ai.operations.getVideosOperation({ operation: operation }) as typeof operation;
       }
 
       setStatusMessage('Rendering final frames...');
@@ -68,7 +79,7 @@ const MotionLab: React.FC = () => {
       if (!downloadLink) throw new Error("Video URI not found");
 
       // Append API key when fetching from the download link as per guidelines
-      const response = await fetch(`${downloadLink}&key=${process.env.API_KEY}`);
+      const response = await fetch(`${downloadLink}&key=${apiKey}`);
       const blob = await response.blob();
       const videoUrl = URL.createObjectURL(blob);
 
@@ -80,14 +91,15 @@ const MotionLab: React.FC = () => {
       }, ...prev]);
       setPrompt('');
       setStatusMessage('');
-    } catch (error: any) {
-      console.error('Video gen error:', error);
+    } catch (error) {
+      const err = error as { message?: string };
+      console.error('Video gen error:', err);
       // Reset key selection if entity not found (API key session issue)
-      if (error.message?.includes('Requested entity was not found')) {
+      if (err.message?.includes('Requested entity was not found')) {
         setHasKey(false);
         alert("API Key session expired. Please re-select your key.");
       } else {
-        alert("Error generating video: " + error.message);
+        alert("Error generating video: " + (err.message || 'Erro desconhecido'));
       }
     } finally {
       setIsGenerating(false);

@@ -8,7 +8,7 @@ const VoiceLab: React.FC = () => {
   const [transcriptions, setTranscriptions] = useState<Transcription[]>([]);
   const [visualizerData, setVisualizerData] = useState<number[]>(new Array(30).fill(0));
 
-  const sessionRef = useRef<any>(null);
+  const sessionRef = useRef<unknown>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const outputAudioContextRef = useRef<AudioContext | null>(null);
   const nextStartTimeRef = useRef<number>(0);

@@ -2,6 +2,21 @@
 import { collection, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
 
+interface CreateBadgeData {
+  name: string;
+  description: string;
+  category: string;
+  visibility: string;
+  imageUrl: string;
+  width: number;
+  height: number;
+  x: number;
+  y: number;
+  creatorId: string;
+  totalPaid: number;
+  paymentInfo: string;
+}
+
 export class BadgeService {
   /**
    * Processamento de imagem Center-Crop via Canvas
@@ -41,7 +56,7 @@ export class BadgeService {
   /**
    * Persistência de novo emblema
    */
-  static async createBadge(data: any) {
+  static async createBadge(data: CreateBadgeData) {
     const finalImage = await this.processImage(data.imageUrl, data.width, data.height);
     return addDoc(collection(db, 'badges'), {
       ...data,

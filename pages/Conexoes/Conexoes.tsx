@@ -67,7 +67,6 @@ const Conexoes: React.FC = () => {
 
         // 4. Accepted Connections
         const conns = await ConnectionService.getConnections(user.uid);
-        // @ts-ignore
         setConnections(conns);
 
         // 5. Suggestions

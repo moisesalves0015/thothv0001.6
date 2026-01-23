@@ -92,8 +92,7 @@ const SubjectDetail: React.FC = () => {
 
   const handleFeedback = (type: string) => {
     setFeedback(type);
-    // Silent send simulation
-    console.log(`Feedback emocional: ${type}`);
+    // Silent send simulation - feedback is stored in state
   };
 
   return (
