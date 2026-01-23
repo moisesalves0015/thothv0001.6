@@ -124,7 +124,7 @@ const Landing: React.FC = () => {
       </nav>
 
       {/* 2. HERO SECTION ENHANCED */}
-      <main className="flex-1">
+      <main className="flex-1 hidden">
         <section className="relative pt-48 lg:pt-64 pb-24 lg:pb-40 px-6 lg:px-20 max-w-7xl mx-auto w-full flex flex-col-reverse lg:flex-row items-center gap-16 overflow-visible">
           
           <div className="absolute top-20 right-0 w-[600px] h-[600px] bg-[#d9f1a2]/15 rounded-full blur-[140px] -z-10 animate-pulse"></div>
@@ -430,7 +430,7 @@ const Landing: React.FC = () => {
       </main>
 
       {/* FOOTER */}
-      <footer className="py-24 border-t border-slate-200 bg-white">
+      <footer className="py-24 border-t border-slate-200 bg-white hidden" >
         <div className="max-w-7xl mx-auto px-6 lg:px-20 overflow-hidden">
           <div className="flex flex-col md:flex-row items-center justify-between gap-16">
             <div className="flex flex-col items-center md:items-start gap-6">
