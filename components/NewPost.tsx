@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { X, FileText, Image as ImageIcon, Link as LinkIcon, Send, Loader2 } from 'lucide-react';
 import { StorageService } from '../modules/storage/storage.service';
 import { PostService } from '../modules/post/post.service';
@@ -40,9 +40,15 @@ const NewPost: React.FC<NewPostProps> = ({ isOpen, onClose, onPostCreated }) => 
       setRawImageFile(file);
       const url = URL.createObjectURL(file);
       setSelectedImage(url);
-      setActiveAttachment('image');
-      setSelectedFile(null);
-      setSelectedLink(null);
+      // Não limpa arquivo nem link - permite múltiplos anexos
+      // Atualiza activeAttachment apenas se não houver outros anexos
+      if (!selectedFile && !selectedLink) {
+        setActiveAttachment('image');
+      }
+    }
+    // Limpa o input para permitir selecionar o mesmo arquivo novamente
+    if (imageInputRef.current) {
+      imageInputRef.current.value = '';
     }
   };
 
@@ -56,9 +62,15 @@ const NewPost: React.FC<NewPostProps> = ({ isOpen, onClose, onPostCreated }) => 
         url: URL.createObjectURL(file),
         raw: file
       });
-      setActiveAttachment('file');
-      setSelectedImage(null);
-      setSelectedLink(null);
+      // Não limpa imagem nem link - permite múltiplos anexos
+      // Atualiza activeAttachment apenas se não houver outros anexos
+      if (!selectedImage && !selectedLink) {
+        setActiveAttachment('file');
+      }
+    }
+    // Limpa o input para permitir selecionar o mesmo arquivo novamente
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -73,13 +85,47 @@ const NewPost: React.FC<NewPostProps> = ({ isOpen, onClose, onPostCreated }) => 
       setActiveAttachment('link');
       setIsLinkInputOpen(false);
       setTempLink('');
+      // Link é exclusivo - limpa outros anexos
       setSelectedImage(null);
       setSelectedFile(null);
       setRawImageFile(null);
     }
   };
 
+  const clearImage = () => {
+    if (selectedImage) {
+      URL.revokeObjectURL(selectedImage);
+    }
+    setSelectedImage(null);
+    setRawImageFile(null);
+    // Atualiza activeAttachment se não houver mais anexos
+    if (!selectedFile && !selectedLink) {
+      setActiveAttachment('none');
+    }
+  };
+
+  const clearFile = () => {
+    if (selectedFile?.url) {
+      URL.revokeObjectURL(selectedFile.url);
+    }
+    setSelectedFile(null);
+    // Atualiza activeAttachment se não houver mais anexos
+    if (!selectedImage && !selectedLink) {
+      setActiveAttachment('none');
+    }
+  };
+
+  const clearLink = () => {
+    setSelectedLink(null);
+    // Atualiza activeAttachment se não houver mais anexos
+    if (!selectedImage && !selectedFile) {
+      setActiveAttachment('none');
+    }
+  };
+
   const clearAttachments = () => {
+    if (selectedImage) URL.revokeObjectURL(selectedImage);
+    if (selectedFile?.url) URL.revokeObjectURL(selectedFile.url);
     setActiveAttachment('none');
     setSelectedImage(null);
     setRawImageFile(null);
@@ -100,18 +146,18 @@ const NewPost: React.FC<NewPostProps> = ({ isOpen, onClose, onPostCreated }) => 
 
     try {
       let finalImages: string[] = [];
-      let finalFileAttachment = selectedFile ? { ...selectedFile } : null;
+      let finalFileAttachment = null;
 
       const timestamp = Date.now();
 
-      // 1. Upload Image if exists
-      if (activeAttachment === 'image' && rawImageFile) {
+      // 1. Upload Image if exists (independente de activeAttachment)
+      if (rawImageFile) {
         const imageUrl = await StorageService.uploadFile(`posts/${user.uid}/images/${timestamp}_${rawImageFile.name}`, rawImageFile);
         finalImages = [imageUrl];
       }
 
-      // 2. Upload File if exists
-      if (activeAttachment === 'file' && selectedFile?.raw) {
+      // 2. Upload File if exists (independente de activeAttachment)
+      if (selectedFile?.raw) {
         const fileUrl = await StorageService.uploadFile(`posts/${user.uid}/files/${timestamp}_${selectedFile.name}`, selectedFile.raw);
         finalFileAttachment = {
           name: selectedFile.name,
@@ -157,23 +203,27 @@ const NewPost: React.FC<NewPostProps> = ({ isOpen, onClose, onPostCreated }) => 
   };
 
   const renderPreview = () => {
-    if (activeAttachment === 'none') return null;
+    const hasAnyAttachment = selectedImage || selectedFile || selectedLink;
+    if (!hasAnyAttachment) return null;
 
     return (
-      <div className="mb-6 animate-in fade-in zoom-in-95 duration-300">
-        {activeAttachment === 'image' && selectedImage && (
+      <div className="mb-6 space-y-4 animate-in fade-in zoom-in-95 duration-300">
+        {/* Preview de Imagem */}
+        {selectedImage && (
           <div className="relative group rounded-2xl overflow-hidden border-2 border-slate-100 bg-slate-50 shadow-sm">
             <img src={selectedImage} className="w-full max-h-[300px] object-cover" alt="Preview" />
             <button
-              onClick={clearAttachments}
+              onClick={clearImage}
               className="absolute top-3 right-3 p-2 bg-black/50 text-white rounded-full hover:bg-black/70 transition-all backdrop-blur-sm active:scale-90"
+              title="Remover imagem"
             >
               <X size={16} strokeWidth={3} />
             </button>
           </div>
         )}
 
-        {activeAttachment === 'link' && selectedLink && (
+        {/* Preview de Link */}
+        {selectedLink && (
           <div className="flex items-center gap-4 p-4 rounded-2xl border-2 border-blue-100 bg-blue-50/50 shadow-sm transition-all hover:bg-blue-50">
             <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm flex-shrink-0 border border-blue-100 uppercase text-[10px] font-black text-blue-500">
               URL
@@ -182,13 +232,14 @@ const NewPost: React.FC<NewPostProps> = ({ isOpen, onClose, onPostCreated }) => 
               <h5 className="text-[14px] font-black text-slate-900 truncate tracking-tight">{selectedLink.title}</h5>
               <p className="text-[11px] text-blue-500 font-bold truncate opacity-80">{selectedLink.url}</p>
             </div>
-            <button onClick={clearAttachments} className="p-2 text-slate-400 hover:text-slate-600 transition-colors">
+            <button onClick={clearLink} className="p-2 text-slate-400 hover:text-slate-600 transition-colors" title="Remover link">
               <X size={20} strokeWidth={2.5} />
             </button>
           </div>
         )}
 
-        {activeAttachment === 'file' && selectedFile && (
+        {/* Preview de Arquivo */}
+        {selectedFile && (
           <div className="flex items-center gap-4 p-4 rounded-2xl border-2 border-[#006c55]/10 bg-[#006c55]/5 shadow-sm transition-all hover:bg-[#006c55]/10">
             <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm flex-shrink-0 border border-[#006c55]/10">
               <FileText className="text-[#006c55]" size={24} />
@@ -197,7 +248,7 @@ const NewPost: React.FC<NewPostProps> = ({ isOpen, onClose, onPostCreated }) => 
               <h5 className="text-[14px] font-black text-slate-900 truncate tracking-tight">{selectedFile.name}</h5>
               <span className="text-[10px] text-[#006c55] font-black uppercase tracking-widest">{selectedFile.size}</span>
             </div>
-            <button onClick={clearAttachments} className="p-2 text-slate-400 hover:text-slate-600 transition-colors">
+            <button onClick={clearFile} className="p-2 text-slate-400 hover:text-slate-600 transition-colors" title="Remover arquivo">
               <X size={20} strokeWidth={2.5} />
             </button>
           </div>
@@ -296,14 +347,16 @@ const NewPost: React.FC<NewPostProps> = ({ isOpen, onClose, onPostCreated }) => 
               />
               <button
                 onClick={() => imageInputRef.current?.click()}
-                className={`p-3 rounded-xl transition-all active:scale-90 ${activeAttachment === 'image' ? 'bg-[#006c55] text-white shadow-lg' : 'text-slate-400 hover:bg-white hover:text-[#006c55]'}`}
+                className={`p-3 rounded-xl transition-all active:scale-90 ${selectedImage ? 'bg-[#006c55] text-white shadow-lg' : 'text-slate-400 hover:bg-white hover:text-[#006c55]'}`}
+                title="Adicionar imagem"
               >
                 <ImageIcon size={20} strokeWidth={2.5} />
               </button>
 
               <button
                 onClick={() => setIsLinkInputOpen(true)}
-                className={`p-3 rounded-xl transition-all active:scale-90 ${activeAttachment === 'link' ? 'bg-[#006c55] text-white shadow-lg' : 'text-slate-400 hover:bg-white hover:text-[#006c55]'}`}
+                className={`p-3 rounded-xl transition-all active:scale-90 ${selectedLink ? 'bg-[#006c55] text-white shadow-lg' : 'text-slate-400 hover:bg-white hover:text-[#006c55]'}`}
+                title="Adicionar link"
               >
                 <LinkIcon size={20} strokeWidth={2.5} />
               </button>
@@ -316,7 +369,8 @@ const NewPost: React.FC<NewPostProps> = ({ isOpen, onClose, onPostCreated }) => 
               />
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className={`p-3 rounded-xl transition-all active:scale-90 ${activeAttachment === 'file' ? 'bg-[#006c55] text-white shadow-lg' : 'text-slate-400 hover:bg-white hover:text-[#006c55]'}`}
+                className={`p-3 rounded-xl transition-all active:scale-90 ${selectedFile ? 'bg-[#006c55] text-white shadow-lg' : 'text-slate-400 hover:bg-white hover:text-[#006c55]'}`}
+                title="Adicionar arquivo"
               >
                 <FileText size={20} strokeWidth={2.5} />
               </button>
