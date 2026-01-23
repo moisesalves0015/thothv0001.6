@@ -15,6 +15,7 @@ import Estudos from './pages/Estudos/Estudos';
 import Disciplinas from './pages/Disciplinas/Disciplinas';
 import SubjectDetail from './pages/Disciplinas/SubjectDetail';
 import Conexoes from './pages/Conexoes/Conexoes';
+import SearchPage from './pages/Search/SearchPage';
 import Eventos from './pages/Eventos/Eventos';
 import Pesquisas from './pages/Pesquisas/Pesquisas';
 import Vagas from './pages/Vagas/Vagas';
@@ -28,6 +29,7 @@ import Settings from './pages/Settings/Settings';
 import Support from './pages/Support/Support';
 import Mensagens from './pages/Mensagens/Mensagens';
 import Notificacoes from './pages/Notificacoes/Notificacoes';
+import Onboarding from './pages/Auth/Onboarding';
 
 const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -41,7 +43,7 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           <UtilityHeader />
           {children}
           <footer className="text-center py-12 mt-auto">
-             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Thoth Creative Suite • 2024</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Thoth Creative Suite • 2024</p>
           </footer>
         </div>
       </main>
@@ -72,6 +74,7 @@ const AppRoutes: React.FC = () => {
                 <Route path="/estudos" element={<Estudos />} />
                 <Route path="/disciplinas" element={<Disciplinas />} />
                 <Route path="/disciplinas/:id" element={<SubjectDetail />} />
+                <Route path="/explorar" element={<SearchPage />} />
                 <Route path="/conexoes" element={<Conexoes />} />
                 <Route path="/eventos" element={<Eventos />} />
                 <Route path="/pesquisas" element={<Pesquisas />} />
@@ -80,6 +83,7 @@ const AppRoutes: React.FC = () => {
                 <Route path="/perfil" element={<Profile />} />
                 <Route path="/mensagens" element={<Mensagens />} />
                 <Route path="/notificacoes" element={<Notificacoes />} />
+                <Route path="/onboarding" element={<Onboarding />} />
                 <Route path="/configuracoes" element={<Settings />} />
                 <Route path="/suporte" element={<Support />} />
                 <Route path="*" element={<Navigate to="/home" replace />} />

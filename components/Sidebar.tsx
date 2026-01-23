@@ -15,8 +15,8 @@ import {
 } from 'lucide-react';
 
 interface SidebarProps {
-  isCollapsed: boolean;
-  setIsCollapsed: (collapsed: boolean) => void;
+    isCollapsed: boolean;
+    setIsCollapsed: (collapsed: boolean) => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
@@ -49,13 +49,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
             <nav className="sidebar-nav">
                 {menuItems.map((item, index) => {
                     const Icon = item.icon;
-                    
+
                     return (
                         <NavLink
                             key={index}
                             to={item.path}
-                            className={({ isActive }) => 
-                              `sidebar-item ${isActive ? 'active' : ''}`
+                            className={({ isActive }) =>
+                                `sidebar-item ${isActive ? 'active' : ''}`
                             }
                         >
                             <div className="sidebar-item-content">
@@ -71,9 +71,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
 
             {/* Rodapé do Sidebar */}
             <div className="sidebar-profile">
-                <button 
-                  onClick={() => navigate('/printers/login')}
-                  className="w-full flex items-center gap-3 p-3 rounded-[24px] hover:bg-[#006c55]/5 transition-all group"
+                <button
+                    onClick={() => navigate('/printers/login')}
+                    className="w-full flex items-center gap-3 p-3 rounded-[24px] hover:bg-[#006c55]/5 transition-all group"
                 >
                     <div className="w-11 h-11 rounded-[16px] bg-[#006c55]/10 flex items-center justify-center text-[#006c55] group-hover:bg-[#006c55] group-hover:text-white transition-all shrink-0">
                         <Printer size={20} />

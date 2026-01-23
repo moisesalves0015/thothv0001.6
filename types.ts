@@ -5,6 +5,14 @@ export interface Author {
   username: string;
   avatar: string;
   verified?: boolean;
+  university?: string;
+  fullName?: string;
+  phoneNumber?: string;
+  stats?: {
+    followers: number;
+    following: number;
+    projects: number;
+  };
 }
 
 export interface Post {
@@ -15,6 +23,15 @@ export interface Post {
   likes: number;
   replies: number;
   images: string[];
+  externalLink?: {
+    url: string;
+    title: string;
+  };
+  attachmentFile?: {
+    name: string;
+    size: string;
+    url: string;
+  };
   itemCount?: string;
   tags?: string[];
 }

@@ -1,13 +1,13 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { AiService } from '../modules/ai/ai.service';
+
 import { Message } from '../types';
-import { 
-  Send, 
-  Bot, 
-  User, 
-  Sparkles, 
-  Loader2, 
+import {
+  Send,
+  Bot,
+  User,
+  Sparkles,
+  Loader2,
   ExternalLink,
   MessageSquare
 } from 'lucide-react';
@@ -32,28 +32,17 @@ const ChatLab: React.FC = () => {
     const userMsg: Message = { id: Date.now().toString(), role: 'user', content: input, timestamp: Date.now() };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
-    setIsLoading(true);
 
-    try {
-      const result = await AiService.chat(input);
+    // Simulating response since AI is disabled
+    setTimeout(() => {
       const assistantMsg: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: result.text,
-        timestamp: Date.now(),
-        groundingUrls: result.urls.length > 0 ? result.urls : undefined
+        content: "AI Services are currently disabled.",
+        timestamp: Date.now()
       };
       setMessages(prev => [...prev, assistantMsg]);
-    } catch (error) {
-      setMessages(prev => [...prev, { 
-        id: Date.now().toString(), 
-        role: 'assistant', 
-        content: "Sinto muito, tive um problema de conexão com a rede Thoth. Poderia tentar novamente?", 
-        timestamp: Date.now() 
-      }]);
-    } finally {
-      setIsLoading(false);
-    }
+    }, 500);
   };
 
   return (
@@ -83,14 +72,14 @@ const ChatLab: React.FC = () => {
               </div>
               <div className={`rounded-2xl p-4 shadow-sm border ${msg.role === 'user' ? 'bg-[#006c55] text-white border-[#006c55]' : 'bg-white/80 backdrop-blur-sm text-slate-800 border-white'}`}>
                 <div className="whitespace-pre-wrap text-[14px] leading-relaxed font-medium">{msg.content}</div>
-                
+
                 {msg.groundingUrls && (
                   <div className="mt-4 pt-3 border-t border-slate-200/50 flex flex-wrap gap-2">
                     {msg.groundingUrls.map((url, idx) => (
-                      <a 
-                        key={idx} 
-                        href={url.uri} 
-                        target="_blank" 
+                      <a
+                        key={idx}
+                        href={url.uri}
+                        target="_blank"
                         rel="noopener noreferrer"
                         className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${msg.role === 'user' ? 'bg-white/10 text-white border border-white/20' : 'bg-slate-50 text-slate-500 border border-slate-100 hover:text-[#006c55] hover:border-[#006c55]/30'}`}
                       >
@@ -100,9 +89,9 @@ const ChatLab: React.FC = () => {
                     ))}
                   </div>
                 )}
-                
+
                 <div className={`text-[9px] mt-2 font-bold uppercase tracking-widest opacity-40 ${msg.role === 'user' ? 'text-right' : 'text-left'}`}>
-                  {new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                  {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </div>
               </div>
             </div>
@@ -139,12 +128,12 @@ const ChatLab: React.FC = () => {
               className="w-full h-14 bg-white/70 border border-white rounded-2xl px-5 text-[15px] font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-[#006c55]/10 focus:border-[#006c55] focus:bg-white transition-all shadow-sm"
             />
             <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2 pointer-events-none opacity-40 group-focus-within:opacity-0 transition-opacity">
-               <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Pressione Enter</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Pressione Enter</span>
             </div>
           </div>
-          <button 
-            onClick={handleSend} 
-            disabled={isLoading || !input.trim()} 
+          <button
+            onClick={handleSend}
+            disabled={isLoading || !input.trim()}
             className="w-14 h-14 bg-[#006c55] hover:bg-[#005a46] text-white rounded-2xl flex items-center justify-center transition-all shadow-lg shadow-[#006c55]/20 disabled:opacity-50 active:scale-95"
           >
             <Send size={20} strokeWidth={2.5} />

@@ -3,6 +3,7 @@ import { getAuth, setPersistence, browserSessionPersistence } from "firebase/aut
 import { initializeFirestore, memoryLocalCache } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
+
 const firebaseConfig = {
   apiKey: "AIzaSyBZkStF0t5bcWJxK_EFRG9Hqb_nRIhqbMY",
   authDomain: "thothv0001-4.firebaseapp.com",
@@ -23,6 +24,7 @@ const storage = getStorage(app);
 const db = initializeFirestore(app, {
   localCache: memoryLocalCache(),
 });
+
 
 // Configura a persistência de forma assíncrona sem bloquear a exportação
 setPersistence(auth, browserSessionPersistence).catch(err => {

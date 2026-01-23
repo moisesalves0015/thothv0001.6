@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { AiService } from '../modules/ai/ai.service';
+
 import { GeneratedImage } from '../types';
 import { Sparkles, Image as ImageIcon, Download, Trash2, Loader2, Maximize2 } from 'lucide-react';
 
@@ -14,26 +14,7 @@ const VisionLab: React.FC = () => {
 
   // Handle image generation using the AiService
   const handleGenerate = async () => {
-    if (!prompt.trim() || isGenerating) return;
-
-    setIsGenerating(true);
-    try {
-      // Correctly call the AiService for image generation
-      const imageUrl = await AiService.generateImage(prompt, aspectRatio);
-      const newImage: GeneratedImage = {
-        id: Date.now().toString(),
-        url: imageUrl,
-        prompt: prompt,
-        timestamp: Date.now(),
-      };
-      setImages(prev => [newImage, ...prev]);
-      setPrompt('');
-    } catch (error: any) {
-      console.error("Image generation error:", error);
-      alert("Erro ao gerar imagem: " + (error.message || "Erro desconhecido"));
-    } finally {
-      setIsGenerating(false);
-    }
+    alert("AI Services have been disabled.");
   };
 
   const deleteImage = (id: string) => {
@@ -66,26 +47,25 @@ const VisionLab: React.FC = () => {
             </div>
 
             <div className="flex flex-col md:flex-row gap-4">
-               <div className="flex-1 space-y-2">
-                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Proporção (Aspect Ratio)</label>
-                 <div className="flex flex-wrap gap-2">
-                   {aspectRatios.map((ratio) => (
-                     <button
-                       key={ratio}
-                       onClick={() => setAspectRatio(ratio)}
-                       className={`px-4 py-2 rounded-xl text-[11px] font-black transition-all border ${
-                         aspectRatio === ratio 
-                         ? 'bg-[#006c55] text-white border-[#006c55] shadow-lg shadow-[#006c55]/20' 
-                         : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
-                       }`}
-                     >
-                       {ratio}
-                     </button>
-                   ))}
-                 </div>
-               </div>
-               
-               <button
+              <div className="flex-1 space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Proporção (Aspect Ratio)</label>
+                <div className="flex flex-wrap gap-2">
+                  {aspectRatios.map((ratio) => (
+                    <button
+                      key={ratio}
+                      onClick={() => setAspectRatio(ratio)}
+                      className={`px-4 py-2 rounded-xl text-[11px] font-black transition-all border ${aspectRatio === ratio
+                        ? 'bg-[#006c55] text-white border-[#006c55] shadow-lg shadow-[#006c55]/20'
+                        : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
+                        }`}
+                    >
+                      {ratio}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <button
                 onClick={handleGenerate}
                 disabled={!prompt.trim() || isGenerating}
                 className="h-16 px-10 bg-[#006c55] hover:bg-[#005a46] rounded-2xl font-black text-white shadow-xl shadow-[#006c55]/20 flex items-center justify-center gap-3 transition-all disabled:opacity-50 disabled:grayscale min-w-[200px] mt-auto"
@@ -111,7 +91,7 @@ const VisionLab: React.FC = () => {
           <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
             <span className="w-8 h-px bg-slate-200"></span> Galeria Recente
           </h3>
-          
+
           {images.length === 0 ? (
             <div className="h-64 bg-white/40 rounded-[2.5rem] flex flex-col items-center justify-center text-center p-12 border-2 border-dashed border-slate-200">
               <ImageIcon size={40} className="text-slate-300 mb-4" />
@@ -124,9 +104,9 @@ const VisionLab: React.FC = () => {
                   <div className="relative aspect-square overflow-hidden bg-slate-100">
                     <img src={img.url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt={img.prompt} />
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                       <button className="p-3 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/40 transition-colors">
-                         <Maximize2 size={20} />
-                       </button>
+                      <button className="p-3 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/40 transition-colors">
+                        <Maximize2 size={20} />
+                      </button>
                     </div>
                   </div>
                   <div className="p-6 bg-white flex flex-col gap-3">
@@ -136,14 +116,14 @@ const VisionLab: React.FC = () => {
                         {new Date(img.timestamp).toLocaleDateString()}
                       </span>
                       <div className="flex gap-1">
-                        <a 
-                          href={img.url} 
+                        <a
+                          href={img.url}
                           download={`thoth-vision-${img.id}.png`}
                           className="p-2 text-slate-400 hover:text-[#006c55] transition-colors"
                         >
                           <Download size={16} />
                         </a>
-                        <button 
+                        <button
                           onClick={() => deleteImage(img.id)}
                           className="p-2 text-slate-400 hover:text-red-500 transition-colors"
                         >

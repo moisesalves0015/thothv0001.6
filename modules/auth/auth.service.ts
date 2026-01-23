@@ -1,9 +1,10 @@
 
-import { 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  signOut, 
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
   updateProfile,
+  fetchSignInMethodsForEmail,
   User as FirebaseUser
 } from 'firebase/auth';
 import { auth } from '../../firebase';
@@ -22,5 +23,16 @@ export class AuthService {
 
   static async logout(): Promise<void> {
     await signOut(auth);
+  }
+
+  static async checkEmailAvailability(email: string): Promise<boolean> {
+    try {
+      const methods = await fetchSignInMethodsForEmail(auth, email);
+      return methods.length === 0;
+    } catch (error) {
+      console.error("Error checking email:", error);
+      // Assume available if error to not block user, validation will happen on signup
+      return true;
+    }
   }
 }

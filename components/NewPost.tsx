@@ -1,154 +1,330 @@
+import { StorageService } from '../modules/storage/storage.service';
 
-import React, { useState } from 'react';
-
-interface NewPostProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
-
-type AttachmentType = 'none' | 'image' | 'link' | 'file' | 'location';
-
-const NewPost: React.FC<NewPostProps> = ({ isOpen, onClose }) => {
+const NewPost: React.FC<NewPostProps> = ({ isOpen, onClose, onPostCreated }) => {
   const [text, setText] = useState('');
   const [hashtags, setHashtags] = useState('');
-  const [isToolsOpen, setIsToolsOpen] = useState(false);
   const [activeAttachment, setActiveAttachment] = useState<AttachmentType>('none');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Attachment States
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [rawImageFile, setRawImageFile] = useState<File | null>(null);
+
+  const [selectedFile, setSelectedFile] = useState<{ name: string; size: string; url: string; raw?: File } | null>(null);
+  const [selectedLink, setSelectedLink] = useState<{ url: string; title: string } | null>(null);
+  const [isLinkInputOpen, setIsLinkInputOpen] = useState(false);
+  const [tempLink, setTempLink] = useState('');
+
+  // Refs for file inputs
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
 
-  const handleAttachment = (type: AttachmentType) => {
-    setActiveAttachment(type === activeAttachment ? 'none' : type);
-  };
-
-  const renderPreview = () => {
-    switch (activeAttachment) {
-      case 'image':
-        return (
-          <div className="relative group rounded-xl overflow-hidden border border-slate-200 mb-4 bg-slate-50 animate-in fade-in zoom-in-95 duration-300">
-            <img src="https://picsum.photos/seed/post_preview/800/400" className="w-full h-32 object-cover opacity-90" alt="Preview" />
-            <button onClick={() => setActiveAttachment('none')} className="absolute top-2 right-2 p-1 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors">
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
-            </button>
-          </div>
-        );
-      case 'link':
-        return (
-          <div className="flex items-center gap-3 p-2.5 rounded-xl border border-blue-100 bg-blue-50/50 mb-4 animate-in slide-in-from-left-2 duration-300">
-            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm flex-shrink-0">
-              <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
-            </div>
-            <div className="flex-1 min-w-0">
-              <h5 className="text-[11px] font-bold text-slate-900 truncate">Título do Link Externo</h5>
-              <p className="text-[9px] text-slate-500 truncate">https://exemplo.com/artigo</p>
-            </div>
-            <button onClick={() => setActiveAttachment('none')} className="text-slate-400 hover:text-slate-600">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
-            </button>
-          </div>
-        );
-      case 'file':
-        return (
-          <div className="flex items-center gap-3 p-2.5 rounded-xl border border-slate-200 bg-slate-50 mb-4 animate-in slide-in-from-left-2 duration-300">
-            <div className="w-8 h-8 bg-[#006c55]/10 rounded-lg flex items-center justify-center flex-shrink-0">
-              <svg className="w-4 h-4 text-[#006c55]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-            </div>
-            <div className="flex-1 min-w-0">
-              <h5 className="text-[11px] font-bold text-slate-700 truncate">arquivo.pdf</h5>
-              <span className="text-[9px] text-slate-400">2.4 MB</span>
-            </div>
-            <button onClick={() => setActiveAttachment('none')} className="text-slate-400 hover:text-slate-600">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
-            </button>
-          </div>
-        );
-      default:
-        return null;
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setRawImageFile(file);
+      const url = URL.createObjectURL(file);
+      setSelectedImage(url);
+      setActiveAttachment('image');
+      setSelectedFile(null);
+      setSelectedLink(null);
     }
   };
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const sizeInMB = (file.size / (1024 * 1024)).toFixed(1);
+      setSelectedFile({
+        name: file.name,
+        size: `${sizeInMB} MB`,
+        url: URL.createObjectURL(file),
+        raw: file
+      });
+      setActiveAttachment('file');
+      setSelectedImage(null);
+      setSelectedLink(null);
+    }
+  };
+
+  const handleLinkAdd = () => {
+    if (tempLink.trim()) {
+      let url = tempLink.trim();
+      if (!url.startsWith('http')) url = 'https://' + url;
+      setSelectedLink({
+        url,
+        title: url.replace('https://', '').replace('http://', '').split('/')[0]
+      });
+      setActiveAttachment('link');
+      setIsLinkInputOpen(false);
+      setTempLink('');
+      setSelectedImage(null);
+      setSelectedFile(null);
+      setRawImageFile(null);
+    }
+  };
+
+  const clearAttachments = () => {
+    setActiveAttachment('none');
+    setSelectedImage(null);
+    setRawImageFile(null);
+    setSelectedFile(null);
+    setSelectedLink(null);
+  };
+
+  const handlePost = async () => {
+    if (!text.trim()) return;
+
+    const user = auth.currentUser;
+    if (!user) {
+      alert("Você precisa estar logado para publicar.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      let finalImages: string[] = [];
+      let finalFileAttachment = selectedFile ? { ...selectedFile } : null;
+
+      const timestamp = Date.now();
+
+      // 1. Upload Image if exists
+      if (activeAttachment === 'image' && rawImageFile) {
+        const imageUrl = await StorageService.uploadFile(`posts/${user.uid}/images/${timestamp}_${rawImageFile.name}`, rawImageFile);
+        finalImages = [imageUrl];
+      }
+
+      // 2. Upload File if exists
+      if (activeAttachment === 'file' && selectedFile?.raw) {
+        const fileUrl = await StorageService.uploadFile(`posts/${user.uid}/files/${timestamp}_${selectedFile.name}`, selectedFile.raw);
+        finalFileAttachment = {
+          name: selectedFile.name,
+          size: selectedFile.size,
+          url: fileUrl
+        };
+      }
+
+      const author: Author = {
+        id: user.uid,
+        name: user.displayName || 'Usuário',
+        username: '@' + (user.email?.split('@')[0] || 'usuario'),
+        avatar: user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}`,
+        verified: false
+      };
+
+      const tagList = hashtags.split(' ').map(t => t.replace('#', '')).filter(t => t.length > 0);
+
+      await PostService.createPost(
+        text,
+        tagList,
+        finalImages,
+        author,
+        selectedLink,
+        finalFileAttachment
+      );
+
+      setText('');
+      setHashtags('');
+      clearAttachments();
+
+      if (onPostCreated) {
+        onPostCreated();
+      }
+      onClose();
+
+    } catch (error) {
+      console.error("Error creating post:", error);
+      alert("Erro ao criar publicação.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const renderPreview = () => {
+    if (activeAttachment === 'none') return null;
+
+    return (
+      <div className="mb-6 animate-in fade-in zoom-in-95 duration-300">
+        {activeAttachment === 'image' && selectedImage && (
+          <div className="relative group rounded-2xl overflow-hidden border-2 border-slate-100 bg-slate-50 shadow-sm">
+            <img src={selectedImage} className="w-full max-h-[300px] object-cover" alt="Preview" />
+            <button
+              onClick={clearAttachments}
+              className="absolute top-3 right-3 p-2 bg-black/50 text-white rounded-full hover:bg-black/70 transition-all backdrop-blur-sm active:scale-90"
+            >
+              <X size={16} strokeWidth={3} />
+            </button>
+          </div>
+        )}
+
+        {activeAttachment === 'link' && selectedLink && (
+          <div className="flex items-center gap-4 p-4 rounded-2xl border-2 border-blue-100 bg-blue-50/50 shadow-sm transition-all hover:bg-blue-50">
+            <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm flex-shrink-0 border border-blue-100 uppercase text-[10px] font-black text-blue-500">
+              URL
+            </div>
+            <div className="flex-1 min-w-0">
+              <h5 className="text-[14px] font-black text-slate-900 truncate tracking-tight">{selectedLink.title}</h5>
+              <p className="text-[11px] text-blue-500 font-bold truncate opacity-80">{selectedLink.url}</p>
+            </div>
+            <button onClick={clearAttachments} className="p-2 text-slate-400 hover:text-slate-600 transition-colors">
+              <X size={20} strokeWidth={2.5} />
+            </button>
+          </div>
+        )}
+
+        {activeAttachment === 'file' && selectedFile && (
+          <div className="flex items-center gap-4 p-4 rounded-2xl border-2 border-[#006c55]/10 bg-[#006c55]/5 shadow-sm transition-all hover:bg-[#006c55]/10">
+            <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm flex-shrink-0 border border-[#006c55]/10">
+              <FileText className="text-[#006c55]" size={24} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h5 className="text-[14px] font-black text-slate-900 truncate tracking-tight">{selectedFile.name}</h5>
+              <span className="text-[10px] text-[#006c55] font-black uppercase tracking-widest">{selectedFile.size}</span>
+            </div>
+            <button onClick={clearAttachments} className="p-2 text-slate-400 hover:text-slate-600 transition-colors">
+              <X size={20} strokeWidth={2.5} />
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
-    <div 
-      className="absolute inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-[2px] p-2 sm:p-4 animate-in fade-in duration-300"
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-[4px] p-4 animate-in fade-in duration-300"
       onClick={onClose}
     >
-      <div 
-        className="w-full max-w-[440px] max-h-full bg-white rounded-2xl shadow-2xl overflow-hidden border border-white/20 animate-in slide-in-from-bottom-4 duration-500 flex flex-col"
+      <div
+        className="w-full max-w-[500px] bg-white rounded-[32px] shadow-2xl overflow-hidden animate-in slide-in-from-bottom-8 duration-500 flex flex-col border border-white/20"
         onClick={(e) => e.stopPropagation()}
       >
-        
         {/* Header */}
-        <div className="flex justify-between items-center px-5 py-4 border-b border-slate-50 flex-shrink-0">
+        <div className="flex justify-between items-center px-8 py-6 border-b border-slate-50">
           <div className="flex flex-col">
-            <h3 className="text-base font-black text-slate-900 tracking-tight">Nova Publicação</h3>
-            <p className="text-[9px] uppercase tracking-widest font-bold text-[#006c55] mt-0.5 opacity-70">Feed ao vivo</p>
+            <h3 className="text-xl font-black text-slate-900 tracking-tight leading-none">Criar Publicação</h3>
+            <span className="text-[10px] uppercase tracking-[0.2em] font-black text-[#006c55] opacity-70 mt-2">Compartilhe conhecimento</span>
           </div>
-          <button 
+          <button
             onClick={onClose}
-            className="p-2 hover:bg-slate-50 rounded-xl transition-all text-slate-400 hover:text-slate-600 active:scale-90"
+            className="p-3 hover:bg-slate-50 rounded-2xl transition-all text-slate-400 hover:text-slate-600 active:scale-90"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            <X size={20} strokeWidth={2.5} />
           </button>
         </div>
 
-        {/* Scrollable Content */}
-        <div className="p-5 overflow-y-auto custom-scrollbar flex-1 min-h-0">
-          {/* Main Input Area */}
-          <div className="mb-4">
-            <textarea 
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="O que está acontecendo?"
-              className="w-full h-24 bg-transparent text-[16px] text-slate-800 placeholder:text-slate-300 border-none focus:ring-0 resize-none p-0 custom-scrollbar"
-              autoFocus
-            />
-          </div>
+        {/* Content Area */}
+        <div className="p-8 pb-4 max-h-[60vh] overflow-y-auto no-scrollbar flex-1">
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="O que está acontecendo agora?"
+            className="w-full h-32 bg-transparent text-[18px] font-medium text-slate-800 placeholder:text-slate-300 border-none focus:ring-0 resize-none p-0 custom-scrollbar leading-relaxed"
+            autoFocus
+            disabled={isSubmitting}
+          />
 
-          {/* Dynamic Previews */}
           {renderPreview()}
 
-          {/* Hashtags Input - Adjusted to 16px font */}
-          <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-xl border border-slate-100 mb-6 focus-within:border-[#006c55]/30 focus-within:bg-white transition-all">
-            <span className="text-[#006c55] font-black text-[16px] select-none">#</span>
-            <input 
-              type="text" 
+          {/* Link Input Overlay */}
+          {isLinkInputOpen && (
+            <div className="mb-6 p-4 bg-blue-50 rounded-2xl border border-blue-100 animate-in slide-in-from-top-4 duration-300">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={tempLink}
+                  onChange={(e) => setTempLink(e.target.value)}
+                  placeholder="https://..."
+                  className="flex-1 bg-white border-none rounded-xl px-4 text-sm focus:ring-2 focus:ring-blue-500 transition-all font-medium h-11"
+                  autoFocus
+                />
+                <button
+                  onClick={handleLinkAdd}
+                  className="bg-blue-500 text-white px-4 rounded-xl hover:bg-blue-600 transition-all active:scale-95 font-bold text-xs uppercase"
+                >
+                  Adicionar
+                </button>
+                <button
+                  onClick={() => setIsLinkInputOpen(false)}
+                  className="bg-white text-slate-400 p-2.5 rounded-xl hover:bg-slate-50 transition-all border border-blue-100"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center gap-2 px-4 py-3 bg-slate-50 rounded-2xl border border-slate-100 focus-within:border-[#006c55]/30 focus-within:bg-white transition-all shadow-sm">
+            <span className="text-[#006c55] font-black text-lg select-none">#</span>
+            <input
+              type="text"
               value={hashtags}
               onChange={(e) => setHashtags(e.target.value)}
-              placeholder="hashtags..."
-              className="flex-1 bg-transparent border-none focus:ring-0 text-[16px] font-medium text-slate-600 placeholder:text-slate-300 p-0"
+              placeholder="principais topicos..."
+              className="flex-1 bg-transparent border-none focus:ring-0 text-sm font-bold text-slate-600 placeholder:text-slate-300 p-0"
+              disabled={isSubmitting}
             />
           </div>
         </div>
 
-        {/* Sticky Footer Actions */}
-        <div className="px-5 py-4 bg-white border-t border-slate-50 flex-shrink-0">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-1.5">
-              <button 
-                onClick={() => setIsToolsOpen(!isToolsOpen)}
-                className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all shadow-sm ${isToolsOpen ? 'bg-[#006c55] text-white rotate-45' : 'bg-white border border-slate-100 text-slate-400 hover:text-[#006c55]'}`}
+        {/* Footer Actions */}
+        <div className="px-8 py-6 bg-white border-t border-slate-50">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2 p-1.5 bg-slate-50 rounded-[20px] border border-slate-100 shadow-inner">
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                ref={imageInputRef}
+                onChange={handleImageSelect}
+              />
+              <button
+                onClick={() => imageInputRef.current?.click()}
+                className={`p-3 rounded-xl transition-all active:scale-90 ${activeAttachment === 'image' ? 'bg-[#006c55] text-white shadow-lg' : 'text-slate-400 hover:bg-white hover:text-[#006c55]'}`}
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+                <ImageIcon size={20} strokeWidth={2.5} />
               </button>
 
-              {/* Tools Bar - Responsive adaptation */}
-              {isToolsOpen && (
-                <div className="flex items-center gap-0.5 p-1 bg-slate-50 rounded-xl border border-slate-100 animate-in slide-in-from-left-4 duration-300">
-                  <button onClick={() => handleAttachment('image')} className={`p-2 rounded-lg transition-all ${activeAttachment === 'image' ? 'bg-[#006c55] text-white' : 'text-slate-400 hover:text-slate-600'}`}>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                  </button>
-                  <button onClick={() => handleAttachment('link')} className={`p-2 rounded-lg transition-all ${activeAttachment === 'link' ? 'bg-[#006c55] text-white' : 'text-slate-400 hover:text-slate-600'}`}>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
-                  </button>
-                  <button onClick={() => handleAttachment('file')} className={`p-2 rounded-lg transition-all ${activeAttachment === 'file' ? 'bg-[#006c55] text-white' : 'text-slate-400 hover:text-slate-600'}`}>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
-                  </button>
-                </div>
-              )}
+              <button
+                onClick={() => setIsLinkInputOpen(true)}
+                className={`p-3 rounded-xl transition-all active:scale-90 ${activeAttachment === 'link' ? 'bg-[#006c55] text-white shadow-lg' : 'text-slate-400 hover:bg-white hover:text-[#006c55]'}`}
+              >
+                <LinkIcon size={20} strokeWidth={2.5} />
+              </button>
+
+              <input
+                type="file"
+                className="hidden"
+                ref={fileInputRef}
+                onChange={handleFileSelect}
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className={`p-3 rounded-xl transition-all active:scale-90 ${activeAttachment === 'file' ? 'bg-[#006c55] text-white shadow-lg' : 'text-slate-400 hover:bg-white hover:text-[#006c55]'}`}
+              >
+                <FileText size={20} strokeWidth={2.5} />
+              </button>
             </div>
-            
-            <button className="flex-1 bg-[#006c55] hover:bg-[#005a46] text-white py-2.5 rounded-xl font-black text-[12px] transition-all shadow-lg shadow-[#006c55]/20 active:scale-95 flex items-center justify-center gap-2 min-w-[120px]">
-              <span>Publicar</span>
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+
+            <button
+              onClick={handlePost}
+              disabled={isSubmitting || !text.trim()}
+              className={`flex-1 h-14 rounded-2xl flex items-center justify-center gap-3 font-black text-sm uppercase tracking-widest transition-all shadow-xl active:scale-95 ${isSubmitting || !text.trim()
+                ? 'bg-slate-100 text-slate-300 cursor-not-allowed shadow-none'
+                : 'bg-[#006c55] text-white hover:bg-[#005a46] shadow-[#006c55]/20'
+                }`}
+            >
+              {isSubmitting ? (
+                <Loader2 className="animate-spin" size={20} strokeWidth={3} />
+              ) : (
+                <>
+                  <span>Publicar Agora</span>
+                  <Send size={18} strokeWidth={3} />
+                </>
+              )}
             </button>
           </div>
         </div>

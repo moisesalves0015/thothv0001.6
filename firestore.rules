@@ -1,0 +1,80 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function to check if user is owner
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Regra genérica: nega tudo por padrão
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Coleção de Usuários
+    match /users/{userId} {
+      allow read: if isAuthenticated(); 
+      allow write: if isOwner(userId);
+      
+      // Permitir atualização de contadores (stats) - Mantido
+      allow update: if isAuthenticated() 
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stats']);
+
+      // NOVA Lógica de Conexões (Sub-coleção única 'connections')
+      // Doc ID será o UID do alvo.
+      // Campos: status ('pending', 'accepted'), direction ('sent', 'received')
+      // Sub-coleção: Connections
+      // connectionId represent ao UID da outra pessoa na relação
+      match /connections/{connectionId} {
+        allow read: if isAuthenticated();
+        
+        // Regra de Escrita:
+        // 1. Dono do Perfil (userId) pode escrever (Aceitar, Rejeitar, Remover)
+        // 2. O Outro Usuário (connectionId) pode escrever (Criar solicitação, Cancelar)
+        //    - Isso permite que 'ME' escreva em 'users/TARGET/connections/ME'
+        allow write: if isAuthenticated() && (request.auth.uid == userId || request.auth.uid == connectionId);
+      }
+
+      // Permitir leitura de outras subcoleções (badges, etc) para evitar erros
+      match /badges/{badgeId} {
+        allow read: if isAuthenticated();
+      }
+      match /notifications/{notifId} {
+        allow read: if isOwner(userId);
+        allow write: if isAuthenticated(); // Outros podem criar notificações para mim
+      }
+    }
+
+    // Coleção de Usernames (Para garantir unicidade)
+    match /usernames/{username} {
+      allow get: if true; // Permitir verificar disponibilidade (get específico)
+      allow list: if isAuthenticated();
+      allow create: if isAuthenticated(); 
+    }
+
+    // Coleção de Emails (Para verificação de disponibilidade pública sem expor dados)
+    match /emails/{email} {
+      allow get: if true; // Permitir verificar se o email já está cadastrado
+      allow create: if isAuthenticated(); // Reservado no cadastro
+    }
+
+    // Coleção de Telefones (Para verificação de disponibilidade pública)
+    match /phones/{phone} {
+      allow get: if true;
+      allow create: if isAuthenticated();
+    }
+    
+    // Coleção de Posts
+    match /posts/{postId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.author.id == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.author.id == request.auth.uid;
+    }
+  }
+}

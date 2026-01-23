@@ -1,13 +1,13 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { GoogleGenAI, Modality, LiveServerMessage } from '@google/genai';
+
 import { Transcription } from '../types';
 
 const VoiceLab: React.FC = () => {
   const [isActive, setIsActive] = useState(false);
   const [transcriptions, setTranscriptions] = useState<Transcription[]>([]);
   const [visualizerData, setVisualizerData] = useState<number[]>(new Array(30).fill(0));
-  
+
   const sessionRef = useRef<any>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const outputAudioContextRef = useRef<AudioContext | null>(null);
@@ -90,97 +90,7 @@ const VoiceLab: React.FC = () => {
   }, []);
 
   const startSession = async () => {
-    try {
-      // Correct initialization using named parameter
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      
-      const inputCtx = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
-      const outputCtx = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
-      audioContextRef.current = inputCtx;
-      outputAudioContextRef.current = outputCtx;
-
-      const sessionPromise = ai.live.connect({
-        model: 'gemini-2.5-flash-native-audio-preview-12-2025',
-        callbacks: {
-          onopen: () => {
-            setIsActive(true);
-            const source = inputCtx.createMediaStreamSource(stream);
-            const scriptProcessor = inputCtx.createScriptProcessor(4096, 1, 1);
-            scriptProcessor.onaudioprocess = (e) => {
-              const inputData = e.inputBuffer.getChannelData(0);
-              const pcmBlob = createBlob(inputData);
-              // CRITICAL: Ensure data is only sent after the session promise resolves
-              sessionPromise.then((session) => {
-                session.sendRealtimeInput({ media: pcmBlob });
-              });
-            };
-            source.connect(scriptProcessor);
-            scriptProcessor.connect(inputCtx.destination);
-          },
-          onmessage: async (message: LiveServerMessage) => {
-            // Audio Output Processing - following manual decoding logic as per guidelines
-            const audioBase64 = message.serverContent?.modelTurn?.parts[0]?.inlineData?.data;
-            if (audioBase64) {
-              const outCtx = outputAudioContextRef.current!;
-              nextStartTimeRef.current = Math.max(nextStartTimeRef.current, outCtx.currentTime);
-              const audioBuffer = await decodeAudioData(decode(audioBase64), outCtx, 24000, 1);
-              const source = outCtx.createBufferSource();
-              source.buffer = audioBuffer;
-              source.connect(outCtx.destination);
-              // Schedule with exact nextStartTime for gapless playback
-              source.start(nextStartTimeRef.current);
-              nextStartTimeRef.current += audioBuffer.duration;
-              sourcesRef.current.add(source);
-              source.onended = () => sourcesRef.current.delete(source);
-            }
-
-            // Interruptions
-            if (message.serverContent?.interrupted) {
-              sourcesRef.current.forEach(s => s.stop());
-              sourcesRef.current.clear();
-              nextStartTimeRef.current = 0;
-            }
-
-            // Transcription
-            if (message.serverContent?.inputTranscription) {
-              transcriptionBufferRef.current.user += message.serverContent.inputTranscription.text;
-            }
-            if (message.serverContent?.outputTranscription) {
-              transcriptionBufferRef.current.assistant += message.serverContent.outputTranscription.text;
-            }
-            if (message.serverContent?.turnComplete) {
-              const userText = transcriptionBufferRef.current.user;
-              const assistantText = transcriptionBufferRef.current.assistant;
-              if (userText || assistantText) {
-                setTranscriptions(prev => [
-                  ...prev, 
-                  { role: 'user', text: userText }, 
-                  { role: 'assistant', text: assistantText }
-                ]);
-              }
-              transcriptionBufferRef.current = { user: '', assistant: '' };
-            }
-          },
-          onerror: (e) => console.error('Live API Error:', e),
-          onclose: () => stopSession()
-        },
-        config: {
-          responseModalities: [Modality.AUDIO],
-          speechConfig: {
-            voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Zephyr' } }
-          },
-          inputAudioTranscription: {},
-          outputAudioTranscription: {},
-          systemInstruction: 'You are a helpful and charismatic AI companion named Lumina. You speak naturally and warmly.'
-        }
-      });
-
-      sessionRef.current = await sessionPromise;
-    } catch (err) {
-      console.error('Failed to start Live API:', err);
-      alert('Could not access microphone or connect to Live API.');
-    }
+    alert("Voice AI features are disabled.");
   };
 
   return (
@@ -200,9 +110,9 @@ const VoiceLab: React.FC = () => {
             {isActive ? (
               <div className="flex items-end gap-1 px-4 h-24">
                 {visualizerData.map((v, i) => (
-                  <div 
-                    key={i} 
-                    className="w-1 bg-emerald-500 rounded-full transition-all duration-100" 
+                  <div
+                    key={i}
+                    className="w-1 bg-emerald-500 rounded-full transition-all duration-100"
                     style={{ height: `${Math.max(10, v)}%` }}
                   ></div>
                 ))}
@@ -222,13 +132,13 @@ const VoiceLab: React.FC = () => {
             {isActive ? 'Lumina is Listening...' : 'Disconnected'}
           </h3>
           <p className="text-gray-500 leading-relaxed">
-            {isActive 
-              ? 'Speak naturally! Lumina can hear you in real-time and respond with low latency human-like speech.' 
+            {isActive
+              ? 'Speak naturally! Lumina can hear you in real-time and respond with low latency human-like speech.'
               : 'Click the orb above to establish a secure neural link and begin your voice conversation.'
             }
           </p>
           {isActive && (
-            <button 
+            <button
               onClick={stopSession}
               className="px-8 py-3 rounded-2xl bg-red-600/10 border border-red-500/20 text-red-500 font-bold hover:bg-red-600 hover:text-white transition-all"
             >
