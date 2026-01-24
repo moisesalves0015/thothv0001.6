@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Author } from '../types';
-import { User, Layers, Plus, Check, Loader2, Clock, Play } from 'lucide-react';
+import { User, Layers, Plus, Check, Loader2, Clock, MessageCircle, X, UserCheck, UserX, MoreVertical, BookOpen, MapPin, GraduationCap, Shield, Star } from 'lucide-react';
 import { ConnectionService } from '../modules/connection/connection.service';
 
 interface ConnectionCardProps {
@@ -8,39 +8,69 @@ interface ConnectionCardProps {
   currentUid?: string;
   currentUserData?: Author;
   initialStatus?: 'none' | 'pending_sent' | 'pending_received' | 'accepted';
-  onActionComplete?: () => void; // Para recarregar listas pai se necessário
+  onActionComplete?: () => void;
+  showRemoveOption?: boolean;
 }
 
-const ConnectionCard: React.FC<ConnectionCardProps> = ({ author, currentUid, currentUserData, initialStatus, onActionComplete }) => {
+const ConnectionCard: React.FC<ConnectionCardProps> = ({
+  author,
+  currentUid,
+  currentUserData,
+  initialStatus,
+  onActionComplete,
+  showRemoveOption = true
+}) => {
   const [status, setStatus] = useState<'none' | 'pending_sent' | 'pending_received' | 'accepted'>(initialStatus || 'none');
   const [loading, setLoading] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const [showRejectConfirm, setShowRejectConfirm] = useState(false);
+  const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
 
-  // Se não foi passado status inicial, verifica (útil em listas gerais)
+  // Se inicialStatus mudar externamente, atualiza o local
+  useEffect(() => {
+    if (initialStatus) {
+      setStatus(initialStatus);
+    }
+  }, [initialStatus]);
+
+  // Se não foi passado status inicial, verifica
   useEffect(() => {
     if (!initialStatus && currentUid) {
       ConnectionService.getConnectionStatus(currentUid, author.id).then(res => setStatus(res.status));
     }
   }, [currentUid, author.id, initialStatus]);
 
-  const handleAction = async (action: 'connect' | 'accept' | 'reject' | 'remove') => {
+  const handleAction = async (action: 'connect' | 'accept' | 'reject' | 'remove' | 'cancel') => {
     if (!currentUid || !currentUserData || loading) return;
 
     setLoading(true);
     try {
-      if (action === 'connect') {
-        await ConnectionService.sendConnectionRequest(currentUid, currentUserData, author.id, author);
-        setStatus('pending_sent');
-      } else if (action === 'accept') {
-        await ConnectionService.acceptConnectionRequest(currentUid, author.id);
-        setStatus('accepted');
-      } else if (action === 'reject') {
-        await ConnectionService.removeConnection(currentUid, author.id, false);
-        setStatus('none');
-      } else if (action === 'remove') {
-        await ConnectionService.removeConnection(currentUid, author.id, status === 'accepted');
-        setStatus('none');
+      switch (action) {
+        case 'connect':
+          await ConnectionService.sendConnectionRequest(currentUid, currentUserData, author.id, author);
+          setStatus('pending_sent');
+          break;
+        case 'accept':
+          await ConnectionService.acceptConnectionRequest(currentUid, author.id);
+          setStatus('accepted');
+          break;
+        case 'reject':
+          await ConnectionService.removeConnection(currentUid, author.id, false);
+          setStatus('none');
+          setShowRejectConfirm(false);
+          break;
+        case 'remove':
+          await ConnectionService.removeConnection(currentUid, author.id, true);
+          setStatus('none');
+          setShowRemoveConfirm(false);
+          break;
+        case 'cancel':
+          await ConnectionService.removeConnection(currentUid, author.id, false);
+          setStatus('none');
+          break;
       }
 
+      setShowMenu(false);
       if (onActionComplete) onActionComplete();
     } catch (error) {
       console.error("Erro na ação de conexão:", error);
@@ -49,100 +79,298 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({ author, currentUid, cur
     }
   };
 
+  const getCourseAbbreviation = (course?: string) => {
+    if (!course) return '';
+    const words = course.split(' ');
+    if (words.length === 1) return course.substring(0, 10);
+    return words.map(word => word[0].toUpperCase()).join('');
+  };
+
   return (
     <div className="flex-shrink-0 w-[190px] h-[260px] relative rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 group border border-white/20">
-      {/* Camada 1: Imagem de Fundo Total */}
+      {/* Background Image */}
       <img
         src={author.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${author.name}`}
         alt={author.name}
         className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
       />
 
-      {/* Camada 2 & 3: Painel com efeito Glassmorphism */}
-      <div className="absolute bottom-2 left-2 right-2 p-3 rounded-xl bg-white/75 backdrop-blur-xl border border-white/40 flex flex-col gap-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.1)] transition-all duration-300">
+      {/* Glass Panel Overlay */}
+      <div className="absolute bottom-2 left-2 right-2 p-3 rounded-xl bg-white/85 backdrop-blur-xl border border-white/40 flex flex-col gap-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.1)] transition-all duration-300">
 
-        {/* Camada 4: Conteúdo (Texto e Botões) */}
+        {/* User Info */}
         <div className="flex flex-col">
-          <div className="flex items-center gap-1">
-            <h4 className="text-[13px] font-black text-slate-900 leading-tight truncate">
-              {author.name}
-            </h4>
-            {author.verified && (
-              <div className="bg-[#006c55] rounded-full p-0.5 flex items-center justify-center flex-shrink-0">
-                <svg className="w-1.5 h-1.5 text-white" fill="none" stroke="currentColor" strokeWidth="4" viewBox="0 0 24 24">
-                  <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
+          <div className="flex items-start justify-between mb-1">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1 mb-0.5">
+                <h4 className="text-[13px] font-black text-slate-900 leading-tight truncate">
+                  {author.name}
+                </h4>
+                {author.verified && (
+                  <div className="bg-[#006c55] rounded-full p-0.5 flex items-center justify-center flex-shrink-0">
+                    <Check size={8} className="text-white" strokeWidth={3} />
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-500 leading-tight truncate">
+                {author.university && (
+                  <>
+                    <GraduationCap size={8} />
+                    <span className="truncate">{author.university}</span>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Status Indicator */}
+            {status === 'accepted' && (
+              <div className="flex items-center gap-1 px-1.5 py-0.5 bg-emerald-50 rounded-md border border-emerald-100">
+                <UserCheck size={8} className="text-emerald-600" />
+                <span className="text-[7px] font-black text-emerald-600 uppercase tracking-tighter">Conectado</span>
               </div>
             )}
           </div>
-          <p className="text-[9px] font-bold text-slate-500 leading-tight line-clamp-1 mt-0.5">
-            {author.university || "Estudante"}
-          </p>
+
+          {/* Course/Additional Info */}
+          {author.course && (
+            <div className="flex items-center gap-1 text-[8px] font-medium text-slate-400 mt-0.5">
+              <BookOpen size={8} />
+              <span className="truncate">{author.course}</span>
+            </div>
+          )}
         </div>
 
-        {/* Stats & Action */}
-        <div className="flex items-center justify-between mt-0.5 pt-1.5 border-t border-slate-100/80">
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-0.5">
-              <User size={10} className="text-slate-400" />
-              <span className="text-[10px] font-black text-slate-700">{author.stats?.followers || 0}</span>
+        {/* Stats */}
+        <div className="flex items-center gap-3 pt-1.5 border-t border-slate-100/80">
+          <div className="flex items-center gap-1">
+            <User size={10} className="text-slate-400" />
+            <span className="text-[10px] font-black text-slate-700">
+              {(author.stats?.followers || 0).toLocaleString()}
+            </span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Layers size={10} className="text-slate-400" />
+            <span className="text-[10px] font-black text-slate-700">
+              {author.stats?.projects || 0}
+            </span>
+          </div>
+          {author.location && (
+            <div className="flex items-center gap-1">
+              <MapPin size={10} className="text-slate-400" />
+              <span className="text-[10px] font-black text-slate-700 truncate max-w-[40px]">
+                {author.location.split(',')[0]}
+              </span>
             </div>
-            <div className="flex items-center gap-0.5">
-              <Layers size={10} className="text-slate-400" />
-              <span className="text-[10px] font-black text-slate-700">{author.stats?.projects || 0}</span>
-            </div>
+          )}
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex items-center justify-between pt-1.5 border-t border-slate-100/80">
+          <div className="text-[9px] font-bold text-slate-400">
+            {status === 'none' && 'Não conectado'}
+            {status === 'pending_sent' && 'Solicitação enviada'}
+            {status === 'pending_received' && 'Solicitou conexão'}
+            {status === 'accepted' && 'Conectado'}
           </div>
 
-          <div className="flex gap-1">
-            {/* Logic for Different Buttons */}
+          <div className="flex items-center gap-1.5">
+            {/* Estado: Nenhuma conexão */}
             {status === 'none' && (
               <button
                 onClick={() => handleAction('connect')}
                 disabled={loading}
-                className="flex items-center justify-center w-7 h-7 rounded-full bg-white text-slate-900 hover:bg-slate-50 border border-slate-200 transition-all shadow-sm active:scale-90"
-                title="Conectar"
+                className="flex items-center justify-center w-8 h-8 rounded-full bg-[#006c55] text-white hover:bg-[#005a46] border border-transparent transition-all shadow-sm active:scale-90"
+                title="Enviar solicitação de conexão"
               >
-                {loading ? <Loader2 size={12} className="animate-spin text-[#006c55]" /> : <Plus size={12} strokeWidth={3} />}
+                {loading ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} strokeWidth={3} />}
               </button>
             )}
 
+            {/* Estado: Solicitação enviada (aguardando) */}
             {status === 'pending_sent' && (
-              <button
-                disabled
-                className="flex items-center justify-center w-7 h-7 rounded-full bg-slate-100 text-slate-400 border border-slate-200 transition-all shadow-sm cursor-not-allowed"
-                title="Solicitação Enviada"
-              >
-                <Clock size={12} strokeWidth={3} />
-              </button>
+              <>
+                <button
+                  disabled
+                  className="flex items-center justify-center w-8 h-8 rounded-full bg-amber-100 text-amber-700 border border-amber-200 transition-all shadow-sm"
+                  title="Solicitação enviada"
+                >
+                  <Clock size={12} strokeWidth={2.5} />
+                </button>
+                <button
+                  onClick={() => handleAction('cancel')}
+                  disabled={loading}
+                  className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200 transition-all shadow-sm active:scale-90"
+                  title="Cancelar solicitação"
+                >
+                  {loading ? <Loader2 size={12} className="animate-spin" /> : <X size={12} strokeWidth={3} />}
+                </button>
+              </>
             )}
 
+            {/* Estado: Solicitação recebida */}
             {status === 'pending_received' && (
               <>
                 <button
                   onClick={() => handleAction('accept')}
                   disabled={loading}
-                  className="flex items-center justify-center w-7 h-7 rounded-full bg-[#006c55] text-white hover:bg-[#005a46] border border-transparent transition-all shadow-sm active:scale-90"
-                  title="Aceitar"
+                  className="flex items-center justify-center w-8 h-8 rounded-full bg-emerald-500 text-white hover:bg-emerald-600 border border-transparent transition-all shadow-sm active:scale-90"
+                  title="Aceitar solicitação"
                 >
-                  <Check size={12} strokeWidth={3} />
+                  {loading ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} strokeWidth={3} />}
+                </button>
+                <button
+                  onClick={() => setShowRejectConfirm(true)}
+                  disabled={loading}
+                  className="flex items-center justify-center w-8 h-8 rounded-full bg-rose-100 text-rose-600 hover:bg-rose-200 border border-rose-200 transition-all shadow-sm active:scale-90"
+                  title="Recusar solicitação"
+                >
+                  <X size={12} strokeWidth={3} />
                 </button>
               </>
             )}
 
+            {/* Estado: Conexão aceita */}
             {status === 'accepted' && (
-              <button
-                disabled={loading} // TODO: Open Chat
-                className="flex items-center justify-center w-7 h-7 rounded-full bg-[#006c55] text-white hover:bg-[#005a46] border border-transparent transition-all shadow-sm active:scale-90"
-                title="Conexão (Enviar Mensagem)"
-              >
-                <Play size={10} fill="currentColor" />
-              </button>
+              <>
+                <button
+                  onClick={async () => {
+                    if (currentUid) {
+                      const chatId = await import('../modules/chat/chat.service').then(m =>
+                        m.ChatService.getOrCreateDirectChat(currentUid, author.id, author)
+                      );
+                      window.location.href = `/mensagens?chatId=${chatId}`; // Force reload or use navigate if available in scope
+                    }
+                  }}
+                  className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-500 text-white hover:bg-blue-600 border border-transparent transition-all shadow-sm active:scale-90"
+                  title="Enviar mensagem"
+                >
+                  <MessageCircle size={12} strokeWidth={2.5} />
+                </button>
+
+                {showRemoveOption && (
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowMenu(!showMenu)}
+                      className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200 transition-all shadow-sm active:scale-90"
+                      title="Mais opções"
+                    >
+                      <MoreVertical size={12} strokeWidth={2.5} />
+                    </button>
+
+                    {/* Menu Dropdown */}
+                    {showMenu && (
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
+                        <div className="absolute right-0 top-full mt-1 w-48 bg-white/95 backdrop-blur-xl border border-white/40 rounded-xl shadow-2xl z-50 py-1.5 animate-in fade-in zoom-in-95 duration-200">
+                          <button className="w-full flex items-center gap-2 px-3 py-2 text-[11px] font-bold text-slate-700 hover:bg-slate-50 transition-colors">
+                            <MessageCircle size={12} /> Enviar mensagem
+                          </button>
+                          <button className="w-full flex items-center gap-2 px-3 py-2 text-[11px] font-bold text-slate-700 hover:bg-slate-50 transition-colors">
+                            <User size={12} /> Ver perfil completo
+                          </button>
+                          <div className="h-px bg-slate-100 my-1 mx-2" />
+                          <button
+                            onClick={() => {
+                              setShowMenu(false);
+                              setShowRemoveConfirm(true);
+                            }}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-[11px] font-bold text-rose-500 hover:bg-rose-50 transition-colors"
+                          >
+                            <UserX size={12} /> Remover conexão
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
       </div>
+
+      {/* Confirmação de Rejeição */}
+      {showRejectConfirm && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setShowRejectConfirm(false)} />
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm rounded-2xl">
+            <div className="bg-white/95 backdrop-blur-xl border border-white/40 rounded-xl p-4 mx-2 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+              <div className="flex flex-col items-center text-center">
+                <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center mb-2">
+                  <X size={20} className="text-rose-500" />
+                </div>
+                <h5 className="text-[13px] font-black text-slate-900 mb-1">Recusar conexão?</h5>
+                <p className="text-[11px] text-slate-500 mb-3">
+                  {author.name} não será notificado sobre esta ação.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowRejectConfirm(false)}
+                    className="px-3 py-1.5 text-[11px] font-bold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={() => handleAction('reject')}
+                    disabled={loading}
+                    className="px-3 py-1.5 text-[11px] font-bold text-white bg-rose-500 hover:bg-rose-600 rounded-lg transition-colors flex items-center gap-1"
+                  >
+                    {loading ? <Loader2 size={10} className="animate-spin" /> : 'Recusar'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Confirmação de Remoção */}
+      {showRemoveConfirm && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setShowRemoveConfirm(false)} />
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm rounded-2xl">
+            <div className="bg-white/95 backdrop-blur-xl border border-white/40 rounded-xl p-4 mx-2 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+              <div className="flex flex-col items-center text-center">
+                <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center mb-2">
+                  <UserX size={20} className="text-rose-500" />
+                </div>
+                <h5 className="text-[13px] font-black text-slate-900 mb-1">Remover conexão?</h5>
+                <p className="text-[11px] text-slate-500 mb-3">
+                  Esta ação é irreversível. {author.name} será removido da sua lista de conexões.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowRemoveConfirm(false)}
+                    className="px-3 py-1.5 text-[11px] font-bold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={() => handleAction('remove')}
+                    disabled={loading}
+                    className="px-3 py-1.5 text-[11px] font-bold text-white bg-rose-500 hover:bg-rose-600 rounded-lg transition-colors flex items-center gap-1"
+                  >
+                    {loading ? <Loader2 size={10} className="animate-spin" /> : 'Remover'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      <style jsx>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        .animate-in {
+          animation: fadeIn 0.2s ease-out;
+        }
+      `}</style>
     </div>
   );
 };
+
 
 export default ConnectionCard;

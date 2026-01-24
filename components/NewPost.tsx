@@ -302,47 +302,47 @@ const NewPost: React.FC<NewPostProps> = ({ isOpen, onClose, onPostCreated }) => 
   };
 
   const modalContent = (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-xl p-4 animate-in fade-in duration-500" onClick={onClose}>
-      <div className="w-full max-w-[620px] bg-gradient-to-br from-white via-white to-white/95 rounded-3xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom-8 duration-700 flex flex-col border border-white/40 max-h-[90vh] relative" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 dark:bg-slate-900/80 backdrop-blur-xl p-4 animate-in fade-in duration-500" onClick={onClose}>
+      <div className="w-full max-w-[620px] bg-gradient-to-br from-white via-white to-white/95 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 rounded-3xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom-8 duration-700 flex flex-col border border-white/40 dark:border-white/10 max-h-[90vh] relative" onClick={(e) => e.stopPropagation()}>
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-[#006c55] to-emerald-500" />
-        <div className="flex justify-between items-center px-8 py-6 border-b border-slate-50/80 relative">
+        <div className="flex justify-between items-center px-8 py-6 border-b border-slate-50/80 dark:border-white/5 relative">
           <div className="flex flex-col">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#006c55] to-[#00876a] flex items-center justify-center shadow-lg"><GraduationCap size={20} className="text-white" /></div>
               <div>
-                <h3 className="text-2xl font-black text-slate-900 tracking-tight leading-none">Compartilhar Conhecimento</h3>
+                <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight leading-none">Compartilhar Conhecimento</h3>
                 <div className="flex items-center gap-2 mt-1.5">
-                  <span className="text-[10px] uppercase tracking-[0.3em] font-black text-[#006c55] opacity-90">Thoth University</span>
+                  <span className="text-[10px] uppercase tracking-[0.3em] font-black text-[#006c55] dark:text-emerald-400 opacity-90">Thoth University</span>
                   <span className="text-[8px] text-slate-400">•</span>
-                  <span className="text-[10px] font-bold text-slate-500">Contribua com a comunidade</span>
+                  <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">Contribua com a comunidade</span>
                 </div>
               </div>
             </div>
           </div>
-          <button onClick={onClose} className="w-10 h-10 rounded-xl bg-slate-50 hover:bg-slate-100 transition-all text-slate-400 hover:text-slate-600 active:scale-90 flex items-center justify-center"><X size={20} strokeWidth={2.5} /></button>
+          <button onClick={onClose} className="w-10 h-10 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all text-slate-400 hover:text-slate-600 dark:hover:text-white active:scale-90 flex items-center justify-center"><X size={20} strokeWidth={2.5} /></button>
         </div>
         <div className="p-8 pb-4 max-h-[60vh] overflow-y-auto no-scrollbar flex-1">
           <div className="mb-6">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Tipo de Publicação</span>
-              <span className="text-[10px] font-bold text-slate-400">Selecione o propósito</span>
+              <span className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tipo de Publicação</span>
+              <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500">Selecione o propósito</span>
             </div>
             <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
               {postTypes.map((type) => {
                 const Icon = type.icon;
                 const isActive = postType === type.id;
                 return (
-                  <button key={type.id} onClick={() => setPostType(type.id as PostType)} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border transition-all flex-shrink-0 ${isActive ? `${type.bg} ${type.border} border-2 ${type.color} font-bold` : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}><Icon size={16} /><span className="text-[12px] whitespace-nowrap">{type.label}</span></button>
+                  <button key={type.id} onClick={() => setPostType(type.id as PostType)} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border transition-all flex-shrink-0 ${isActive ? `${type.bg} ${type.border} border-2 ${type.color} font-bold` : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-white/5 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'}`}><Icon size={16} /><span className="text-[12px] whitespace-nowrap">{type.label}</span></button>
                 );
               })}
             </div>
           </div>
           <div className="relative mb-6">
-            <textarea ref={textareaRef} value={text} onChange={handleTextChange} placeholder={getPlaceholderByType()} className="w-full min-h-[160px] bg-gradient-to-b from-white to-slate-50/30 text-[16px] font-medium text-slate-800 placeholder:text-slate-400 border-2 border-slate-100 focus:border-[#006c55]/30 focus:ring-2 focus:ring-[#006c55]/10 transition-all resize-none p-5 rounded-2xl leading-relaxed shadow-inner" autoFocus disabled={isSubmitting} onKeyDown={handleKeyDown} />
+            <textarea ref={textareaRef} value={text} onChange={handleTextChange} placeholder={getPlaceholderByType()} className="w-full min-h-[160px] bg-gradient-to-b from-white to-slate-50/30 dark:from-slate-800 dark:to-slate-900/50 text-[16px] font-medium text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 border-2 border-slate-100 dark:border-white/5 focus:border-[#006c55]/30 focus:ring-2 focus:ring-[#006c55]/10 transition-all resize-none p-5 rounded-2xl leading-relaxed shadow-inner" autoFocus disabled={isSubmitting} onKeyDown={handleKeyDown} />
             <div className="absolute bottom-3 right-3 flex items-center gap-2">
-              <span className={`text-[11px] font-bold ${characterCount > maxCharacters * 0.9 ? 'text-amber-500' : 'text-slate-400'}`}>{characterCount}/{maxCharacters}</span>
-              <div className="text-[10px] text-slate-300">|</div>
-              <span className="text-[10px] font-bold text-slate-400">Ctrl+Enter para publicar</span>
+              <span className={`text-[11px] font-bold ${characterCount > maxCharacters * 0.9 ? 'text-amber-500' : 'text-slate-400 dark:text-slate-600'}`}>{characterCount}/{maxCharacters}</span>
+              <div className="text-[10px] text-slate-300 dark:text-slate-700">|</div>
+              <span className="text-[10px] font-bold text-slate-400 dark:text-slate-600">Ctrl+Enter para publicar</span>
             </div>
           </div>
           {renderPreview()}

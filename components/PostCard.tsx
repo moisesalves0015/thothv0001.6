@@ -1,11 +1,11 @@
 ﻿import React, { useState, useRef, useEffect } from 'react';
 import { Post } from '../types';
 import ImageModal from './ImageModal';
-import { 
-  BookOpen, 
-  GraduationCap, 
-  Sparkles, 
-  Calendar, 
+import {
+  BookOpen,
+  GraduationCap,
+  Sparkles,
+  Calendar,
   Target,
   Bookmark,
   Share2,
@@ -176,54 +176,54 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
 
   return (
     <>
-      <div className="flex-shrink-0 w-full sm:w-[340px] h-[500px] flex flex-col bg-gradient-to-br from-white via-white to-white/95 rounded-3xl p-6 shadow-lg border border-white/60 snap-center hover:shadow-2xl transition-all duration-500 relative overflow-hidden group">
+      <div className="flex-shrink-0 w-full sm:w-[340px] h-[500px] flex flex-col bg-gradient-to-br from-white via-white to-white/95 dark:from-slate-800 dark:via-slate-900 dark:to-slate-900 rounded-3xl p-6 shadow-lg border border-white/60 dark:border-white/5 snap-center hover:shadow-2xl transition-all duration-500 relative overflow-hidden group">
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-[#006c55] to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
         <div className="flex items-start justify-between mb-4 flex-shrink-0 relative">
           <div className="flex items-start gap-3 overflow-hidden flex-1">
             <div className="relative">
-              <img src={post.author.avatar} className="w-12 h-12 rounded-2xl object-cover border-2 border-white shadow-lg flex-shrink-0" alt={post.author.name} />
-              {post.author.verified && <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-gradient-to-r from-[#006c55] to-[#00876a] rounded-full flex items-center justify-center border-2 border-white"><CheckCircle size={8} className="text-white" fill="white" /></div>}
+              <img src={post.author.avatar} className="w-12 h-12 rounded-2xl object-cover border-2 border-white dark:border-slate-700 shadow-lg flex-shrink-0" alt={post.author.name} />
+              {post.author.verified && <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-gradient-to-r from-[#006c55] to-[#00876a] rounded-full flex items-center justify-center border-2 border-white dark:border-slate-800"><CheckCircle size={8} className="text-white" fill="white" /></div>}
             </div>
             <div className="flex flex-col min-w-0 flex-1">
               <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-2">
-                  <h4 className="text-[14px] font-black text-slate-900 leading-tight truncate">{post.author.name}</h4>
-                  {post.author.verified && <span className="text-[8px] font-black text-[#006c55] bg-[#006c55]/10 px-1.5 py-0.5 rounded-md uppercase tracking-tighter">Verificado</span>}
+                  <h4 className="text-[14px] font-black text-slate-900 dark:text-white leading-tight truncate">{post.author.name}</h4>
+                  {post.author.verified && <span className="text-[8px] font-black text-[#006c55] dark:text-emerald-400 bg-[#006c55]/10 dark:bg-emerald-400/10 px-1.5 py-0.5 rounded-md uppercase tracking-tighter">Verificado</span>}
                 </div>
               </div>
-              <div className="flex items-center gap-2 text-[11px] text-slate-500 mb-2">
+              <div className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400 mb-2">
                 <span className="font-bold truncate">{post.author.username}</span>
-                <span className="text-slate-300">•</span>
+                <span className="text-slate-300 dark:text-slate-600">•</span>
                 <div className="flex items-center gap-1"><Clock size={10} /><span>{formatTimestamp(post.timestamp)}</span></div>
               </div>
             </div>
           </div>
           <div className="flex items-center gap-1 flex-shrink-0 ml-2" ref={menuRef}>
-            <button onClick={handleBookmark} className={`p-2 rounded-xl transition-all active:scale-90 ${isBookmarked ? 'text-[#006c55] bg-gradient-to-br from-[#006c55]/10 to-[#006c55]/5' : 'text-slate-400 hover:text-[#006c55] hover:bg-slate-50'}`} title={isBookmarked ? "Remover" : "Salvar"}><Bookmark size={16} strokeWidth={isBookmarked ? 2.5 : 2} fill={isBookmarked ? "currentColor" : "none"} /></button>
-            <button onClick={() => setIsMenuOpen(!isMenuOpen)} className={`p-2 rounded-xl transition-all active:scale-90 ${isMenuOpen ? 'text-slate-900 bg-slate-100' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`} title="Opções"><MoreVertical size={16} /></button>
-            {isMenuOpen && <div className="absolute right-0 top-10 w-56 bg-white/95 backdrop-blur-xl border border-white/40 rounded-2xl shadow-2xl z-50 py-2 animate-in fade-in slide-in-from-top-2 duration-200">
-                <button className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-bold text-slate-700 hover:bg-slate-50 text-left transition-colors"><Share2 size={14} />Compartilhar</button>
-                <button className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-bold text-slate-700 hover:bg-slate-50 text-left transition-colors"><Link size={14} />Copiar link</button>
-                <button className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-bold text-slate-700 hover:bg-slate-50 text-left transition-colors"><BarChart2 size={14} />Estatísticas</button>
-                <div className="h-px bg-slate-100 my-2 mx-4"></div>
-                <button className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-bold text-red-500 hover:bg-red-50 text-left transition-colors"><ExternalLink size={14} />Denunciar</button>
-              </div>}
+            <button onClick={handleBookmark} className={`p-2 rounded-xl transition-all active:scale-90 ${isBookmarked ? 'text-[#006c55] dark:text-emerald-400 bg-gradient-to-br from-[#006c55]/10 to-[#006c55]/5 dark:from-emerald-400/10 dark:to-emerald-400/5' : 'text-slate-400 hover:text-[#006c55] dark:hover:text-emerald-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`} title={isBookmarked ? "Remover" : "Salvar"}><Bookmark size={16} strokeWidth={isBookmarked ? 2.5 : 2} fill={isBookmarked ? "currentColor" : "none"} /></button>
+            <button onClick={() => setIsMenuOpen(!isMenuOpen)} className={`p-2 rounded-xl transition-all active:scale-90 ${isMenuOpen ? 'text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'}`} title="Opções"><MoreVertical size={16} /></button>
+            {isMenuOpen && <div className="absolute right-0 top-10 w-56 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-2xl shadow-2xl z-50 py-2 animate-in fade-in slide-in-from-top-2 duration-200">
+              <button className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors"><Share2 size={14} />Compartilhar</button>
+              <button className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors"><Link size={14} />Copiar link</button>
+              <button className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors"><BarChart2 size={14} />Estatísticas</button>
+              <div className="h-px bg-slate-100 dark:bg-slate-800 my-2 mx-4"></div>
+              <button className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 text-left transition-colors"><ExternalLink size={14} />Denunciar</button>
+            </div>}
           </div>
         </div>
         {renderCollage()}
         <div className="flex-1 flex flex-col min-h-0">
           <div className="flex-1 overflow-y-auto no-scrollbar pr-2 mb-4">
-            <p className="text-[14px] text-slate-800 leading-relaxed mb-3 font-medium">
+            <p className="text-[14px] text-slate-800 dark:text-slate-200 leading-relaxed mb-3 font-medium">
               {isExpanded ? post.content : (isLongText ? post.content.substring(0, charLimit) + "..." : post.content)}
-              {isLongText && <button onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }} className="inline-block ml-2 text-[11px] font-black text-[#006c55] hover:underline cursor-pointer uppercase tracking-tighter">{isExpanded ? ' Menos' : ' Mais'}</button>}
+              {isLongText && <button onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }} className="inline-block ml-2 text-[11px] font-black text-[#006c55] dark:text-emerald-400 hover:underline cursor-pointer uppercase tracking-tighter">{isExpanded ? ' Menos' : ' Mais'}</button>}
             </p>
             {renderLinkAttachment()}
             {renderFileAttachment()}
             {post.tags && post.tags.length > 0 && <div className="flex flex-wrap gap-1.5 mb-4">
-                {post.tags.slice(0, 6).map(tag => <span key={tag} className="text-[9px] font-extrabold text-[#006c55] bg-gradient-to-r from-[#006c55]/10 to-[#006c55]/5 px-2.5 py-1.5 rounded-lg uppercase tracking-wider transition-all hover:scale-105 cursor-pointer border border-[#006c55]/10">#{tag}</span>)}
-              </div>}
+              {post.tags.slice(0, 6).map(tag => <span key={tag} className="text-[9px] font-extrabold text-[#006c55] dark:text-emerald-400 bg-gradient-to-r from-[#006c55]/10 to-[#006c55]/5 dark:from-emerald-400/10 dark:to-emerald-400/5 px-2.5 py-1.5 rounded-lg uppercase tracking-wider transition-all hover:scale-105 cursor-pointer border border-[#006c55]/10 dark:border-white/5">#{tag}</span>)}
+            </div>}
           </div>
-          <div className="flex items-center justify-between pt-4 border-t border-slate-100/80 flex-shrink-0">
+          <div className="flex items-center justify-between pt-4 border-t border-slate-100/80 dark:border-white/5 flex-shrink-0">
             <div className="flex items-center gap-4">
               <button onClick={handleLike} className={`flex items-center gap-1.5 transition-all active:scale-95 ${isLiked ? 'text-red-500' : 'text-slate-400 hover:text-red-500'}`}><Heart size={16} strokeWidth={2.5} fill={isLiked ? "currentColor" : "none"} /><span className="text-[11px] font-bold">{likeCount}</span></button>
               <button className="flex items-center gap-1.5 text-slate-400 hover:text-blue-500 transition-colors active:scale-95"><MessageCircle size={16} strokeWidth={2.5} /><span className="text-[11px] font-bold">{commentCount}</span></button>

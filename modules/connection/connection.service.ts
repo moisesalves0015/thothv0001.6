@@ -17,15 +17,27 @@ import { Author } from "../../types";
 export class ConnectionService {
 
     /**
+     * Helper para remover undefined
+     */
+    static sanitizeData(data: any): any {
+        return JSON.parse(JSON.stringify(data, (key, value) => {
+            return value === undefined ? null : value;
+        }));
+    }
+
+    /**
      * Envia solicitação de conexão.
      */
     static async sendConnectionRequest(currentUid: string, currentUser: Author, targetUid: string, targetUser: Author): Promise<void> {
         const batch = writeBatch(db);
 
+        const cleanCurrentUser = ConnectionService.sanitizeData(currentUser);
+        const cleanTargetUser = ConnectionService.sanitizeData(targetUser);
+
         // 1. Sent
         const myConnRef = doc(db, "users", currentUid, "connections", targetUid);
         batch.set(myConnRef, {
-            ...targetUser,
+            ...cleanTargetUser,
             status: 'pending',
             direction: 'sent',
             timestamp: new Date().toISOString()
@@ -34,7 +46,7 @@ export class ConnectionService {
         // 2. Received
         const targetConnRef = doc(db, "users", targetUid, "connections", currentUid);
         batch.set(targetConnRef, {
-            ...currentUser,
+            ...cleanCurrentUser,
             status: 'pending',
             direction: 'received',
             timestamp: new Date().toISOString()

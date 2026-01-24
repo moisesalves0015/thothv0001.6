@@ -8,7 +8,7 @@ import Sidebar from './components/Sidebar';
 import Topbar from './components/Topbar';
 import UtilityHeader from './components/UtilityHeader';
 
-// Pages
+// Pages - Importação de todas as páginas da aplicação
 import Landing from './pages/Landing/Landing';
 import Home from './pages/Home/Home';
 import Estudos from './pages/Estudos/Estudos';
@@ -33,13 +33,25 @@ import Onboarding from './pages/Auth/Onboarding';
 import AdminPortal from './pages/Admin/AdminPortal';
 import AdminRoute from './routes/AdminRoute';
 
+/**
+ * MainLayout
+ * Componente de layout principal que envolve as páginas autenticadas.
+ * Gerencia a exibição da Sidebar e Topbar.
+ * 
+ * @param {children} - O conteúdo da página a ser renderizado dentro do layout.
+ */
 const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-transparent">
+      {/* Barra superior fixa */}
       <Topbar />
+
+      {/* Menu lateral retrátil */}
       <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
+
+      {/* Área principal de conteúdo com ajuste dinâmico de margem baseado no estado da Sidebar */}
       <main className={`flex-1 transition-all duration-300 min-h-screen pt-[72px] lg:pt-[24px] ${isCollapsed ? 'lg:ml-[80px]' : 'lg:ml-[280px]'} ml-0 flex flex-col items-center overflow-x-hidden`}>
         <div className="w-full px-4 md:px-6 lg:px-0 lg:w-[1005px] flex flex-col box-border pb-12">
           <UtilityHeader />
@@ -53,16 +65,33 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   );
 };
 
+/**
+ * AppRoutes
+ * Gerencia todas as rotas da aplicação.
+ * Define rotas públicas, privadas e administrativas.
+ */
+import AppLoadingPage from './components/AppLoadingPage';
+
+// ... (existing imports)
+
+/**
+ * AppRoutes
+ * Gerencia todas as rotas da aplicação.
+ * Define rotas públicas, privadas e administrativas.
+ */
 const AppRoutes: React.FC = () => {
   const { user, loading } = useAuth();
 
-  if (loading) return null;
+  if (loading) return <AppLoadingPage />;
 
   return (
     <Routes>
+      {/* Rotas Públicas */}
       <Route path="/" element={user ? <Navigate to="/home" replace /> : <Landing />} />
       <Route path="/login" element={!user ? <Login /> : <Navigate to="/home" replace />} />
       <Route path="/signup" element={!user ? <Signup /> : <Navigate to="/home" replace />} />
+
+      {/* Rotas Específicas (Impressoras) */}
       <Route path="/printers/login" element={<PrinterLogin />} />
       <Route path="/printers/dashboard" element={<PrinterDashboard />} />
 
@@ -76,6 +105,7 @@ const AppRoutes: React.FC = () => {
         }
       />
 
+      {/* Rotas Protegidas (Requer Autenticação) */}
       <Route
         path="/*"
         element={
@@ -108,6 +138,11 @@ const AppRoutes: React.FC = () => {
   );
 };
 
+/**
+ * App
+ * Componente raiz da aplicação.
+ * Envolve a aplicação com os Providers necessários (Auth, Theme, Router).
+ */
 const App: React.FC = () => {
   return (
     <AuthProvider>

@@ -21,6 +21,7 @@ export class UserService {
     /**
      * Verifica se o nome de usuário já está em uso.
      * Retorna true se disponível, false se indisponível.
+     * Checa a coleção 'usernames' para garantia de unicidade rápida.
      */
     static async checkUsernameAvailability(username: string): Promise<boolean> {
         const usernameLower = username.trim().toLowerCase();
@@ -35,6 +36,7 @@ export class UserService {
 
     /**
      * Verifica se o email já está cadastrado no sistema (Firestore + Auth fallback).
+     * Utiliza uma coleção de índice 'emails' para verificação rápida antes de criar o Auth.
      */
     static async checkEmailAvailability(email: string): Promise<boolean> {
         if (!email || !email.includes('@')) return false;
@@ -64,6 +66,7 @@ export class UserService {
 
     /**
      * Verifica se o telefone já está cadastrado no sistema (Firestore).
+     * Checa a coleção 'phones'.
      */
     static async checkPhoneAvailability(phone: string): Promise<boolean> {
         const cleanPhone = phone.replace(/\D/g, '');
@@ -76,6 +79,8 @@ export class UserService {
 
     /**
      * Cria o perfil completo do usuário e reserva o username/email.
+     * Utiliza BATCH WRITE para garantir atomicidade: ou salva tudo (usuário + índices) ou nada.
+     * Isso evita dados órfãos se a criação falhar no meio.
      */
     static async createCompleteProfile(data: CreateProfileData): Promise<void> {
         const batch = writeBatch(db);
@@ -129,6 +134,9 @@ export class UserService {
         await batch.commit();
     }
 
+    /**
+     * Atualiza dados parciais do perfil do usuário.
+     */
     static async updateProfile(uid: string, data: Partial<CreateProfileData & { photoURL: string; bio: string }>): Promise<void> {
         const userRef = doc(db, "users", uid);
         await setDoc(userRef, {
@@ -137,6 +145,9 @@ export class UserService {
         }, { merge: true });
     }
 
+    /**
+     * Busca o perfil completo de um usuário pelo UID.
+     */
     static async getUserProfile(uid: string) {
         const userRef = doc(db, "users", uid);
         const snap = await getDoc(userRef);

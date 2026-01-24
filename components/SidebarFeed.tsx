@@ -5,11 +5,11 @@ import NewPost from './NewPost';
 import { PostService } from '../modules/post/post.service';
 import { auth } from '../firebase';
 import { Post } from '../types';
-import { 
-  RefreshCw, 
-  ChevronLeft, 
-  ChevronRight, 
-  Plus, 
+import {
+  RefreshCw,
+  ChevronLeft,
+  ChevronRight,
+  Plus,
   Filter,
   BookOpen,
   X,
@@ -60,7 +60,7 @@ const SidebarFeed: React.FC<SidebarConfig> = ({ title = "Feed do Conhecimento", 
     if (isFilterOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
-    
+
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
@@ -109,8 +109,8 @@ const SidebarFeed: React.FC<SidebarConfig> = ({ title = "Feed do Conhecimento", 
       <div className="flex flex-col px-6 pt-6 mb-4 flex-shrink-0 z-10">
         <div className="flex items-center justify-between">
           <div className="flex flex-col">
-            <h2 className="text-lg font-black text-slate-900 tracking-tight leading-none">{title}</h2>
-            <span className="text-[10px] uppercase tracking-[0.2em] font-extrabold text-[#006c55] mt-1 opacity-80">
+            <h2 className="text-lg font-black text-slate-900 dark:text-white tracking-tight leading-none">{title}</h2>
+            <span className="text-[10px] uppercase tracking-[0.2em] font-extrabold text-[#006c55] dark:text-emerald-400 mt-1 opacity-80">
               atualizações da rede
             </span>
           </div>
@@ -120,10 +120,10 @@ const SidebarFeed: React.FC<SidebarConfig> = ({ title = "Feed do Conhecimento", 
             <div className="relative" ref={filterRef}>
               <button
                 onClick={() => setIsFilterOpen(!isFilterOpen)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all ${isFilterOpen ? 
-                  'bg-[#006c55] text-white' : 
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all ${isFilterOpen ?
+                  'bg-[#006c55] text-white' :
                   'bg-white/60 text-slate-600 hover:bg-white border border-white/90'
-                } shadow-sm active:scale-95`}
+                  } shadow-sm active:scale-95`}
               >
                 <Filter size={14} />
                 <span className="text-[11px] font-bold hidden sm:inline">Filtrar</span>
@@ -144,7 +144,7 @@ const SidebarFeed: React.FC<SidebarConfig> = ({ title = "Feed do Conhecimento", 
                     const Icon = filter.icon;
                     const isActive = activeFilter === filter.id;
                     const count = filter.id === 'all' ? posts.length : getFilteredCount(filter.id);
-                    
+
                     return (
                       <button
                         key={filter.id}
@@ -152,10 +152,10 @@ const SidebarFeed: React.FC<SidebarConfig> = ({ title = "Feed do Conhecimento", 
                           setActiveFilter(filter.id as any);
                           setIsFilterOpen(false);
                         }}
-                        className={`w-full flex items-center justify-between px-4 py-2.5 text-left transition-colors ${isActive ? 
-                          `${filter.bg} ${filter.color} font-bold` : 
+                        className={`w-full flex items-center justify-between px-4 py-2.5 text-left transition-colors ${isActive ?
+                          `${filter.bg} ${filter.color} font-bold` :
                           'text-slate-600 hover:bg-slate-50'
-                        }`}
+                          }`}
                       >
                         <div className="flex items-center gap-3">
                           <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isActive ? filter.bg : 'bg-slate-100'}`}>
@@ -164,10 +164,10 @@ const SidebarFeed: React.FC<SidebarConfig> = ({ title = "Feed do Conhecimento", 
                           <span className="text-[12px] font-medium">{filter.label}</span>
                         </div>
                         {count > 0 && (
-                          <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${isActive ? 
-                            'bg-white text-slate-900' : 
+                          <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${isActive ?
+                            'bg-white text-slate-900' :
                             'bg-slate-100 text-slate-500'
-                          }`}>
+                            }`}>
                             {count}
                           </span>
                         )}
@@ -211,9 +211,9 @@ const SidebarFeed: React.FC<SidebarConfig> = ({ title = "Feed do Conhecimento", 
         {activeFilter !== 'all' && (
           <div className="flex items-center gap-2 mt-4">
             <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg ${filters.find(f => f.id === activeFilter)?.bg} border ${filters.find(f => f.id === activeFilter)?.border}`}>
-              {React.createElement(filters.find(f => f.id === activeFilter)!.icon, { 
-                size: 12, 
-                className: filters.find(f => f.id === activeFilter)!.color 
+              {React.createElement(filters.find(f => f.id === activeFilter)!.icon, {
+                size: 12,
+                className: filters.find(f => f.id === activeFilter)!.color
               })}
               <span className={`text-[10px] font-black uppercase tracking-wider ${filters.find(f => f.id === activeFilter)!.color}`}>
                 {getActiveFilterLabel()}
@@ -245,8 +245,8 @@ const SidebarFeed: React.FC<SidebarConfig> = ({ title = "Feed do Conhecimento", 
           <>
             {filteredPosts.slice(0, maxPosts).map((post) => (
               <div key={post.id} className="snap-start">
-                <PostCard 
-                  post={post} 
+                <PostCard
+                  post={post}
                   onBookmarkToggle={(postId, bookmarked) => {
                     console.log(`Post ${postId} ${bookmarked ? 'bookmarked' : 'unbookmarked'}`);
                   }}
@@ -265,8 +265,8 @@ const SidebarFeed: React.FC<SidebarConfig> = ({ title = "Feed do Conhecimento", 
             </div>
             <p className="text-sm font-medium mb-1">Nenhuma publicação encontrada</p>
             <p className="text-xs opacity-70 text-center max-w-sm">
-              {activeFilter === 'all' 
-                ? "O feed está vazio. Seja o primeiro a compartilhar conhecimento!" 
+              {activeFilter === 'all'
+                ? "O feed está vazio. Seja o primeiro a compartilhar conhecimento!"
                 : `Nenhum post do tipo "${getActiveFilterLabel().toLowerCase()}" encontrado.`}
             </p>
             <button
@@ -279,20 +279,7 @@ const SidebarFeed: React.FC<SidebarConfig> = ({ title = "Feed do Conhecimento", 
         )}
       </div>
 
-      {/* Footer Simples */}
-      {filteredPosts.length > 0 && (
-        <div className="px-6 py-3 border-t border-slate-100 bg-white/50">
-          <div className="flex items-center justify-between text-[10px] font-bold text-slate-400">
-            <div className="flex items-center gap-1">
-              <RefreshCw size={10} className={refreshing ? 'animate-spin' : ''} />
-              <span>{refreshing ? 'Atualizando...' : 'Feed em tempo real'}</span>
-            </div>
-            <div>
-              {filteredPosts.length} de {posts.length} posts
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Footer Simples - Removido conforme solicitação */}
 
       {/* Modal de Nova Postagem */}
       <NewPost

@@ -12,11 +12,14 @@ import {
   Calendar,
   Search,
   Briefcase,
-  GraduationCap
+  GraduationCap,
+  MessageCircle,
+  Bell
 } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase/index';
 import { useAuth } from '../contexts/AuthContext';
+import { ChatService } from '../modules/chat/chat.service';
 
 const avatarUrls = [
   "https://api.dicebear.com/7.x/avataaars/svg?seed=Moisés",
@@ -91,17 +94,32 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
 const Topbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const navigate = useNavigate();
 
   const avatarAtual = user?.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.displayName || 'Thoth'}`;
 
+  // Hook for Unread Count
+  useEffect(() => {
+    if (!user) return;
+    try {
+      const unsub = ChatService.subscribeToUnreadCount(user.uid, (count) => {
+        setUnreadCount(count);
+      });
+      return () => unsub();
+    } catch (e) {
+      console.error("Failed to subscribe to unread count", e);
+    }
+  }, [user]);
+
   const mobileMenuItems = [
     { icon: LayoutDashboard, label: 'Página Inicial', path: '/home' },
     { icon: GraduationCap, label: 'Estudos', path: '/estudos' },
     { icon: BookOpen, label: 'Disciplinas', path: '/disciplinas' },
     { icon: Users, label: 'Conexões', path: '/conexoes' },
+    { icon: MessageCircle, label: `Mensagens ${unreadCount > 0 ? `(${unreadCount})` : ''}`, path: '/mensagens' },
     { icon: Calendar, label: 'Eventos', path: '/eventos' },
     { icon: Search, label: 'Pesquisas', path: '/pesquisas' },
     { icon: Briefcase, label: 'Vagas', path: '/vagas' },
@@ -152,10 +170,10 @@ const Topbar = () => {
         />
       )}
 
-      <header className={`fixed top-0 left-0 w-full z-[1000] bg-white/95 backdrop-blur-[12px] rounded-b-[16px] border border-white/60 shadow-[0_10px_30px_rgba(0,0,0,0.1)] lg:hidden transition-all duration-300 topbar-glass ${menuOpen ? 'rounded-b-[24px]' : ''}`}>
+      <header className={`fixed top-0 left-0 w-full z-[1000] bg-white/95 dark:bg-slate-900/95 backdrop-blur-[12px] rounded-b-[16px] border border-white/60 dark:border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.1)] lg:hidden transition-all duration-300 topbar-glass ${menuOpen ? 'rounded-b-[24px]' : ''}`}>
         <div className="flex items-center justify-between px-4 h-[64px]">
           <button
-            className={`text-slate-700 transition-transform ${menuOpen ? 'rotate-90' : ''}`}
+            className={`text-slate-700 dark:text-slate-200 transition-transform ${menuOpen ? 'rotate-90' : ''}`}
             onClick={() => {
               setMenuOpen(!menuOpen);
               setProfileDropdownOpen(false);
@@ -164,11 +182,14 @@ const Topbar = () => {
             {menuOpen ? (
               <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" /></svg>
             ) : (
-              <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
+              <div className="relative">
+                <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
+                {unreadCount > 0 && <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></span>}
+              </div>
             )}
           </button>
 
-          <div className="font-black text-[#006c55] text-[24px] tracking-tighter">thoth</div>
+          <div className="font-black text-[#006c55] dark:text-emerald-400 text-[24px] tracking-tighter">thoth</div>
 
           <div className="relative" ref={dropdownRef}>
             <div
@@ -181,7 +202,7 @@ const Topbar = () => {
               <img
                 src={avatarAtual}
                 alt="Avatar"
-                className="w-[38px] h-[38px] rounded-full object-cover border-2 border-white shadow-md"
+                className="w-[38px] h-[38px] rounded-full object-cover border-2 border-white dark:border-slate-700 shadow-md"
               />
             </div>
 
@@ -195,7 +216,7 @@ const Topbar = () => {
           </div>
         </div>
 
-        <nav className={`flex flex-col gap-1 px-3 overflow-hidden transition-all duration-500 ${menuOpen ? "max-h-[85vh] py-4 border-t border-slate-100" : "max-h-0 py-0"}`}>
+        <nav className={`flex flex-col gap-1 px-3 overflow-hidden transition-all duration-500 ${menuOpen ? "max-h-[85vh] py-4 border-t border-slate-100 dark:border-white/10" : "max-h-0 py-0"}`}>
           {mobileMenuItems.map((item, idx) => {
             const Icon = item.icon;
             return (
@@ -204,11 +225,14 @@ const Topbar = () => {
                 to={item.path}
                 onClick={closeAll}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 py-3 px-4 rounded-xl transition-all ${isActive ? 'bg-[#006c55]/5 text-[#006c55] font-bold' : 'text-slate-600 hover:bg-slate-50'}`
+                  `flex items-center gap-3 py-3 px-4 rounded-xl transition-all ${isActive ? 'bg-[#006c55]/5 dark:bg-emerald-400/10 text-[#006c55] dark:text-emerald-400 font-bold' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`
                 }
               >
                 <Icon size={20} />
                 <span className="text-[15px]">{item.label}</span>
+                {item.label.includes('Mensagens') && unreadCount > 0 && (
+                  <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{unreadCount}</span>
+                )}
               </NavLink>
             );
           })}

@@ -1,6 +1,11 @@
 
 import { Post, Connection } from './types';
 
+/**
+ * MOCK_POSTS
+ * Lista de postagens simuladas para popular o feed inicial durante o desenvolvimento.
+ * Cada post contém informações do autor, conteúdo, métricas e imagens.
+ */
 export const MOCK_POSTS: Post[] = [
   {
     id: '1',
@@ -104,6 +109,11 @@ export const MOCK_POSTS: Post[] = [
   }
 ];
 
+/**
+ * MOCK_CONNECTIONS
+ * Lista de conexões/usuários sugeridos simulados.
+ * Usado na barra lateral ou páginas de sugestão de conexões.
+ */
 export const MOCK_CONNECTIONS: Connection[] = [
   {
     id: 'c1',

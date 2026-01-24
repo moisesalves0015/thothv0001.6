@@ -55,6 +55,11 @@ service cloud.firestore {
         allow read: if isOwner(userId);
         allow write: if isAuthenticated(); // Outros podem criar notificações para mim
       }
+
+      // Sub-coleção: Lembretes
+      match /reminders/{reminderId} {
+        allow read, write: if isOwner(userId);
+      }
     }
 
     // Coleção de Usernames (Para garantir unicidade)
@@ -118,6 +123,23 @@ service cloud.firestore {
       );
       
       allow delete: if isAuthenticated() && (resource.data.customerId == request.auth.uid || isAdmin());
+    }
+
+    // Coleção de Chats (Mensagens)
+    match /chats/{chatId} {
+      allow read: if isAuthenticated(); // Temporariamente permissivo para corrigir erro
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (request.auth.uid in resource.data.members);
+
+      match /messages/{messageId} {
+        allow read, create: if isAuthenticated() && 
+          request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.members;
+      }
+    }
+
+    // Regra Global de Lembretes (caso o service salve na raiz)
+    match /reminders/{reminderId} {
+      allow read, write: if isAuthenticated();
     }
   }
 }

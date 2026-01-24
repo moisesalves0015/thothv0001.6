@@ -4,10 +4,10 @@ import { auth, db } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { Author } from '../types';
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  Users, 
+import {
+  ChevronLeft,
+  ChevronRight,
+  Users,
   RefreshCw,
   Search,
   Filter,
@@ -78,7 +78,7 @@ const ConnectionSuggestions: React.FC = () => {
     // Apply search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(user => 
+      filtered = filtered.filter(user =>
         user.name.toLowerCase().includes(query) ||
         user.username?.toLowerCase().includes(query) ||
         user.university?.toLowerCase().includes(query) ||
@@ -127,7 +127,7 @@ const ConnectionSuggestions: React.FC = () => {
 
   const getFilterCount = (type: 'university' | 'course') => {
     if (!currentUserData) return 0;
-    
+
     return suggestions.filter(user => {
       if (type === 'university') {
         return user.university && user.university === currentUserData.university;
@@ -162,18 +162,16 @@ const ConnectionSuggestions: React.FC = () => {
     <div className="relative w-full h-[350px] flex flex-col glass-panel rounded-2xl overflow-hidden shadow-2xl group">
       {/* Decorative Accent */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-[#006c55] to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-      
+
       {/* Header */}
       <div className="flex flex-col px-6 pt-6 mb-4 flex-shrink-0">
         <div className="flex items-center justify-between mb-3">
           <div className="flex flex-col">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#006c55] to-[#00876a] flex items-center justify-center shadow-md">
-                <UserPlus size={18} className="text-white" />
-              </div>
-              <h2 className="text-lg font-black text-slate-900 tracking-tight leading-none">Conexões Sugeridas</h2>
+
+              <h2 className="text-lg font-black text-slate-900 dark:text-white tracking-tight leading-none">Conexões Sugeridas</h2>
             </div>
-            <span className="text-[10px] uppercase tracking-[0.2em] font-extrabold text-[#006c55] mt-1 opacity-80">
+            <span className="text-[10px] uppercase tracking-[0.2em] font-extrabold text-[#006c55] dark:text-emerald-400 mt-1 opacity-80">
               expanda sua rede acadêmica
             </span>
           </div>
@@ -193,10 +191,10 @@ const ConnectionSuggestions: React.FC = () => {
             <div className="relative">
               <button
                 onClick={() => setIsFilterOpen(!isFilterOpen)}
-                className={`p-2 rounded-lg transition-all ${isFilterOpen ? 
-                  'bg-[#006c55] text-white' : 
+                className={`p-2 rounded-lg transition-all ${isFilterOpen ?
+                  'bg-[#006c55] text-white' :
                   'bg-white/60 text-slate-600 hover:text-[#006c55] hover:bg-white border border-white/90'
-                } shadow-sm active:scale-90`}
+                  } shadow-sm active:scale-90`}
                 title="Filtrar conexões"
               >
                 <Filter size={14} />
@@ -221,20 +219,20 @@ const ConnectionSuggestions: React.FC = () => {
                           setActiveFilter(filter.id as any);
                           setIsFilterOpen(false);
                         }}
-                        className={`w-full flex items-center justify-between px-4 py-2.5 text-left transition-colors ${isActive ? 
-                          'bg-[#006c55]/5 text-[#006c55] font-bold' : 
+                        className={`w-full flex items-center justify-between px-4 py-2.5 text-left transition-colors ${isActive ?
+                          'bg-[#006c55]/5 text-[#006c55] font-bold' :
                           'text-slate-600 hover:bg-slate-50'
-                        }`}
+                          }`}
                       >
                         <div className="flex items-center gap-3">
                           <Icon size={14} className={isActive ? 'text-[#006c55]' : 'text-slate-400'} />
                           <span className="text-[12px] font-medium">{filter.label}</span>
                         </div>
                         {filter.count > 0 && (
-                          <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${isActive ? 
-                            'bg-[#006c55] text-white' : 
+                          <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${isActive ?
+                            'bg-[#006c55] text-white' :
                             'bg-slate-100 text-slate-500'
-                          }`}>
+                            }`}>
                             {filter.count}
                           </span>
                         )}
@@ -268,24 +266,7 @@ const ConnectionSuggestions: React.FC = () => {
         {/* Search and Active Filter */}
         <div className="flex items-center gap-3">
           {/* Search Bar */}
-          <div className="relative flex-1">
-            <Search size={14} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Buscar por nome, universidade ou curso..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-white/60 border border-white/90 rounded-lg text-[12px] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#006c55]/20 focus:border-[#006c55]/30 transition-all"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600"
-              >
-                <X size={14} />
-              </button>
-            )}
-          </div>
+
 
           {/* Active Filter Badge */}
           {activeFilter !== 'all' && (
@@ -323,7 +304,7 @@ const ConnectionSuggestions: React.FC = () => {
               {searchQuery ? 'Nenhum resultado encontrado' : 'Nenhuma sugestão disponível'}
             </p>
             <p className="text-xs text-slate-500 max-w-sm">
-              {searchQuery 
+              {searchQuery
                 ? 'Tente buscar por termos diferentes ou limpe os filtros.'
                 : 'Conecte-se com mais pessoas ou atualize para novas sugestões.'}
             </p>
@@ -356,26 +337,7 @@ const ConnectionSuggestions: React.FC = () => {
         )}
       </div>
 
-      {/* Footer */}
-      {filteredSuggestions.length > 0 && (
-        <div className="px-6 py-3 border-t border-slate-100 bg-white/50">
-          <div className="flex items-center justify-between text-[10px] font-bold text-slate-400">
-            <div className="flex items-center gap-1">
-              <Users size={10} />
-              <span>{filteredSuggestions.length} conexões sugeridas</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span>{suggestions.length} no total</span>
-              <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-gradient-to-r from-[#006c55] to-emerald-500 rounded-full transition-all duration-300"
-                  style={{ width: `${(filteredSuggestions.length / suggestions.length) * 100}%` }}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Footer - Removido conforme solicitação */}
 
       <style>{`
         .no-scrollbar::-webkit-scrollbar { display: none; }

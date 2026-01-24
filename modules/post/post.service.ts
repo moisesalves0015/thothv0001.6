@@ -20,6 +20,7 @@ const FEED_LIMIT = 50;
 export const PostService = {
     /**
      * Creates a new post with the given content and author.
+     * Salva o post na coleção 'posts' com metadados do autor desnormalizados para leitura rápida.
      */
     async createPost(
         content: string,
@@ -60,8 +61,9 @@ export const PostService = {
 
     /**
      * Fetches the feed posts (User's own posts + Connections' posts).
-     * Note: Firestore 'in' query supports up to 30 items. 
-     * For MVP, we limit the feed construction to the first 29 connections.
+     * Nota Importante: O Firestore tem uma limitação de 30 itens na cláusula 'in'.
+     * Para este MVP, limitamos a construção do feed às primeiras 29 conexões + o próprio usuário.
+     * Para escalar, seria necessário uma abordagem de "Fan-out on write" ou um feed service dedicado.
      */
     async getFeedPosts(currentUserUid: string): Promise<Post[]> {
         try {
@@ -107,6 +109,7 @@ export const PostService = {
 
     /**
      * Helper to format Timestamp to "15m atrás", "2h atrás", etc.
+     * Converte timestamps do Firestore para texto amigável relativo (ex: 5min ago).
      */
     formatAccurateTimeAgo(timestamp: Timestamp): string {
         if (!timestamp) return 'agora';

@@ -93,15 +93,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
                 <div className="sidebar-profile">
                     <button
                         onClick={() => navigate('/printers/login')}
-                        className="w-full flex items-center gap-3 p-3 rounded-[24px] hover:bg-[#006c55]/5 transition-all group"
+                        className="w-full flex items-center gap-3 p-3 rounded-[24px] hover:bg-[#006c55]/5 dark:hover:bg-slate-800 transition-all group"
                     >
-                        <div className="w-11 h-11 rounded-[16px] bg-[#006c55]/10 flex items-center justify-center text-[#006c55] group-hover:bg-[#006c55] group-hover:text-white transition-all shrink-0">
+                        <div className="w-11 h-11 rounded-[16px] bg-[#006c55]/10 dark:bg-emerald-400/10 flex items-center justify-center text-[#006c55] dark:text-emerald-400 group-hover:bg-[#006c55] group-hover:text-white transition-all shrink-0">
                             <Printer size={20} />
                         </div>
                         {!isCollapsed && (
                             <div className="flex flex-col text-left overflow-hidden">
-                                <span className="text-xs font-black text-slate-900 leading-none truncate uppercase tracking-tighter">Área Gráfica</span>
-                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter mt-1.5 truncate">Portal Parceiro</span>
+                                <span className="text-xs font-black text-slate-900 dark:text-slate-200 leading-none truncate uppercase tracking-tighter">Área Gráfica</span>
+                                <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tighter mt-1.5 truncate">Portal Parceiro</span>
                             </div>
                         )}
                     </button>
