@@ -20,7 +20,7 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 // Inicialização imediata dos serviços para garantir registro no core do App
 // getAuth(app) registra o componente 'auth' internamente
 const auth = getAuth(app);
-const storage = getStorage(app);
+const storage = getStorage(app, `gs://${firebaseConfig.storageBucket}`);
 const db = initializeFirestore(app, {
   localCache: memoryLocalCache(),
 });

@@ -2,27 +2,42 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Regra para avatares
+    // Helper handlers
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+        firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role.lower() == 'admin';
+    }
+
+    // Regra para avatares (permite o arquivo direto ou em subpastas)
     match /avatars/{userId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && request.auth.uid == userId;
+    }
+    match /avatars/{userId}/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && request.auth.uid == userId;
     }
 
-    // Regra para posts - imagens
-    match /posts/{userId}/images/{fileName} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == userId;
+    // Regra para posts - imagens e arquivos
+    match /posts/{userId}/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && request.auth.uid == userId;
     }
 
-    // Regra para posts - arquivos
-    match /posts/{userId}/files/{fileName} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == userId;
+    // Regra para arquivos de impressão
+    match /print-files/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
     }
 
-    // Regra genérica para outros arquivos (fallback)
+    // Regra genérica (fallback seguro)
     match /{allPaths=**} {
-      allow read, write: if request.auth != null;
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
     }
   }
 }

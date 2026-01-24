@@ -1,30 +1,77 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { auth } from '../firebase/index';
+import { db, auth } from '../firebase/index';
+import { onSnapshot, doc } from 'firebase/firestore';
+import { UserService } from '../modules/user/user.service';
 
 interface AuthContextType {
   user: User | null;
+  userProfile: any | null;
   loading: boolean;
+  refreshUser: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType>({ user: null, loading: true });
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  userProfile: null,
+  loading: true,
+  refreshUser: async () => { }
+});
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // onAuthStateChanged registra o observer no auth singleton inicializado corretamente
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    let unsubscribeProfile: (() => void) | null = null;
+
+    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
-      setLoading(false);
+
+      // Se tivermos um listener anterior, cancelamos
+      if (unsubscribeProfile) {
+        unsubscribeProfile();
+        unsubscribeProfile = null;
+      }
+
+      if (currentUser) {
+        // Escuta mudanças no perfil em tempo real
+        unsubscribeProfile = onSnapshot(doc(db, 'users', currentUser.uid), (docSnap) => {
+          if (docSnap.exists()) {
+            setUserProfile(docSnap.data());
+          } else {
+            setUserProfile(null);
+          }
+          setLoading(false);
+        }, (error) => {
+          console.error("Erro ao escutar perfil do usuário:", error);
+          setLoading(false);
+        });
+      } else {
+        setUserProfile(null);
+        setLoading(false);
+      }
     });
-    return () => unsubscribe();
+
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeProfile) unsubscribeProfile();
+    };
   }, []);
 
+  const refreshUser = async () => {
+    if (auth.currentUser) {
+      await auth.currentUser.reload();
+      const profile = await UserService.getUserProfile(auth.currentUser.uid);
+      setUser({ ...auth.currentUser }); // Spreadeamos para garantir nova referência e re-render
+      setUserProfile(profile);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading }}>
+    <AuthContext.Provider value={{ user, userProfile, loading, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

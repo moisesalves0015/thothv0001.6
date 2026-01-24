@@ -13,6 +13,8 @@ import {
     Printer,
     GraduationCap
 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { PrinterService } from '../modules/print/printer.service';
 
 interface SidebarProps {
     isCollapsed: boolean;
@@ -21,6 +23,23 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
     const navigate = useNavigate();
+    const { user, userProfile } = useAuth();
+    const [hasPrinterAccess, setHasPrinterAccess] = React.useState(false);
+
+    React.useEffect(() => {
+        const checkAccess = async () => {
+            if (userProfile?.role === 'Admin') {
+                setHasPrinterAccess(true);
+                return;
+            }
+            if (user?.email) {
+                const access = await PrinterService.checkUserPrinterAccess(user.email);
+                setHasPrinterAccess(access);
+            }
+        };
+        checkAccess();
+    }, [user, userProfile]);
+
     const menuItems = [
         { icon: LayoutDashboard, label: 'Página Inicial', path: '/home' },
         { icon: GraduationCap, label: 'Estudos', path: '/estudos' },
@@ -70,22 +89,24 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
             </nav>
 
             {/* Rodapé do Sidebar */}
-            <div className="sidebar-profile">
-                <button
-                    onClick={() => navigate('/printers/login')}
-                    className="w-full flex items-center gap-3 p-3 rounded-[24px] hover:bg-[#006c55]/5 transition-all group"
-                >
-                    <div className="w-11 h-11 rounded-[16px] bg-[#006c55]/10 flex items-center justify-center text-[#006c55] group-hover:bg-[#006c55] group-hover:text-white transition-all shrink-0">
-                        <Printer size={20} />
-                    </div>
-                    {!isCollapsed && (
-                        <div className="flex flex-col text-left overflow-hidden">
-                            <span className="text-xs font-black text-slate-900 leading-none truncate uppercase tracking-tighter">Área Gráfica</span>
-                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter mt-1.5 truncate">Portal Parceiro</span>
+            {(userProfile?.role === 'Admin' || hasPrinterAccess) && (
+                <div className="sidebar-profile">
+                    <button
+                        onClick={() => navigate('/printers/login')}
+                        className="w-full flex items-center gap-3 p-3 rounded-[24px] hover:bg-[#006c55]/5 transition-all group"
+                    >
+                        <div className="w-11 h-11 rounded-[16px] bg-[#006c55]/10 flex items-center justify-center text-[#006c55] group-hover:bg-[#006c55] group-hover:text-white transition-all shrink-0">
+                            <Printer size={20} />
                         </div>
-                    )}
-                </button>
-            </div>
+                        {!isCollapsed && (
+                            <div className="flex flex-col text-left overflow-hidden">
+                                <span className="text-xs font-black text-slate-900 leading-none truncate uppercase tracking-tighter">Área Gráfica</span>
+                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter mt-1.5 truncate">Portal Parceiro</span>
+                            </div>
+                        )}
+                    </button>
+                </div>
+            )}
         </aside>
     );
 };

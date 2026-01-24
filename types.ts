@@ -57,7 +57,10 @@ export interface Reminder {
 export interface PrintRequest {
   id: string;
   fileName: string;
+  fileUrl?: string; // URL do arquivo no Firebase Storage
   printerName: string;
+  stationId: string; // ID amigável (ex: CAMPUS-01)
+  stationOwnerEmail: string; // Email do dono para Security Rules
   pages: string;
   isColor: boolean;
   isDuplex: boolean;
@@ -67,6 +70,7 @@ export interface PrintRequest {
   archived?: boolean;
   pickupCode?: string;
   customerName?: string;
+  customerId: string;
 }
 
 export interface PrinterStats {

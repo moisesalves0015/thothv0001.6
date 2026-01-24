@@ -1,17 +1,34 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Printer, Lock, ArrowRight, ShieldCheck, Globe } from 'lucide-react';
+import { Printer, Lock, ArrowRight, ShieldCheck, Globe, Loader2, AlertCircle } from 'lucide-react';
+import { PrinterService } from '../../modules/print/printer.service';
 
 const PrinterLogin: React.FC = () => {
   const [accessCode, setAccessCode] = useState('');
   const [stationId, setStationId] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulação de login de gráfica
-    navigate('/printers/dashboard');
+    setLoading(true);
+    setError(null);
+
+    try {
+      const station = await PrinterService.validateCredentials(stationId, accessCode);
+      if (station) {
+        localStorage.setItem('thoth_station_id', station.stationId);
+        navigate('/printers/dashboard');
+      } else {
+        setError("Credenciais inválidas ou estação inativa.");
+      }
+    } catch (err) {
+      console.error("Erro no login da impressora:", err);
+      setError("Falha na comunicação com o servidor.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -27,7 +44,7 @@ const PrinterLogin: React.FC = () => {
             <Printer size={32} strokeWidth={2.5} />
           </div>
           <div className="text-[32px] font-black text-white tracking-tighter leading-none mb-2">thoth <span className="text-[#006c55]">print</span></div>
-          <p className="text-[10px] uppercase tracking-[0.4em] font-black text-slate-500">Terminal de Gestão Gráfica</p>
+          <p className="text-[10px] uppercase tracking-[0.4em] font-black text-slate-500">Terminal da Gráfica Parceira</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6">
@@ -35,8 +52,8 @@ const PrinterLogin: React.FC = () => {
             <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">ID da Estação</label>
             <div className="relative group">
               <Globe className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-[#006c55] transition-colors" size={18} />
-              <input 
-                type="text" 
+              <input
+                type="text"
                 required
                 value={stationId}
                 onChange={(e) => setStationId(e.target.value)}
@@ -50,8 +67,8 @@ const PrinterLogin: React.FC = () => {
             <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Código de Segurança</label>
             <div className="relative group">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-[#006c55] transition-colors" size={18} />
-              <input 
-                type="password" 
+              <input
+                type="password"
                 required
                 value={accessCode}
                 onChange={(e) => setAccessCode(e.target.value)}
@@ -68,15 +85,23 @@ const PrinterLogin: React.FC = () => {
             </p>
           </div>
 
-          <button 
+          {error && (
+            <div className="flex items-center gap-2 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-500 text-xs font-bold animate-in fade-in slide-in-from-top-1">
+              <AlertCircle size={16} />
+              {error}
+            </div>
+          )}
+
+          <button
             type="submit"
-            className="w-full h-16 bg-[#006c55] hover:bg-emerald-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-all shadow-xl shadow-[#006c55]/20 active:scale-[0.98] flex items-center justify-center gap-3"
+            disabled={loading}
+            className="w-full h-16 bg-[#006c55] hover:bg-emerald-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-all shadow-xl shadow-[#006c55]/20 active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-50"
           >
-            Acessar Terminal <ArrowRight size={18} />
+            {loading ? <Loader2 className="animate-spin" size={20} /> : <>Acessar Terminal <ArrowRight size={18} /></>}
           </button>
         </form>
 
-        <button 
+        <button
           onClick={() => navigate('/')}
           className="mt-8 w-full text-center text-slate-500 hover:text-white transition-colors text-[11px] font-black uppercase tracking-widest"
         >

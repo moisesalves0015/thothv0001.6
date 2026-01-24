@@ -9,8 +9,13 @@ export class StorageService {
      * @returns URL de download pública
      */
     static async uploadFile(path: string, file: File | Blob): Promise<string> {
-        const storageRef = ref(storage, path);
-        await uploadBytes(storageRef, file);
-        return await getDownloadURL(storageRef);
+        try {
+            const storageRef = ref(storage, path);
+            await uploadBytes(storageRef, file);
+            return await getDownloadURL(storageRef);
+        } catch (error) {
+            console.error("StorageService.uploadFile error:", error);
+            throw error;
+        }
     }
 }

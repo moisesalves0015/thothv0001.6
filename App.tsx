@@ -30,6 +30,8 @@ import Support from './pages/Support/Support';
 import Mensagens from './pages/Mensagens/Mensagens';
 import Notificacoes from './pages/Notificacoes/Notificacoes';
 import Onboarding from './pages/Auth/Onboarding';
+import AdminPortal from './pages/Admin/AdminPortal';
+import AdminRoute from './routes/AdminRoute';
 
 const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -63,6 +65,16 @@ const AppRoutes: React.FC = () => {
       <Route path="/signup" element={!user ? <Signup /> : <Navigate to="/home" replace />} />
       <Route path="/printers/login" element={<PrinterLogin />} />
       <Route path="/printers/dashboard" element={<PrinterDashboard />} />
+
+      {/* Rota Administrativa Secreta */}
+      <Route
+        path="/portal-ultra-secreto-thoth-crm"
+        element={
+          <AdminRoute>
+            <AdminPortal />
+          </AdminRoute>
+        }
+      />
 
       <Route
         path="/*"

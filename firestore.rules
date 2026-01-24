@@ -11,20 +11,26 @@ service cloud.firestore {
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
-
-    // Regra genérica: nega tudo por padrão
-    match /{document=**} {
-      allow read, write: if false;
+    // Helper function to check if user is admin
+    function isAdmin() {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role.lower() == 'admin';
     }
+    // Helper para verificar se o usuário é gerente de uma gráfica
+    function isShopManager(email) {
+      return isAuthenticated() && request.auth.token.email.lower() == email.lower();
+    }
+
 
     // Coleção de Usuários
     match /users/{userId} {
-      allow read: if isAuthenticated(); 
-      allow write: if isOwner(userId);
+      allow read: if isAuthenticated();
       
-      // Permitir atualização de contadores (stats) - Mantido
-      allow update: if isAuthenticated() 
-                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stats']);
+      // Dono pode tudo; Outros podem ler e apenas o sistema/admin poderia editar stats (aqui permitimos por simplificação)
+      allow create, delete: if isOwner(userId);
+      allow update: if isOwner(userId) || (
+        isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stats'])
+      );
 
       // NOVA Lógica de Conexões (Sub-coleção única 'connections')
       // Doc ID será o UID do alvo.
@@ -79,7 +85,7 @@ service cloud.firestore {
 
     // Coleção de Badges (Emblemas)
     match /badges/{badgeId} {
-      allow read: if isAuthenticated();
+      allow read, list: if isAuthenticated();
       allow create: if isAuthenticated() && request.resource.data.creatorId == request.auth.uid;
       allow update: if isAuthenticated() && (
         resource.data.creatorId == request.auth.uid || 
@@ -87,6 +93,31 @@ service cloud.firestore {
         (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['x', 'y']) && isAuthenticated())
       );
       allow delete: if isAuthenticated() && resource.data.creatorId == request.auth.uid;
+    }
+
+    // Coleção de Estações de Impressora
+    match /printerStations/{stationId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() || (isAuthenticated() && isShopManager(resource.data.ownerEmail)); 
+    }
+
+    // Coleção de Pedidos de Impressão (Optimized Sync)
+    match /printRequests/{orderId} {
+      // Leitura permitida para o dono do pedido ou o dono da gráfica (via email no token)
+      allow read: if isAuthenticated() && (
+        resource.data.customerId == request.auth.uid || 
+        request.auth.token.email.lower() == resource.data.stationOwnerEmail.lower()
+      );
+      
+      allow create: if isAuthenticated() && request.resource.data.customerId == request.auth.uid;
+      
+      // Atualização (ex: mudar status) permitida para quem tem acesso de leitura
+      allow update: if isAuthenticated() && (
+        resource.data.customerId == request.auth.uid || 
+        request.auth.token.email.lower() == resource.data.stationOwnerEmail.lower()
+      );
+      
+      allow delete: if isAuthenticated() && (resource.data.customerId == request.auth.uid || isAdmin());
     }
   }
 }

@@ -2,8 +2,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Camera, User, Check, Loader2, ArrowRight, School, GraduationCap, Building2, UserCircle } from 'lucide-react';
+import { updateProfile } from 'firebase/auth';
 import { useAuth } from '../../contexts/AuthContext';
 import { StorageService } from '../../modules/storage/storage.service';
+import { UserService } from '../../modules/user/user.service';
 
 const ROLES = [
     { id: 'Estudante', label: 'Estudante', icon: GraduationCap, description: 'Interessado em aprender e trocar materiais.' },
@@ -13,7 +15,7 @@ const ROLES = [
 ];
 
 const Onboarding: React.FC = () => {
-    const { user } = useAuth();
+    const { user, refreshUser } = useAuth();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [role, setRole] = useState(ROLES[0].id);
@@ -31,6 +33,12 @@ const Onboarding: React.FC = () => {
             // Se o usuário selecionou um arquivo local, faz o upload primeiro
             if (selectedFile) {
                 finalPhotoURL = await StorageService.uploadFile(`avatars/${user.uid}`, selectedFile);
+
+                // Sincroniza a foto no Firebase Auth
+                await updateProfile(user, { photoURL: finalPhotoURL });
+
+                // Atualiza o estado global para refletir em todos os componentes
+                await refreshUser();
             }
 
             await UserService.updateProfile(user.uid, {
