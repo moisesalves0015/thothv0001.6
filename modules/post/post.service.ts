@@ -27,13 +27,15 @@ export const PostService = {
         images: string[],
         author: Author,
         externalLink?: { url: string; title: string } | null,
-        attachmentFile?: { name: string; size: string; url: string } | null
+        attachmentFile?: { name: string; size: string; url: string } | null,
+        postType: 'general' | 'study' | 'resource' | 'event' | 'question' = 'general'
     ): Promise<string> {
         try {
             const docRef = await addDoc(collection(db, POSTS_COLLECTION), {
                 content,
                 tags,
                 images,
+                postType,
                 externalLink: externalLink || null,
                 attachmentFile: attachmentFile || null,
                 author: {
@@ -94,6 +96,7 @@ export const PostService = {
                     tags: data.tags || [],
                     externalLink: data.externalLink,
                     attachmentFile: data.attachmentFile,
+                    postType: data.postType || 'general',
                 };
             });
         } catch (error) {

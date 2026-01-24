@@ -6,6 +6,7 @@ export interface Author {
   avatar: string;
   verified?: boolean;
   university?: string;
+  course?: string;
   fullName?: string;
   phoneNumber?: string;
   stats?: {
@@ -34,6 +35,7 @@ export interface Post {
   };
   itemCount?: string;
   tags?: string[];
+  postType?: 'general' | 'study' | 'resource' | 'event' | 'question';
 }
 
 export interface Connection {
