@@ -79,6 +79,20 @@ const UtilityHeader: React.FC = () => {
 
   return (
     <header className="flex items-center justify-between w-full h-[64px] mb-4 bg-transparent gap-2 md:gap-4 box-border relative utility-header-transparent">
+      <style>{`
+        @keyframes badge-pulse {
+          0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.4); }
+          70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(225, 29, 72, 0); }
+          100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(225, 29, 72, 0); }
+        }
+        @keyframes badge-pulse-amber {
+          0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+          70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
+          100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+        }
+        .animate-badge-rose { animation: badge-pulse 2s infinite; }
+        .animate-badge-amber { animation: badge-pulse-amber 2s infinite; }
+      `}</style>
       <div className="flex items-center flex-shrink-0">
         <button
           onClick={() => window.history.back()}
@@ -112,24 +126,30 @@ const UtilityHeader: React.FC = () => {
       <div className="flex items-center gap-1.5 md:gap-3 flex-shrink-0">
         <button
           onClick={() => navigate('/mensagens')}
-          className="relative w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-white/50 dark:border-white/5 text-slate-700 dark:text-slate-300 hover:bg-[#006c55] hover:text-white transition-all shadow-sm active:scale-90"
+          className="relative w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-white/50 dark:border-white/5 text-slate-700 dark:text-slate-300 hover:bg-[#006c55] hover:text-white transition-all shadow-sm active:scale-90 group"
         >
           <MessageCircle size={18} />
           {messagesCount > 0 && (
-            <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-white animate-bounce">
-              {messagesCount}
+            <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-4 w-4 bg-gradient-to-tr from-rose-500 to-red-600 text-white text-[9px] font-black items-center justify-center shadow-lg animate-badge-rose">
+                {messagesCount > 9 ? '9+' : messagesCount}
+              </span>
             </span>
           )}
         </button>
 
         <button
           onClick={() => navigate('/notificacoes')}
-          className="relative w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-white/50 dark:border-white/5 text-slate-700 dark:text-slate-300 hover:bg-[#006c55] hover:text-white transition-all shadow-sm active:scale-90"
+          className="relative w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-white/50 dark:border-white/5 text-slate-700 dark:text-slate-300 hover:bg-[#006c55] hover:text-white transition-all shadow-sm active:scale-90 group"
         >
           <Bell size={18} />
           {notificationsCount > 0 && (
-            <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-white animate-bounce">
-              {notificationsCount}
+            <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-4 w-4 bg-gradient-to-tr from-amber-500 to-orange-600 text-white text-[9px] font-black items-center justify-center shadow-lg animate-badge-amber">
+                {notificationsCount > 9 ? '9+' : notificationsCount}
+              </span>
             </span>
           )}
         </button>

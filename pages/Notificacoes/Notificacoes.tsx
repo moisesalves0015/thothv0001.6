@@ -140,9 +140,16 @@ const Notificacoes: React.FC = () => {
             ))}
           </div>
           <button
-            onClick={() => { setNotifs(notifs.map(n => ({ ...n, isRead: true }))); celebrate(); }}
+            onClick={async () => {
+              if (!user) return;
+              const unreadIds = notifs.filter(n => !n.isRead).map(n => n.id);
+              for (const id of unreadIds) {
+                if (id) await markAsRead(id);
+              }
+              celebrate();
+            }}
             className="p-2.5 bg-white border border-slate-100 rounded-xl text-slate-400 hover:text-[#006c55] transition-all shadow-sm"
-            title="Limpar todas"
+            title="Marcar todas como lidas"
           >
             <CheckCircle2 size={18} />
           </button>

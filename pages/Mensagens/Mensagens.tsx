@@ -160,6 +160,9 @@ const Mensagens: React.FC = () => {
       setActiveMessages(msgs);
     });
 
+    // Mark as read when opened
+    ChatService.markAsRead(selectedChatId);
+
     // Determine Type locally if not set (fallback)
     const currentChat = chats.find(c => c.id === selectedChatId);
     if (currentChat) setSelectedChatType(currentChat.type);

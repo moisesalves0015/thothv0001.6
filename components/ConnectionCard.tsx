@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import confetti from 'canvas-confetti';
 import { Author } from '../types';
 import { User, Layers, Plus, Check, Loader2, Clock, MessageCircle, X, UserCheck, UserX, MoreVertical, BookOpen, MapPin, GraduationCap, Shield, Star } from 'lucide-react';
 import { ConnectionService } from '../modules/connection/connection.service';
@@ -25,6 +26,15 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
   const [showMenu, setShowMenu] = useState(false);
   const [showRejectConfirm, setShowRejectConfirm] = useState(false);
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
+
+  const celebrate = () => {
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#006c55', '#d9f1a2', '#ffffff']
+    });
+  };
 
   // Se inicialStatus mudar externamente, atualiza o local
   useEffect(() => {
@@ -53,6 +63,7 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
         case 'accept':
           await ConnectionService.acceptConnectionRequest(currentUid, author.id);
           setStatus('accepted');
+          celebrate();
           break;
         case 'reject':
           await ConnectionService.removeConnection(currentUid, author.id, false);

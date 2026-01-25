@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import confetti from 'canvas-confetti';
 import { UserPlus, Sparkles, Clock, ArrowRight, Ban, Trash2 } from 'lucide-react';
 import ConnectionCard from '../../components/ConnectionCard';
 import ConnectionCardSkeleton from '../../components/ConnectionCardSkeleton';
@@ -57,12 +58,8 @@ const Conexoes: React.FC = () => {
         const reqs = await ConnectionService.getPendingRequests(user.uid);
         setPendingRequests(reqs);
 
-        // 3. Sent Requests (Manual Query - Frontend Enhancement)
-        // O Service nao tem getSentRequests, entao fazemos aqui para completar a UI
-        const sentRef = collection(db, "users", user.uid, "connections");
-        const sentQ = query(sentRef, where("status", "==", "pending"), where("direction", "==", "sent"));
-        const sentSnap = await getDocs(sentQ);
-        const sentData = sentSnap.docs.map(d => ({ id: d.id, ...d.data() } as Author));
+        // 3. Sent Requests (New Service Method)
+        const sentData = await ConnectionService.getSentRequests(user.uid);
         setSentRequests(sentData);
 
         // 4. Accepted Connections
@@ -109,6 +106,15 @@ const Conexoes: React.FC = () => {
 
 
   // Actions
+  const celebrate = () => {
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#006c55', '#d9f1a2', '#ffffff']
+    });
+  };
+
   const showToast = (message: string, type: 'success' | 'error') => {
     setToast({ message, type, onClose: () => setToast(null) });
   };
@@ -118,6 +124,7 @@ const Conexoes: React.FC = () => {
     setPendingRequests(prev => prev.filter(p => p.id !== author.id));
     setConnections(prev => [{ ...author, connectedAt: new Date().toISOString() } as ConnectionAuthor, ...prev]);
     showToast(`Você agora está conectado com ${author.name.split(' ')[0]}`, "success");
+    // Removido celebrate() daqui pois o ConnectionCard já faz internamente
   };
 
   const handleRejectRequest = (id: string, name: string) => {

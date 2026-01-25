@@ -45,6 +45,34 @@
                     "order": "DESCENDING"
                 }
             ]
+        },
+        {
+            "collectionGroup": "connections",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "users",
+                    "arrayConfig": "CONTAINS"
+                },
+                {
+                    "fieldPath": "status",
+                    "order": "ASCENDING"
+                }
+            ]
+        },
+        {
+            "collectionGroup": "connections",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "requesterId",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "status",
+                    "order": "ASCENDING"
+                }
+            ]
         }
     ],
     "fieldOverrides": []

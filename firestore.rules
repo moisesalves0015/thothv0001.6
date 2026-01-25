@@ -32,34 +32,24 @@ service cloud.firestore {
         isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stats'])
       );
 
-      // NOVA Lógica de Conexões (Sub-coleção única 'connections')
-      // Doc ID será o UID do alvo.
-      // Campos: status ('pending', 'accepted'), direction ('sent', 'received')
-      // Sub-coleção: Connections
-      // connectionId represent ao UID da outra pessoa na relação
-      match /connections/{connectionId} {
-        allow read: if isAuthenticated();
-        
-        // Regra de Escrita:
-        // 1. Dono do Perfil (userId) pode escrever (Aceitar, Rejeitar, Remover)
-        // 2. O Outro Usuário (connectionId) pode escrever (Criar solicitação, Cancelar)
-        //    - Isso permite que 'ME' escreva em 'users/TARGET/connections/ME'
-        allow write: if isAuthenticated() && (request.auth.uid == userId || request.auth.uid == connectionId);
-      }
-
-      // Permitir leitura de outras subcoleções (badges, etc) para evitar erros
-      match /badges/{badgeId} {
-        allow read: if isAuthenticated();
-      }
-      match /notifications/{notifId} {
-        allow read: if isOwner(userId);
-        allow write: if isAuthenticated(); // Outros podem criar notificações para mim
-      }
-
       // Sub-coleção: Lembretes
       match /reminders/{reminderId} {
         allow read, write: if isOwner(userId);
       }
+    }
+
+    // Coleção de Conexões (Raiz)
+    match /connections/{connId} {
+      allow read: if isAuthenticated() && (request.auth.uid in resource.data.users);
+      allow create: if isAuthenticated() && (request.auth.uid in request.resource.data.users);
+      allow update, delete: if isAuthenticated() && (request.auth.uid in resource.data.users);
+    }
+
+    // Coleção de Notificações (Raiz)
+    match /notifications/{notifId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid);
+      allow create: if isAuthenticated(); // Outro user pode notificar
+      allow update, delete: if isAuthenticated() && (resource.data.userId == request.auth.uid);
     }
 
     // Coleção de Usernames (Para garantir unicidade)

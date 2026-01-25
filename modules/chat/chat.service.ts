@@ -148,8 +148,8 @@ export class ChatService {
         const q = query(chatsRef, where("members", "array-contains", userId));
 
         return onSnapshot(q, async (snapshot) => {
-            const chats = await Promise.all(snapshot.docs.map(async doc => {
-                const data = doc.data() as ChatGroup;
+            const chats = await Promise.all(snapshot.docs.map(async chatDoc => {
+                const data = chatDoc.data() as ChatGroup;
                 let finalName = data.name;
                 let finalAvatar = data.avatar;
 
@@ -160,9 +160,11 @@ export class ChatService {
                         try {
                             let userProfile = ChatService.profileCache.get(otherUserId);
                             if (!userProfile) {
-                                const userDoc = await getDoc(doc(db, "users", otherUserId));
-                                if (userDoc.exists()) {
-                                    userProfile = { id: userDoc.id, ...userDoc.data() } as Author;
+                                const userDocRef = doc(db, "users", otherUserId);
+                                const userSnap = await getDoc(userDocRef);
+                                if (userSnap.exists()) {
+                                    const userData = userSnap.data();
+                                    userProfile = { id: userSnap.id, ...userData } as Author;
                                     ChatService.profileCache.set(otherUserId, userProfile);
                                 }
                             }
@@ -178,7 +180,7 @@ export class ChatService {
                 }
 
                 return {
-                    id: doc.id,
+                    id: chatDoc.id,
                     ...data,
                     name: finalName,
                     avatar: finalAvatar
@@ -246,6 +248,16 @@ export class ChatService {
             });
         }
         return chatId;
+    }
+
+    /**
+     * Marca o chat como lido (zera contador)
+     */
+    static async markAsRead(chatId: string): Promise<void> {
+        const chatRef = doc(db, "chats", chatId);
+        await updateDoc(chatRef, {
+            unreadCount: 0
+        });
     }
 
     /**
