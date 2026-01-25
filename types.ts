@@ -45,6 +45,9 @@ export interface Post {
   itemCount?: string;
   tags?: string[];
   postType?: 'general' | 'study' | 'resource' | 'event' | 'question';
+  likedBy?: string[]; // Array of UIDs
+  repostedBy?: { uid: string; name: string }[];
+  originalPostId?: string; // If it's a repost
 }
 
 /**
@@ -99,6 +102,9 @@ export interface PrintRequest {
   pickupCode?: string;
   customerName?: string;
   customerId: string;
+  paymentMethod: 'paid' | 'on_pickup';
+  priority: 'normal' | 'urgent';
+  queuePosition?: number;
 }
 
 /**

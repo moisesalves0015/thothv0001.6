@@ -20,8 +20,13 @@ import {
   User,
   BookOpen,
   Target,
-  GraduationCap
+  GraduationCap,
+  Filter as FilterIcon,
+  Bell,
+  AlertTriangle,
+  Pencil
 } from 'lucide-react';
+import { NotificationService } from '../modules/notification/notification.service';
 
 const RemindersBox: React.FC = () => {
   const today = new Date();
@@ -54,15 +59,43 @@ const RemindersBox: React.FC = () => {
     return () => unsub();
   }, []);
 
-  const [isAdding, setIsAdding] = useState(false);
   const [selectedReminder, setSelectedReminder] = useState<Reminder | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [isAgendaOpen, setIsAgendaOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const filterRef = React.useRef<HTMLDivElement>(null);
+
+  // Close filter dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (filterRef.current && !filterRef.current.contains(event.target as Node)) {
+        setIsFilterOpen(false);
+      }
+    };
+
+    if (isFilterOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isFilterOpen]);
+
+  const [isAdding, setIsAdding] = useState(false);
   const [viewDate, setViewDate] = useState(new Date());
+  const [selectedDay, setSelectedDay] = useState<number | null>(new Date().getDate());
   const [activeFilter, setActiveFilter] = useState<'all' | 'study' | 'work' | 'personal' | 'exam'>('all');
+  const [editingReminderId, setEditingReminderId] = useState<string | null>(null);
+
+  const capitalizeFirst = (text: string) => {
+    if (!text) return '';
+    return text.charAt(0).toUpperCase() + text.slice(1);
+  };
 
   const [newTitle, setNewTitle] = useState('');
   const [newText, setNewText] = useState('');
+
+  const handleTitleChange = (val: string) => setNewTitle(capitalizeFirst(val));
+  const handleTextChange = (val: string) => setNewText(capitalizeFirst(val));
+
   const [newDate, setNewDate] = useState(today.toISOString().split('T')[0]);
   const [newTime, setNewTime] = useState('12:00');
   const [newType, setNewType] = useState<'study' | 'work' | 'personal' | 'exam'>('study');
@@ -71,7 +104,7 @@ const RemindersBox: React.FC = () => {
     if (!newTitle.trim() || !currentUser) return;
 
     const combinedDate = new Date(`${newDate}T${newTime}`);
-    const newItem: Omit<Reminder, 'id'> = {
+    const itemData: Omit<Reminder, 'id'> = {
       title: newTitle,
       text: newText,
       completed: false,
@@ -84,13 +117,64 @@ const RemindersBox: React.FC = () => {
     };
 
     try {
-      const addedReminder = await ReminderService.addReminder(currentUser.uid, newItem);
-      setReminders([addedReminder, ...reminders]);
+      if (editingReminderId) {
+        // Update Mode
+        await ReminderService.updateReminder(currentUser.uid, editingReminderId, itemData);
+        setReminders(reminders.map(r => r.id === editingReminderId ? { ...r, ...itemData } : r));
+        if (selectedReminder?.id === editingReminderId) {
+          setSelectedReminder({ id: editingReminderId, ...itemData } as Reminder);
+        }
+      } else {
+        // Create Mode
+        const addedReminder = await ReminderService.addReminder(currentUser.uid, itemData);
+        setReminders([addedReminder, ...reminders]);
+
+        // Notify about new reminder
+        await NotificationService.createNotification({
+          userId: currentUser.uid,
+          type: 'reminder',
+          title: 'Novo Lembrete Criado',
+          desc: `Você agendou "${newTitle}" para ${newDate.split('-').reverse().join('/')}.`,
+          metadata: { reminderId: addedReminder.id }
+        });
+      }
+
       resetForm();
     } catch (error) {
-      console.error("Error adding reminder:", error);
+      console.error("Error saving reminder:", error);
     }
   };
+
+  const getDueAlert = (timestamp: number) => {
+    const now = new Date();
+    const dueDate = new Date(timestamp);
+    const diffTime = dueDate.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 1) return { text: "em 1 dia", color: "text-red-500 bg-red-50 border-red-100" };
+    if (diffDays === 2) return { text: "em 2 dias", color: "text-orange-500 bg-orange-50 border-orange-100" };
+    if (diffDays === 3) return { text: "em 3 dias", color: "text-amber-500 bg-amber-50 border-amber-100" };
+    return null;
+  };
+
+  // Trigger notifications for upcoming reminders
+  useEffect(() => {
+    if (!currentUser || reminders.length === 0) return;
+
+    const checkReminders = async () => {
+      const now = new Date().getTime();
+      const upcoming = reminders.filter(r =>
+        !r.completed &&
+        r.timestamp > now &&
+        (r.timestamp - now) <= 3 * 24 * 60 * 60 * 1000 // 3 days
+      );
+
+      // Simple deduplication logic: only notify if not recently notified (mocked here or use metadata)
+      // Since this is client-side, we'll just implement the alert labels for now
+    };
+
+    checkReminders();
+  }, [currentUser, reminders]);
 
   const resetForm = () => {
     setNewTitle('');
@@ -98,7 +182,18 @@ const RemindersBox: React.FC = () => {
     setNewDate(today.toISOString().split('T')[0]);
     setNewTime('12:00');
     setNewType('study');
+    setEditingReminderId(null);
     setIsAdding(false);
+  };
+
+  const startEdit = (reminder: Reminder) => {
+    setNewTitle(reminder.title);
+    setNewText(reminder.text);
+    setNewDate(reminder.date || today.toISOString().split('T')[0]);
+    setNewTime(reminder.time || '12:00');
+    setNewType(reminder.type);
+    setEditingReminderId(reminder.id);
+    setIsAdding(true);
   };
 
   const toggleComplete = async (id: string, e: React.MouseEvent) => {
@@ -209,8 +304,12 @@ const RemindersBox: React.FC = () => {
   };
 
   const filteredReminders = useMemo(() => {
-    if (activeFilter === 'all') return reminders;
-    return reminders.filter(r => r.type === activeFilter);
+    const filtered = activeFilter === 'all'
+      ? reminders
+      : reminders.filter(r => r.type === activeFilter);
+
+    // Sort by proximity (Closest first)
+    return [...filtered].sort((a, b) => a.timestamp - b.timestamp);
   }, [reminders, activeFilter]);
 
   const getTypeConfig = (type?: string) => {
@@ -232,60 +331,92 @@ const RemindersBox: React.FC = () => {
   ];
 
   return (
-    <div className="w-full lg:w-[315px] h-[550px] flex flex-col glass-panel rounded-2xl overflow-hidden shadow-2xl relative border border-white/40">
+    <div className="w-full lg:w-[315px] h-[380px] flex flex-col glass-panel rounded-2xl overflow-hidden shadow-2xl relative border border-white/40">
       {/* Header */}
-      <div className="flex flex-col px-6 pt-6 pb-4 flex-shrink-0 z-10 bg-gradient-to-b from-white/80 to-transparent">
-        <div className="flex items-center justify-between mb-3">
+      <div className="flex flex-col px-6 pt-6 pb-2 flex-shrink-0 z-10">
+        <div className="flex items-center justify-between mb-1">
           <div className="flex flex-col">
             <h2 className="text-lg font-black text-slate-900 tracking-tight leading-none">Lembretes</h2>
             <span className="text-[10px] uppercase tracking-[0.2em] font-extrabold text-[#006c55] mt-1 opacity-80">
               organização acadêmica
             </span>
           </div>
-          <button
-            onClick={() => setIsAdding(true)}
-            className="w-10 h-10 bg-[#006c55] hover:bg-[#005a46] text-white rounded-xl flex items-center justify-center transition-all shadow-lg shadow-[#006c55]/20 active:scale-95"
-          >
-            <Plus size={20} strokeWidth={3} />
-          </button>
-        </div>
 
-        {/* Type Filter Tabs */}
-        <div className="flex gap-1 overflow-x-auto no-scrollbar py-1">
-          {typeFilters.map((filter) => {
-            const Icon = filter.icon;
-            const isActive = activeFilter === filter.id;
-            const count = filter.id === 'all'
-              ? reminders.length
-              : reminders.filter(r => r.type === filter.id).length;
-
-            return (
+          <div className="flex items-center gap-2">
+            {/* Type Filter Dropdown */}
+            <div className="relative" ref={filterRef}>
               <button
-                key={filter.id}
-                onClick={() => setActiveFilter(filter.id as any)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all flex-shrink-0 ${isActive
-                  ? `${filter.bg} ${filter.color} font-bold border border-white/40`
-                  : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
-                  }`}
+                onClick={() => setIsFilterOpen(!isFilterOpen)}
+                className={`flex items-center gap-2 px-3 py-2 rounded-xl transition-all ${isFilterOpen ?
+                  'bg-[#006c55] text-white' :
+                  'bg-white/60 text-slate-600 hover:bg-white border border-white/90'
+                  } shadow-sm active:scale-95`}
               >
-                <Icon size={12} />
-                <span className="text-[10px] font-bold whitespace-nowrap">{filter.label}</span>
-                {count > 0 && (
-                  <span className={`text-[8px] font-black px-1 py-0.5 rounded-full ${isActive
-                    ? 'bg-white text-slate-900'
-                    : 'bg-slate-100 text-slate-500'
-                    }`}>
-                    {count}
+                <FilterIcon size={12} />
+                <span className="text-[10px] font-bold hidden sm:inline">Filtrar</span>
+                {activeFilter !== 'all' && (
+                  <span className="w-4 h-4 bg-white/20 text-white text-[8px] font-black rounded-full flex items-center justify-center">
+                    {reminders.filter(r => r.type === activeFilter).length}
                   </span>
                 )}
               </button>
-            );
-          })}
+
+              {/* Dropdown Menu */}
+              {isFilterOpen && (
+                <div className="absolute right-0 top-full mt-2 w-48 bg-white/95 backdrop-blur-xl border border-white/40 rounded-2xl shadow-2xl z-50 py-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="px-4 py-2 border-b border-slate-100">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Tipo de Lembrete</span>
+                  </div>
+                  {typeFilters.map((filter) => {
+                    const Icon = filter.icon;
+                    const isActive = activeFilter === filter.id;
+                    const count = filter.id === 'all'
+                      ? reminders.length
+                      : reminders.filter(r => r.type === filter.id).length;
+
+                    return (
+                      <button
+                        key={filter.id}
+                        onClick={() => {
+                          setActiveFilter(filter.id as any);
+                          setIsFilterOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between px-4 py-2 text-left transition-colors ${isActive ?
+                          `${filter.bg} ${filter.color} font-bold` :
+                          'text-slate-600 hover:bg-slate-50'
+                          }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Icon size={12} className={isActive ? filter.color : 'text-slate-400'} />
+                          <span className="text-[11px] font-medium">{filter.label}</span>
+                        </div>
+                        {count > 0 && (
+                          <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${isActive ?
+                            'bg-white text-slate-900' :
+                            'bg-slate-100 text-slate-500'
+                            }`}>
+                            {count}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={() => setIsAdding(true)}
+              className="w-9 h-9 bg-[#006c55] hover:bg-[#005a46] text-white rounded-xl flex items-center justify-center transition-all shadow-lg shadow-[#006c55]/20 active:scale-95"
+            >
+              <Plus size={18} strokeWidth={3} />
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Lista de Lembretes */}
-      <div className="flex-1 overflow-y-auto no-scrollbar p-6 space-y-4 bg-transparent">
+      <div className="flex-1 overflow-y-auto no-scrollbar px-6 pb-6 pt-2 space-y-3 bg-transparent">
         {loading ? (
           <div className="flex flex-col items-center justify-center h-full">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#006c55]"></div>
@@ -312,67 +443,78 @@ const RemindersBox: React.FC = () => {
               <div
                 key={reminder.id}
                 onClick={() => setSelectedReminder(reminder)}
-                className={`group relative flex flex-col p-4 rounded-2xl border transition-all duration-300 cursor-pointer animate-in slide-in-from-bottom-2 ${reminder.completed
+                className={`group relative flex flex-col p-3 rounded-2xl border transition-all duration-300 cursor-pointer animate-in slide-in-from-bottom-2 ${reminder.completed
                   ? 'bg-slate-50/50 border-slate-100 opacity-60'
                   : reminder.isStarred
                     ? 'bg-gradient-to-br from-white to-white/95 border-amber-200 shadow-lg shadow-amber-500/5'
                     : 'bg-gradient-to-br from-white/95 to-white/80 border-white hover:border-[#006c55]/20 hover:shadow-lg'
                   }`}
               >
-                {/* Type Badge */}
-                <div className="flex items-center justify-between mb-2">
-                  <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg ${typeConfig.bg} ${typeConfig.border}`}>
-                    <TypeIcon size={10} className={typeConfig.color} />
-                    <span className={`text-[9px] font-black uppercase tracking-tighter ${typeConfig.color}`}>
-                      {typeConfig.label}
-                    </span>
-                  </div>
-
+                {/* Title and Completion Checkbox */}
+                <div className="flex items-center justify-between mb-1.5">
+                  <h4 className={`text-[13px] font-black leading-tight line-clamp-1 ${reminder.completed ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
+                    {reminder.title}
+                  </h4>
                   <button
                     onClick={(e) => toggleComplete(reminder.id, e)}
-                    className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-all ${reminder.completed
+                    className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 transition-all ${reminder.completed
                       ? 'bg-[#006c55] text-white'
                       : 'bg-white text-slate-300 hover:text-[#006c55] hover:bg-[#006c55]/10 border border-slate-100'
                       }`}
                   >
-                    <Check size={14} strokeWidth={4} />
+                    <Check size={12} strokeWidth={4} />
                   </button>
                 </div>
 
-                {/* Title and Text */}
-                <div className="mb-3">
-                  <h4 className={`text-[14px] font-black leading-tight mb-1 ${reminder.completed ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
-                    {reminder.title}
-                  </h4>
-                  <p className="text-[11px] font-medium text-slate-500 line-clamp-2 leading-relaxed">
+                {/* Text and Alert */}
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <p className="text-[11px] font-medium text-slate-500 line-clamp-1 leading-relaxed">
                     {reminder.text}
                   </p>
+                  {(() => {
+                    const alert = getDueAlert(reminder.timestamp);
+                    if (!alert || reminder.completed) return null;
+                    return (
+                      <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md border whitespace-nowrap animate-pulse ${alert.color}`}>
+                        <AlertTriangle size={8} />
+                        <span className="text-[8px] font-bold uppercase tracking-tighter">{alert.text}</span>
+                      </div>
+                    );
+                  })()}
                 </div>
 
-                {/* Date/Time and Actions */}
-                <div className="flex items-center justify-between pt-3 border-t border-slate-100/40">
-                  <div className="flex items-center gap-2 text-slate-400">
-                    <div className="flex items-center gap-1">
-                      <CalendarIcon size={10} className="text-[#006c55]" />
-                      <span className="text-[9px] font-bold uppercase tracking-tight">
-                        {reminder.date ? reminder.date.split('-').reverse().slice(0, 2).join('/') : 'Hoje'}
+                {/* Footer: Badge, Date/Time and Star */}
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100/40">
+                  <div className="flex items-center gap-2">
+                    {/* Type Badge */}
+                    <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md ${typeConfig.bg} ${typeConfig.border}`}>
+                      <TypeIcon size={8} className={typeConfig.color} />
+                      <span className={`text-[8px] font-black uppercase tracking-tighter ${typeConfig.color}`}>
+                        {typeConfig.label}
                       </span>
                     </div>
-                    <span className="text-[8px] text-slate-300">•</span>
-                    <div className="flex items-center gap-1">
-                      <Clock size={10} className="text-[#006c55]" />
-                      <span className="text-[9px] font-bold uppercase tracking-tight">{reminder.time || '--:--'}</span>
+
+                    <div className="flex items-center gap-2 text-slate-400">
+                      <div className="flex items-center gap-1">
+                        <CalendarIcon size={10} className="text-[#006c55]" />
+                        <span className="text-[9px] font-bold uppercase tracking-tight">
+                          {reminder.date ? reminder.date.split('-').reverse().slice(0, 2).join('/') : 'Hoje'}
+                        </span>
+                      </div>
+                      <span className="text-[8px] text-slate-300">•</span>
+                      <div className="flex items-center gap-1">
+                        <Clock size={10} className="text-[#006c55]" />
+                        <span className="text-[9px] font-bold uppercase tracking-tight">{reminder.time || '--:--'}</span>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={(e) => toggleStar(reminder.id, e)}
-                      className={`transition-colors ${reminder.isStarred ? 'text-amber-400' : 'text-slate-200 hover:text-amber-300'}`}
-                    >
-                      <Star size={14} fill={reminder.isStarred ? 'currentColor' : 'none'} strokeWidth={2.5} />
-                    </button>
-                  </div>
+                  <button
+                    onClick={(e) => toggleStar(reminder.id, e)}
+                    className={`transition-colors ${reminder.isStarred ? 'text-amber-400' : 'text-slate-200 hover:text-amber-300'}`}
+                  >
+                    <Star size={14} fill={reminder.isStarred ? 'currentColor' : 'none'} strokeWidth={2.5} />
+                  </button>
                 </div>
               </div>
             );
@@ -380,25 +522,17 @@ const RemindersBox: React.FC = () => {
         )}
       </div>
 
-      {/* Footer Nav */}
-      <div className="p-6 bg-transparent border-t border-white/40 shrink-0">
-        <button
-          onClick={() => setIsAgendaOpen(true)}
-          className="w-full flex items-center justify-between text-slate-400 hover:text-[#006c55] transition-colors group"
-        >
-          <span className="text-[10px] font-black uppercase tracking-[0.2em]">Acessar agenda completa</span>
-          <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
-        </button>
-      </div>
 
       {/* Modal: Novo Lembrete */}
       {isAdding && (
         <div className="absolute inset-0 z-[60] bg-gradient-to-br from-white to-white/95 p-6 flex flex-col animate-in slide-in-from-right duration-300">
           <div className="flex justify-between items-center mb-6">
             <div className="flex flex-col">
-              <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">Novo Lembrete</h3>
+              <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">
+                {editingReminderId ? 'Editar Lembrete' : 'Novo Lembrete'}
+              </h3>
               <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-[#006c55] mt-1 opacity-80">
-                organize sua rotina
+                {editingReminderId ? 'atualize sua rotina' : 'organize sua rotina'}
               </span>
             </div>
             <button onClick={resetForm} className="p-2 text-slate-400 hover:text-slate-900 transition-colors">
@@ -440,7 +574,7 @@ const RemindersBox: React.FC = () => {
                 type="text"
                 placeholder="Ex: Entrega de Projeto"
                 value={newTitle}
-                onChange={e => setNewTitle(e.target.value)}
+                onChange={e => handleTitleChange(e.target.value)}
                 className="w-full h-12 bg-white border border-slate-100 rounded-xl px-4 font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#006c55]/20 focus:border-[#006c55] transition-all"
               />
             </div>
@@ -450,7 +584,7 @@ const RemindersBox: React.FC = () => {
               <textarea
                 placeholder="Detalhes do lembrete..."
                 value={newText}
-                onChange={e => setNewText(e.target.value)}
+                onChange={e => handleTextChange(e.target.value)}
                 className="w-full h-28 bg-white border border-slate-100 rounded-xl p-4 font-medium text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#006c55]/20 focus:border-[#006c55] transition-all resize-none"
               />
             </div>
@@ -482,8 +616,8 @@ const RemindersBox: React.FC = () => {
             disabled={!newTitle.trim()}
             className="w-full h-14 bg-gradient-to-r from-[#006c55] via-[#007a62] to-[#00876a] text-white rounded-xl font-black text-[11px] uppercase tracking-widest shadow-xl shadow-[#006c55]/20 hover:shadow-2xl hover:shadow-[#006c55]/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all mt-4 flex items-center justify-center gap-2"
           >
-            <Plus size={16} />
-            <span>Adicionar Lembrete</span>
+            {editingReminderId ? <Check size={16} /> : <Plus size={16} />}
+            <span>{editingReminderId ? 'Salvar Alterações' : 'Adicionar Lembrete'}</span>
           </button>
         </div>
       )}
@@ -492,12 +626,24 @@ const RemindersBox: React.FC = () => {
       {selectedReminder && (
         <div className="absolute inset-0 z-[70] bg-gradient-to-br from-white to-white/95 p-6 flex flex-col animate-in slide-in-from-bottom duration-300">
           <div className="flex justify-between items-center mb-6">
-            <button
-              onClick={(e) => toggleStar(selectedReminder.id, e as any)}
-              className={`${selectedReminder.isStarred ? 'text-amber-400' : 'text-slate-300'} transition-colors`}
-            >
-              <Star size={24} fill={selectedReminder.isStarred ? 'currentColor' : 'none'} strokeWidth={3} />
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={(e) => toggleStar(selectedReminder.id, e as any)}
+                className={`${selectedReminder.isStarred ? 'text-amber-400' : 'text-slate-300'} transition-colors`}
+              >
+                <Star size={24} fill={selectedReminder.isStarred ? 'currentColor' : 'none'} strokeWidth={3} />
+              </button>
+              <button
+                onClick={() => {
+                  startEdit(selectedReminder);
+                  setSelectedReminder(null);
+                }}
+                className="w-10 h-10 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center hover:bg-slate-200 transition-all active:scale-95"
+                title="Editar lembrete"
+              >
+                <Pencil size={18} />
+              </button>
+            </div>
             <button onClick={() => setSelectedReminder(null)} className="p-2 text-slate-400 hover:text-slate-900 transition-colors">
               <X size={24} />
             </button>
@@ -568,9 +714,8 @@ const RemindersBox: React.FC = () => {
         </div>
       )}
 
-      {/* Modal: Agenda */}
       {isAgendaOpen && (
-        <div className="absolute inset-0 z-[80] bg-gradient-to-br from-white to-white/95 p-6 flex flex-col animate-in slide-in-from-bottom duration-500">
+        <div className="absolute inset-0 z-[80] glass-panel-dark backdrop-blur-2xl p-6 flex flex-col animate-in slide-in-from-bottom duration-500">
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">Agenda</h3>
             <button onClick={() => setIsAgendaOpen(false)} className="p-2 text-slate-400 hover:text-slate-900 transition-colors">
@@ -613,14 +758,16 @@ const RemindersBox: React.FC = () => {
                 return (
                   <div
                     key={i}
-                    onClick={() => dayReminders.length > 0 && setSelectedReminder(dayReminders[0])}
+                    onClick={() => dayReminders.length > 0 && setSelectedDay(day)}
                     className={`aspect-square rounded-lg border flex flex-col items-center justify-center relative transition-all cursor-pointer ${!day
                       ? 'opacity-0 pointer-events-none'
-                      : isToday
-                        ? 'bg-gradient-to-br from-[#006c55] to-[#00876a] border-[#006c55] text-white'
-                        : dayReminders.length > 0
-                          ? 'bg-gradient-to-br from-white to-white/95 border-[#006c55]/20 text-slate-900'
-                          : 'bg-slate-50/50 border-slate-100 text-slate-400'
+                      : (day === selectedDay)
+                        ? 'bg-[#006c55]/10 border-[#006c55] text-[#006c55]'
+                        : isToday
+                          ? 'bg-gradient-to-br from-[#006c55] to-[#00876a] border-[#006c55] text-white'
+                          : dayReminders.length > 0
+                            ? 'bg-gradient-to-br from-white to-white/95 border-[#006c55]/20 text-slate-900'
+                            : 'bg-slate-50/50 border-slate-100 text-slate-400'
                       }`}
                   >
                     <span className={`text-xs font-black ${isToday ? 'text-white' : 'text-slate-900'}`}>
@@ -638,7 +785,7 @@ const RemindersBox: React.FC = () => {
               })}
             </div>
 
-            <div className="mt-6 flex flex-wrap gap-4">
+            <div className="mt-4 flex flex-wrap gap-4">
               <div className="flex items-center gap-1.5">
                 <div className="w-2 h-2 rounded-full bg-[#006c55]" />
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Hoje</span>
@@ -651,6 +798,54 @@ const RemindersBox: React.FC = () => {
                 <div className="w-2 h-2 rounded-full bg-slate-300" />
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Com Lembrete</span>
               </div>
+            </div>
+
+            {/* Reminders for Selected Day */}
+            <div className="mt-6 flex-1 overflow-y-auto no-scrollbar">
+              {selectedDay ? (
+                <>
+                  <div className="flex items-center justify-between mb-3 border-b border-slate-100 pb-2">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-[#006c55]">
+                      Lembretes do dia {selectedDay}
+                    </span>
+                    <span className="text-[9px] font-bold text-slate-400">
+                      {getRemindersForDay(selectedDay).length} item(s)
+                    </span>
+                  </div>
+                  <div className="space-y-2 pb-4">
+                    {getRemindersForDay(selectedDay).map(reminder => {
+                      const typeCfg = getTypeConfig(reminder.type);
+                      const ICfg = typeCfg.icon;
+                      return (
+                        <div
+                          key={reminder.id}
+                          onClick={() => setSelectedReminder(reminder)}
+                          className="flex items-center justify-between p-3 rounded-xl bg-slate-50/50 border border-slate-100 hover:bg-white hover:shadow-md transition-all cursor-pointer group"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${typeCfg.bg}`}>
+                              <ICfg size={14} className={typeCfg.color} />
+                            </div>
+                            <div>
+                              <h5 className="text-[12px] font-bold text-slate-900 leading-tight line-clamp-1">{reminder.title}</h5>
+                              <p className="text-[10px] text-slate-500 line-clamp-1">{reminder.time}</p>
+                            </div>
+                          </div>
+                          <ChevronRight size={14} className="text-slate-300 group-hover:text-[#006c55] group-hover:translate-x-1 transition-all" />
+                        </div>
+                      );
+                    })}
+                    {getRemindersForDay(selectedDay).length === 0 && (
+                      <p className="text-center py-8 text-[10px] font-bold text-slate-400">Nenhum lembrete para este dia.</p>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center opacity-40">
+                  <CalendarIcon size={32} className="text-slate-300 mb-2" />
+                  <p className="text-[10px] font-black uppercase tracking-widest">Selecione um dia</p>
+                </div>
+              )}
             </div>
           </div>
         </div>

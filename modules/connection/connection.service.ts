@@ -13,6 +13,7 @@ import {
     getDoc
 } from "firebase/firestore";
 import { Author } from "../../types";
+import { NotificationService } from "../notification/notification.service";
 
 export class ConnectionService {
 
@@ -53,6 +54,16 @@ export class ConnectionService {
         });
 
         await batch.commit();
+
+        // 3. Trigger Notification
+        await NotificationService.createNotification({
+            userId: targetUid,
+            type: 'connection',
+            title: 'Nova Solicitação de Conexão',
+            desc: `${currentUser.name} quer se conectar com você.`,
+            avatar: currentUser.avatar,
+            metadata: { fromUserId: currentUid }
+        });
     }
 
     /**

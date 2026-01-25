@@ -15,12 +15,14 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase/index';
+import { ChatService } from '../modules/chat/chat.service';
+import { NotificationService } from '../modules/notification/notification.service';
 
 const UtilityHeader: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
-  const [notificationsCount] = useState(3);
-  const [messagesCount] = useState(2);
+  const [notificationsCount, setNotificationsCount] = useState(0);
+  const [messagesCount, setMessagesCount] = useState(0);
 
   const { user } = useAuth();
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -29,6 +31,25 @@ const UtilityHeader: React.FC = () => {
 
   const userAvatar = user?.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.displayName || 'Thoth'}`;
   const userName = user?.displayName || "Estudante";
+
+  useEffect(() => {
+    if (!user) return;
+
+    // Subscribe to Message Count
+    const unsubMessages = ChatService.subscribeToUnreadCount(user.uid, (count) => {
+      setMessagesCount(count);
+    });
+
+    // Subscribe to Notification Count
+    const unsubNotifs = NotificationService.subscribeToUnreadCount(user.uid, (count) => {
+      setNotificationsCount(count);
+    });
+
+    return () => {
+      unsubMessages();
+      unsubNotifs();
+    };
+  }, [user]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

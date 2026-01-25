@@ -20,8 +20,11 @@ import {
   CheckCircle,
   ExternalLink,
   Paperclip,
-  Globe
+  Globe,
+  Loader2
 } from 'lucide-react';
+import { PostService } from '../modules/post/post.service';
+import { useAuth } from '../contexts/AuthContext';
 
 interface PostCardProps {
   post: Post;
@@ -30,15 +33,17 @@ interface PostCardProps {
 }
 
 const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggle }) => {
+  const { user } = useAuth();
   const [isBookmarked, setIsBookmarked] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
+  const [isLiked, setIsLiked] = useState(user ? post.likedBy?.includes(user.uid) : false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [modalData, setModalData] = useState<{ images: string[], index: number } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const [likeCount, setLikeCount] = useState(post.likes || 0);
-  const [shareCount, setShareCount] = useState(0);
+  const [shareCount, setShareCount] = useState(post.repostedBy?.length || 0);
+  const [isReposting, setIsReposting] = useState(false);
 
   const charLimit = 280;
   const isLongText = post.content.length > charLimit;
@@ -79,12 +84,41 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
     }
   };
 
-  const handleLike = () => {
+  const handleLike = async () => {
+    if (!user) return;
     const newLikedState = !isLiked;
     setIsLiked(newLikedState);
     setLikeCount(prev => newLikedState ? prev + 1 : prev - 1);
-    if (onLikeToggle) {
-      onLikeToggle(post.id, newLikedState);
+
+    try {
+      await PostService.toggleLike(post.id, user.uid, newLikedState);
+      if (onLikeToggle) onLikeToggle(post.id, newLikedState);
+    } catch (e) {
+      console.error("Error toggling like:", e);
+      // Revert optimistic update
+      setIsLiked(!newLikedState);
+      setLikeCount(prev => !newLikedState ? prev + 1 : prev - 1);
+    }
+  };
+
+  const handleRepost = async () => {
+    if (!user || isReposting) return;
+    setIsReposting(true);
+    try {
+      await PostService.repost(post, {
+        id: user.uid,
+        name: user.displayName || 'Usuário',
+        username: '@' + (user.email?.split('@')[0] || 'usuario'),
+        avatar: user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}`
+      });
+      setShareCount(prev => prev + 1);
+      setIsMenuOpen(false);
+      alert("Repostado com sucesso!");
+    } catch (e) {
+      console.error("Error reposting:", e);
+      alert("Erro ao repostar.");
+    } finally {
+      setIsReposting(false);
     }
   };
 
@@ -220,6 +254,14 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
   return (
     <>
       <div className="flex-shrink-0 w-[350px] h-[500px] flex flex-col bg-gradient-to-br from-white via-white to-white/95 dark:from-slate-800 dark:via-slate-900 dark:to-slate-900 rounded-3xl p-6 shadow-lg border border-white/60 dark:border-white/5 snap-center hover:shadow-2xl transition-all duration-500 relative overflow-hidden group">
+        {post.repostedBy && post.repostedBy.length > 0 && (
+          <div className="flex items-center gap-1.5 mb-2 px-1">
+            <Repeat2 size={12} className="text-slate-400" />
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              {post.repostedBy[0]?.uid === user?.uid ? 'Você repostou' : `${post.repostedBy[0]?.name} repostou`}
+            </span>
+          </div>
+        )}
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-[#006c55] to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
         <div className="flex items-start justify-between mb-4 flex-shrink-0 relative">
           <div className="flex items-start gap-3 overflow-hidden flex-1 min-w-0">
@@ -242,7 +284,14 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
             <button onClick={handleBookmark} className={`p-2 rounded-xl transition-all active:scale-95 ${isBookmarked ? 'text-[#006c55] dark:text-emerald-400 bg-gradient-to-br from-[#006c55]/10 to-[#006c55]/5 dark:from-emerald-400/10 dark:to-emerald-400/5' : 'text-slate-400 hover:text-[#006c55] dark:hover:text-emerald-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`} title={isBookmarked ? "Remover" : "Salvar"}><Bookmark size={16} strokeWidth={isBookmarked ? 2.5 : 2} fill={isBookmarked ? "currentColor" : "none"} /></button>
             <button onClick={() => setIsMenuOpen(!isMenuOpen)} className={`p-2 rounded-xl transition-all active:scale-95 ${isMenuOpen ? 'text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'}`} title="Opções"><MoreVertical size={16} /></button>
             {isMenuOpen && <div className="absolute right-0 top-10 w-56 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-2xl shadow-2xl z-50 py-2 animate-in fade-in slide-in-from-top-2 duration-200">
-              <button className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors"><Repeat2 size={14} />Repostar</button>
+              <button
+                onClick={handleRepost}
+                disabled={isReposting}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors disabled:opacity-50"
+              >
+                {isReposting ? <Loader2 size={14} className="animate-spin" /> : <Repeat2 size={14} />}
+                Repostar
+              </button>
               <button className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors"><Link size={14} />Copiar link</button>
               <button className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors"><BarChart2 size={14} />Estatísticas</button>
               <div className="h-px bg-slate-100 dark:bg-slate-800 my-2 mx-4"></div>

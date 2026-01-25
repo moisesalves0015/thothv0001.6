@@ -183,8 +183,9 @@ const NewPost: React.FC<NewPostProps> = ({ isOpen, onClose, onPostCreated }) => 
   };
 
   const handlePost = async () => {
-    if (!text.trim()) {
-      alert("Por favor, escreva algo para publicar!");
+    const hasMedia = selectedImages.length > 0 || selectedFile || selectedLink;
+    if (!text.trim() && !hasMedia) {
+      alert("Por favor, escreva algo ou adicione uma mídia para publicar!");
       return;
     }
     const user = auth.currentUser;
@@ -386,7 +387,17 @@ const NewPost: React.FC<NewPostProps> = ({ isOpen, onClose, onPostCreated }) => 
               <input type="file" className="hidden" ref={fileInputRef} onChange={handleFileSelect} />
               <button onClick={() => fileInputRef.current?.click()} className={`p-3 rounded-xl transition-all active:scale-90 ${selectedFile ? 'bg-gradient-to-r from-[#006c55] to-[#00876a] text-white shadow-lg' : 'text-slate-400 hover:text-[#006c55] hover:bg-white'}`} title="Arquivo"><FileText size={20} strokeWidth={2.5} /></button>
             </div>
-            <button onClick={handlePost} disabled={isSubmitting || !text.trim()} className={`flex-1 h-14 rounded-2xl flex items-center justify-center gap-3 font-black text-sm uppercase tracking-widest transition-all shadow-xl active:scale-95 min-w-[180px] ${isSubmitting || !text.trim() ? 'bg-gradient-to-r from-slate-100 to-slate-200 text-slate-300 cursor-not-allowed shadow-none' : 'bg-gradient-to-r from-[#006c55] via-[#007a62] to-[#00876a] text-white hover:shadow-2xl hover:shadow-[#006c55]/30'}`}>{isSubmitting ? (<><Loader2 className="animate-spin" size={20} strokeWidth={3} /><span>Publicando...</span></>) : (<><GraduationCap size={18} strokeWidth={2.5} /><span>Compartilhar</span><Send size={16} strokeWidth={3} /></>)}</button>
+            <button
+              onClick={handlePost}
+              disabled={isSubmitting || (!text.trim() && !(selectedImages.length > 0 || selectedFile || selectedLink))}
+              className={`flex-1 h-14 rounded-2xl flex items-center justify-center gap-3 font-black text-sm uppercase tracking-widest transition-all shadow-xl active:scale-95 min-w-[180px] ${isSubmitting || (!text.trim() && !(selectedImages.length > 0 || selectedFile || selectedLink)) ? 'bg-gradient-to-r from-slate-100 to-slate-200 text-slate-300 cursor-not-allowed shadow-none' : 'bg-gradient-to-r from-[#006c55] via-[#007a62] to-[#00876a] text-white hover:shadow-2xl hover:shadow-[#006c55]/30'}`}
+            >
+              {isSubmitting ? (
+                <><Loader2 className="animate-spin" size={20} strokeWidth={3} /><span>Publicando...</span></>
+              ) : (
+                <><GraduationCap size={18} strokeWidth={2.5} /><span>Compartilhar</span><Send size={16} strokeWidth={3} /></>
+              )}
+            </button>
           </div>
         </div>
       </div>

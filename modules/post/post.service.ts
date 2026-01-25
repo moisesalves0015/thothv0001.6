@@ -16,6 +16,7 @@ import { ConnectionService } from '../connection/connection.service';
 
 const POSTS_COLLECTION = 'posts';
 const FEED_LIMIT = 50;
+import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, increment } from 'firebase/firestore';
 
 export const PostService = {
     /**
@@ -48,6 +49,8 @@ export const PostService = {
                     university: author.university || '',
                 },
                 likes: 0,
+                likedBy: [],
+                repostedBy: [],
                 replies: 0,
                 createdAt: Timestamp.now(),
                 updatedAt: Timestamp.now()
@@ -57,6 +60,48 @@ export const PostService = {
             console.error('Error creating post:', error);
             throw error;
         }
+    },
+
+    /**
+     * Toggles like on a post
+     */
+    async toggleLike(postId: string, userId: string, isLiked: boolean): Promise<void> {
+        const postRef = doc(db, POSTS_COLLECTION, postId);
+        await updateDoc(postRef, {
+            likedBy: isLiked ? arrayUnion(userId) : arrayRemove(userId),
+            likes: increment(isLiked ? 1 : -1)
+        });
+    },
+
+    /**
+     * Reposts a post
+     */
+    async repost(originalPost: Post, currentUser: Author): Promise<string> {
+        // 1. Create a new post that references the original
+        const newPostId = await addDoc(collection(db, POSTS_COLLECTION), {
+            content: originalPost.content,
+            tags: originalPost.tags || [],
+            images: originalPost.images || [],
+            postType: originalPost.postType || 'general',
+            externalLink: originalPost.externalLink || null,
+            attachmentFile: originalPost.attachmentFile || null,
+            originalPostId: originalPost.id,
+            repostedBy: [{ uid: currentUser.id, name: currentUser.name }],
+            author: originalPost.author, // The original author is still the author
+            likes: 0,
+            likedBy: [],
+            replies: 0,
+            createdAt: Timestamp.now(),
+            updatedAt: Timestamp.now()
+        });
+
+        // 2. Update the original post's repost count (optional metadata in repostedBy)
+        const originalRef = doc(db, POSTS_COLLECTION, originalPost.id);
+        await updateDoc(originalRef, {
+            repostedBy: arrayUnion({ uid: currentUser.id, name: currentUser.name })
+        });
+
+        return newPostId.id;
     },
 
     /**
@@ -93,6 +138,9 @@ export const PostService = {
                     content: data.content,
                     timestamp: this.formatAccurateTimeAgo(data.createdAt),
                     likes: data.likes || 0,
+                    likedBy: data.likedBy || [],
+                    repostedBy: data.repostedBy || [],
+                    originalPostId: data.originalPostId || null,
                     replies: data.replies || 0,
                     images: data.images || [],
                     tags: data.tags || [],

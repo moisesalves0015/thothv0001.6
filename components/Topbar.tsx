@@ -119,7 +119,6 @@ const Topbar = () => {
     { icon: GraduationCap, label: 'Estudos', path: '/estudos' },
     { icon: BookOpen, label: 'Disciplinas', path: '/disciplinas' },
     { icon: Users, label: 'Conexões', path: '/conexoes' },
-    { icon: MessageCircle, label: `Mensagens ${unreadCount > 0 ? `(${unreadCount})` : ''}`, path: '/mensagens' },
     { icon: Calendar, label: 'Eventos', path: '/eventos' },
     { icon: Search, label: 'Pesquisas', path: '/pesquisas' },
     { icon: Briefcase, label: 'Vagas', path: '/vagas' },

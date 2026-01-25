@@ -159,7 +159,7 @@ const ConnectionSuggestions: React.FC = () => {
   }
 
   return (
-    <div className="relative w-full h-[350px] flex flex-col glass-panel rounded-2xl overflow-hidden shadow-2xl group">
+    <div className="relative w-full h-[380px] flex flex-col glass-panel rounded-2xl overflow-hidden shadow-2xl group">
       {/* Decorative Accent */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-[#006c55] to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
@@ -292,7 +292,7 @@ const ConnectionSuggestions: React.FC = () => {
       {/* Connection Cards */}
       <div
         ref={scrollRef}
-        className="flex items-center gap-3 overflow-x-auto overflow-y-hidden pt-1 pb-4 px-6 snap-x snap-mandatory no-scrollbar scroll-smooth flex-1 touch-pan-x bg-transparent"
+        className="flex items-center gap-3 overflow-x-auto overflow-y-hidden py-4 px-6 snap-x snap-mandatory no-scrollbar scroll-smooth flex-1 touch-pan-x bg-transparent"
         onScroll={() => setIsFilterOpen(false)}
       >
         {filteredSuggestions.length === 0 ? (
@@ -323,7 +323,7 @@ const ConnectionSuggestions: React.FC = () => {
         ) : (
           <>
             {filteredSuggestions.map((author) => (
-              <div key={author.id} className="snap-center h-full flex items-center">
+              <div key={author.id} className="snap-center h-full flex items-center justify-center">
                 <ConnectionCard
                   author={author}
                   currentUid={auth.currentUser?.uid}

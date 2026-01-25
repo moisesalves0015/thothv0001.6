@@ -51,6 +51,8 @@ const PrintHistoryBox: React.FC = () => {
   const [totalDetectedPages, setTotalDetectedPages] = useState<number>(0);
   const [newIsColor, setNewIsColor] = useState(false);
   const [newIsDuplex, setNewIsDuplex] = useState(false);
+  const [newPaymentMethod, setNewPaymentMethod] = useState<'paid' | 'on_pickup'>('paid');
+  const [newPriority, setNewPriority] = useState<'normal' | 'urgent'>('normal');
 
   useEffect(() => {
     if (!user) return;
@@ -119,8 +121,9 @@ const PrintHistoryBox: React.FC = () => {
     const pageCount = parsePageCount(newPages);
     let total = unitPrice * pageCount;
     if (newIsDuplex) total *= 0.95; // 5% desconto frente/verso
+    if (newPriority === 'urgent') total += 2.00;
     return { total, unitPrice, pageCount };
-  }, [selectedStation, newIsColor, newPages, newIsDuplex]);
+  }, [selectedStation, newIsColor, newPages, newIsDuplex, newPriority]);
 
   const handleAddRequest = async () => {
     if (!newFile || !user || !selectedStation) return;
@@ -136,6 +139,8 @@ const PrintHistoryBox: React.FC = () => {
         pages: newPages === 'Todas' ? `${totalDetectedPages}` : newPages,
         isColor: newIsColor,
         isDuplex: newIsDuplex,
+        paymentMethod: newPaymentMethod,
+        priority: newPriority,
         totalPrice: currentPricing.total
       };
       console.log("[PrintBox] Order Data for Firestore:", orderData);
@@ -246,6 +251,20 @@ const PrintHistoryBox: React.FC = () => {
                       <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[9px] font-black uppercase tracking-wider ${config.class}`}>
                         {config.icon}
                         {config.text}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {req.status === 'pending' && (
+                          <span className="text-[9px] font-black text-amber-500 bg-amber-50 px-2 py-0.5 rounded border border-amber-100">
+                            #{requests.filter(r => !r.archived && r.status === 'pending' && r.timestamp < req.timestamp).length + 1}º Fila
+                          </span>
+                        )}
+                        {req.priority === 'urgent' && (
+                          <span className="text-[8px] font-black bg-purple-500 text-white px-1.5 py-0.5 rounded uppercase">Urgente</span>
+                        )}
+                        <span className="text-[9px] font-bold text-slate-500">
+                          {req.paymentMethod === 'paid' ? 'PAGO' : 'PAGAR NO BALCÃO'}
+                        </span>
                       </div>
 
                       <button
@@ -408,6 +427,31 @@ const PrintHistoryBox: React.FC = () => {
                 )}
               </div>
             )}
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Pagamento</label>
+                <select
+                  className="w-full h-10 px-2 bg-white border border-slate-200 rounded-lg text-xs font-bold"
+                  value={newPaymentMethod}
+                  onChange={(e) => setNewPaymentMethod(e.target.value as any)}
+                >
+                  <option value="paid">Já Pago (Pix/Crédito)</option>
+                  <option value="on_pickup">Pagar na Retirada</option>
+                </select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Prioridade</label>
+                <select
+                  className="w-full h-10 px-2 bg-white border border-slate-200 rounded-lg text-xs font-bold"
+                  value={newPriority}
+                  onChange={(e) => setNewPriority(e.target.value as any)}
+                >
+                  <option value="normal">Normal</option>
+                  <option value="urgent">Urgente (+R$ 2.00)</option>
+                </select>
+              </div>
+            </div>
 
             <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100">
               <div className="flex flex-col">
