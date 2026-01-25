@@ -8,7 +8,7 @@ import {
   Calendar,
   Target,
   Bookmark,
-  Share2,
+  Repeat2,
   Link,
   FileText,
   Download,
@@ -38,7 +38,6 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
   const menuRef = useRef<HTMLDivElement>(null);
 
   const [likeCount, setLikeCount] = useState(post.likes || 0);
-  const [commentCount, setCommentCount] = useState(post.replies || 0);
   const [shareCount, setShareCount] = useState(0);
 
   const charLimit = 280;
@@ -98,10 +97,14 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
     if (imgCount === 0) return null;
 
     const typeConfig = getPostTypeConfig(post.postType);
+    const hasText = post.content.trim().length > 0;
+
+    // Altura baseada no conteúdo
+    const containerHeight = hasText ? 'h-[200px]' : 'h-[300px]';
 
     if (imgCount === 1) {
       return (
-        <div className="relative w-full h-64 mb-4 cursor-pointer overflow-hidden rounded-2xl border-2 border-slate-100 flex-shrink-0 shadow-lg bg-gradient-to-br from-white to-slate-50 group" onClick={() => openModal(0)}>
+        <div className={`relative w-full ${containerHeight} mb-4 cursor-pointer overflow-hidden rounded-2xl border-2 border-slate-100 flex-shrink-0 shadow-lg bg-gradient-to-br from-white to-slate-50 group transition-all duration-300`} onClick={() => openModal(0)}>
           <img src={post.images[0]} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" alt="Publicação" />
           <div className="absolute top-3 left-3">
             <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg ${typeConfig.bg} ${typeConfig.border} border backdrop-blur-sm`}>
@@ -109,34 +112,74 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
               <span className={`text-[9px] font-black uppercase tracking-tighter ${typeConfig.color}`}>{typeConfig.label}</span>
             </div>
           </div>
-          <div className="absolute inset-0 bg-gradient-to-t from-black/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         </div>
       );
     }
 
-    return (
-      <div className="grid grid-cols-2 gap-2 mb-4 h-48 overflow-hidden rounded-2xl flex-shrink-0 relative">
-        <div className="relative h-full cursor-pointer overflow-hidden rounded-xl group" onClick={() => openModal(0)}>
-          <img src={post.images[0]} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="Principal" />
-          <div className="absolute top-2 left-2">
-            <div className={`flex items-center gap-1 px-2 py-1 rounded-md ${typeConfig.bg} ${typeConfig.border} border backdrop-blur-sm`}>
-              {React.createElement(typeConfig.icon, { size: 10, className: typeConfig.color })}
-              <span className={`text-[8px] font-black uppercase tracking-tighter ${typeConfig.color}`}>{typeConfig.label}</span>
-            </div>
-          </div>
-        </div>
-        <div className="grid grid-rows-2 gap-2 h-full">
-          {post.images.slice(1, 3).map((img, idx) => (
-            <div key={idx} className="relative h-full cursor-pointer overflow-hidden rounded-xl group" onClick={() => openModal(idx + 1)}>
-              <img src={img} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt={`Galeria ${idx}`} />
+    if (imgCount === 2) {
+      return (
+        <div className={`grid grid-cols-2 gap-2 mb-4 ${containerHeight} overflow-hidden rounded-2xl flex-shrink-0 relative transition-all duration-300`}>
+          {post.images.slice(0, 2).map((img, idx) => (
+            <div key={idx} className="relative h-full cursor-pointer overflow-hidden group" onClick={() => openModal(idx)}>
+              <img src={img} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt={`Imagem ${idx}`} />
             </div>
           ))}
         </div>
-        {imgCount > 3 && (
-          <div className="absolute bottom-2 right-2 bg-black/60 text-white text-[10px] font-bold px-2 py-1 rounded-lg backdrop-blur-sm">
-            +{imgCount - 3} imagens
+      );
+    }
+
+    if (imgCount === 3) {
+      return (
+        <div className={`grid grid-cols-3 gap-2 mb-4 ${containerHeight} overflow-hidden rounded-2xl flex-shrink-0 relative transition-all duration-300`}>
+          <div className="col-span-2 relative h-full cursor-pointer overflow-hidden group" onClick={() => openModal(0)}>
+            <img src={post.images[0]} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Principal" />
           </div>
-        )}
+          <div className="grid grid-rows-2 gap-2 h-full">
+            {post.images.slice(1, 3).map((img, idx) => (
+              <div key={idx} className="relative h-full cursor-pointer overflow-hidden group" onClick={() => openModal(idx + 1)}>
+                <img src={img} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt={`Imagem ${idx}`} />
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    if (imgCount === 4) {
+      return (
+        <div className={`flex flex-col gap-2 mb-4 ${containerHeight} overflow-hidden rounded-2xl flex-shrink-0 relative transition-all duration-300`}>
+          <div className="h-2/3 relative cursor-pointer overflow-hidden group" onClick={() => openModal(0)}>
+            <img src={post.images[0]} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Principal" />
+          </div>
+          <div className="h-1/3 grid grid-cols-3 gap-2">
+            {post.images.slice(1, 4).map((img, idx) => (
+              <div key={idx} className="relative h-full cursor-pointer overflow-hidden group" onClick={() => openModal(idx + 1)}>
+                <img src={img} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt={`Imagem ${idx}`} />
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    // 5 ou mais imagens
+    return (
+      <div className={`grid grid-cols-2 gap-2 mb-4 ${containerHeight} overflow-hidden rounded-2xl flex-shrink-0 relative transition-all duration-300`}>
+        <div className="relative h-full cursor-pointer overflow-hidden group" onClick={() => openModal(0)}>
+          <img src={post.images[0]} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="Principal" />
+        </div>
+        <div className="grid grid-cols-2 grid-rows-2 gap-2 h-full">
+          {post.images.slice(1, 5).map((img, idx) => (
+            <div key={idx} className="relative h-full cursor-pointer overflow-hidden group" onClick={() => openModal(idx + 1)}>
+              <img src={img} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt={`Imagem ${idx}`} />
+              {idx === 3 && imgCount > 5 && (
+                <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white text-[12px] font-black backdrop-blur-[2px]">
+                  +{imgCount - 5} imagens
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
     );
   };
@@ -166,8 +209,8 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
             <a href={post.attachmentFile.url} download className="p-1.5 text-slate-400 hover:text-[#006c55] transition-colors" onClick={(e) => e.stopPropagation()}><Download size={12} /></a>
           </div>
           <div className="flex items-center justify-between">
-            <div><h5 className="text-[12px] font-bold text-slate-900 truncate leading-tight">{post.attachmentFile.name}</h5><span className="text-[10px] text-[#006c55] font-black uppercase tracking-wider">{post.attachmentFile.size}</span></div>
-            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center border border-[#006c55]/10"><FileText size={14} className="text-[#006c55]" /></div>
+            <div className="min-w-0 flex-1"><h5 className="text-[12px] font-bold text-slate-900 truncate leading-tight">{post.attachmentFile.name}</h5><span className="text-[10px] text-[#006c55] font-black uppercase tracking-wider">{post.attachmentFile.size}</span></div>
+            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center border border-[#006c55]/10 flex-shrink-0 ml-2"><FileText size={14} className="text-[#006c55]" /></div>
           </div>
         </div>
       </div>
@@ -176,33 +219,30 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
 
   return (
     <>
-      <div className="flex-shrink-0 w-full sm:w-[340px] h-[500px] flex flex-col bg-gradient-to-br from-white via-white to-white/95 dark:from-slate-800 dark:via-slate-900 dark:to-slate-900 rounded-3xl p-6 shadow-lg border border-white/60 dark:border-white/5 snap-center hover:shadow-2xl transition-all duration-500 relative overflow-hidden group">
+      <div className="flex-shrink-0 w-[350px] h-[500px] flex flex-col bg-gradient-to-br from-white via-white to-white/95 dark:from-slate-800 dark:via-slate-900 dark:to-slate-900 rounded-3xl p-6 shadow-lg border border-white/60 dark:border-white/5 snap-center hover:shadow-2xl transition-all duration-500 relative overflow-hidden group">
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-[#006c55] to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
         <div className="flex items-start justify-between mb-4 flex-shrink-0 relative">
-          <div className="flex items-start gap-3 overflow-hidden flex-1">
-            <div className="relative">
-              <img src={post.author.avatar} className="w-12 h-12 rounded-2xl object-cover border-2 border-white dark:border-slate-700 shadow-lg flex-shrink-0" alt={post.author.name} />
+          <div className="flex items-start gap-3 overflow-hidden flex-1 min-w-0">
+            <div className="relative flex-shrink-0">
+              <img src={post.author.avatar} className="w-12 h-12 rounded-2xl object-cover border-2 border-white dark:border-slate-700 shadow-lg" alt={post.author.name} />
               {post.author.verified && <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-gradient-to-r from-[#006c55] to-[#00876a] rounded-full flex items-center justify-center border-2 border-white dark:border-slate-800"><CheckCircle size={8} className="text-white" fill="white" /></div>}
             </div>
             <div className="flex flex-col min-w-0 flex-1">
-              <div className="flex items-center justify-between mb-1">
-                <div className="flex items-center gap-2">
-                  <h4 className="text-[14px] font-black text-slate-900 dark:text-white leading-tight truncate">{post.author.name}</h4>
-                  {post.author.verified && <span className="text-[8px] font-black text-[#006c55] dark:text-emerald-400 bg-[#006c55]/10 dark:bg-emerald-400/10 px-1.5 py-0.5 rounded-md uppercase tracking-tighter">Verificado</span>}
-                </div>
+              <div className="flex items-center gap-2 mb-0.5 min-w-0">
+                <h4 className="text-[14px] font-black text-slate-900 dark:text-white leading-tight truncate shrink-1">{post.author.name}</h4>
+                {post.author.verified && <span className="text-[8px] font-black text-[#006c55] dark:text-emerald-400 bg-[#006c55]/10 dark:bg-emerald-400/10 px-1.5 py-0.5 rounded-md uppercase tracking-tighter flex-shrink-0">V</span>}
               </div>
-              <div className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400 mb-2">
+              <div className="flex flex-col text-[11px] text-slate-500 dark:text-slate-400">
                 <span className="font-bold truncate">{post.author.username}</span>
-                <span className="text-slate-300 dark:text-slate-600">•</span>
-                <div className="flex items-center gap-1"><Clock size={10} /><span>{formatTimestamp(post.timestamp)}</span></div>
+                <div className="flex items-center gap-1 mt-0.5 opacity-70"><Clock size={10} /><span>{formatTimestamp(post.timestamp)}</span></div>
               </div>
             </div>
           </div>
           <div className="flex items-center gap-1 flex-shrink-0 ml-2" ref={menuRef}>
-            <button onClick={handleBookmark} className={`p-2 rounded-xl transition-all active:scale-90 ${isBookmarked ? 'text-[#006c55] dark:text-emerald-400 bg-gradient-to-br from-[#006c55]/10 to-[#006c55]/5 dark:from-emerald-400/10 dark:to-emerald-400/5' : 'text-slate-400 hover:text-[#006c55] dark:hover:text-emerald-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`} title={isBookmarked ? "Remover" : "Salvar"}><Bookmark size={16} strokeWidth={isBookmarked ? 2.5 : 2} fill={isBookmarked ? "currentColor" : "none"} /></button>
-            <button onClick={() => setIsMenuOpen(!isMenuOpen)} className={`p-2 rounded-xl transition-all active:scale-90 ${isMenuOpen ? 'text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'}`} title="Opções"><MoreVertical size={16} /></button>
+            <button onClick={handleBookmark} className={`p-2 rounded-xl transition-all active:scale-95 ${isBookmarked ? 'text-[#006c55] dark:text-emerald-400 bg-gradient-to-br from-[#006c55]/10 to-[#006c55]/5 dark:from-emerald-400/10 dark:to-emerald-400/5' : 'text-slate-400 hover:text-[#006c55] dark:hover:text-emerald-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`} title={isBookmarked ? "Remover" : "Salvar"}><Bookmark size={16} strokeWidth={isBookmarked ? 2.5 : 2} fill={isBookmarked ? "currentColor" : "none"} /></button>
+            <button onClick={() => setIsMenuOpen(!isMenuOpen)} className={`p-2 rounded-xl transition-all active:scale-95 ${isMenuOpen ? 'text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'}`} title="Opções"><MoreVertical size={16} /></button>
             {isMenuOpen && <div className="absolute right-0 top-10 w-56 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-2xl shadow-2xl z-50 py-2 animate-in fade-in slide-in-from-top-2 duration-200">
-              <button className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors"><Share2 size={14} />Compartilhar</button>
+              <button className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors"><Repeat2 size={14} />Repostar</button>
               <button className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors"><Link size={14} />Copiar link</button>
               <button className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors"><BarChart2 size={14} />Estatísticas</button>
               <div className="h-px bg-slate-100 dark:bg-slate-800 my-2 mx-4"></div>
@@ -226,8 +266,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
           <div className="flex items-center justify-between pt-4 border-t border-slate-100/80 dark:border-white/5 flex-shrink-0">
             <div className="flex items-center gap-4">
               <button onClick={handleLike} className={`flex items-center gap-1.5 transition-all active:scale-95 ${isLiked ? 'text-red-500' : 'text-slate-400 hover:text-red-500'}`}><Heart size={16} strokeWidth={2.5} fill={isLiked ? "currentColor" : "none"} /><span className="text-[11px] font-bold">{likeCount}</span></button>
-              <button className="flex items-center gap-1.5 text-slate-400 hover:text-blue-500 transition-colors active:scale-95"><MessageCircle size={16} strokeWidth={2.5} /><span className="text-[11px] font-bold">{commentCount}</span></button>
-              <button className="flex items-center gap-1.5 text-slate-400 hover:text-emerald-500 transition-colors active:scale-95"><Share2 size={16} strokeWidth={2.5} /><span className="text-[11px] font-bold">{shareCount}</span></button>
+              <button className="flex items-center gap-1.5 text-slate-400 hover:text-[#006c55] transition-colors active:scale-95"><Repeat2 size={16} strokeWidth={2.5} /><span className="text-[11px] font-bold">{shareCount}</span></button>
             </div>
             <div className="flex items-center gap-2"><div className="flex items-center gap-1 text-[10px] font-bold text-slate-400"><BarChart2 size={12} /><span>{Math.floor(Math.random() * 1000)} views</span></div></div>
           </div>

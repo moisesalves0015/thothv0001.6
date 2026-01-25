@@ -106,7 +106,7 @@ const SidebarFeed: React.FC<SidebarConfig> = ({ title = "Feed do Conhecimento", 
   return (
     <div className="relative h-full min-h-[550px] flex flex-col glass-panel rounded-2xl overflow-hidden shadow-2xl">
       {/* Header Section */}
-      <div className="flex flex-col px-6 pt-6 mb-4 flex-shrink-0 z-10">
+      <div className="flex flex-col px-6 pt-6 flex-shrink-0 z-10">
         <div className="flex items-center justify-between">
           <div className="flex flex-col">
             <h2 className="text-lg font-black text-slate-900 dark:text-white tracking-tight leading-none">{title}</h2>

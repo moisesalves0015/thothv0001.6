@@ -313,10 +313,10 @@ const RemindersBox: React.FC = () => {
                 key={reminder.id}
                 onClick={() => setSelectedReminder(reminder)}
                 className={`group relative flex flex-col p-4 rounded-2xl border transition-all duration-300 cursor-pointer animate-in slide-in-from-bottom-2 ${reminder.completed
-                    ? 'bg-slate-50/50 border-slate-100 opacity-60'
-                    : reminder.isStarred
-                      ? 'bg-gradient-to-br from-white to-white/95 border-amber-200 shadow-lg shadow-amber-500/5'
-                      : 'bg-gradient-to-br from-white/95 to-white/80 border-white hover:border-[#006c55]/20 hover:shadow-lg'
+                  ? 'bg-slate-50/50 border-slate-100 opacity-60'
+                  : reminder.isStarred
+                    ? 'bg-gradient-to-br from-white to-white/95 border-amber-200 shadow-lg shadow-amber-500/5'
+                    : 'bg-gradient-to-br from-white/95 to-white/80 border-white hover:border-[#006c55]/20 hover:shadow-lg'
                   }`}
               >
                 {/* Type Badge */}
@@ -571,7 +571,7 @@ const RemindersBox: React.FC = () => {
       {/* Modal: Agenda */}
       {isAgendaOpen && (
         <div className="absolute inset-0 z-[80] bg-gradient-to-br from-white to-white/95 p-6 flex flex-col animate-in slide-in-from-bottom duration-500">
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex justify-between items-center">
             <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">Agenda</h3>
             <button onClick={() => setIsAgendaOpen(false)} className="p-2 text-slate-400 hover:text-slate-900 transition-colors">
               <X size={24} />

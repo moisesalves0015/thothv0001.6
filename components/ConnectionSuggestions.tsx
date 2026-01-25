@@ -164,8 +164,8 @@ const ConnectionSuggestions: React.FC = () => {
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-[#006c55] to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
       {/* Header */}
-      <div className="flex flex-col px-6 pt-6 mb-4 flex-shrink-0">
-        <div className="flex items-center justify-between mb-3">
+      <div className="flex flex-col px-6 pt-6 flex-shrink-0">
+        <div className="flex items-center justify-between">
           <div className="flex flex-col">
             <div className="flex items-center gap-3">
 
