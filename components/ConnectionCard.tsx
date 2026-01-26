@@ -3,6 +3,7 @@ import confetti from 'canvas-confetti';
 import { Author } from '../types';
 import { User, Layers, Plus, Check, Loader2, Clock, MessageCircle, X, UserCheck, UserX, MoreVertical, BookOpen, MapPin, GraduationCap, Shield, Star } from 'lucide-react';
 import { ConnectionService } from '../modules/connection/connection.service';
+import { NotificationService } from '../modules/notification/notification.service';
 
 interface ConnectionCardProps {
   author: Author;
@@ -50,6 +51,22 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
     }
   }, [currentUid, author.id, initialStatus]);
 
+  // Helper para marcar notificação relacionada como concluída
+  const markRelatedNotificationAsDone = async (userId: string, fromUserId: string) => {
+    try {
+      const notifs = await NotificationService.getNotifications(userId);
+      const relatedNotif = notifs.find(
+        n => n.type === 'connection' && n.metadata?.fromUserId === fromUserId && !n.isRead
+      );
+
+      if (relatedNotif?.id) {
+        await NotificationService.markActionDone(relatedNotif.id);
+      }
+    } catch (error) {
+      console.error('Error marking notification:', error);
+    }
+  };
+
   const handleAction = async (action: 'connect' | 'accept' | 'reject' | 'remove' | 'cancel') => {
     if (!currentUid || !currentUserData || loading) return;
 
@@ -64,11 +81,15 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
           await ConnectionService.acceptConnectionRequest(currentUid, author.id);
           setStatus('accepted');
           celebrate();
+          // Marca notificação relacionada como concluída
+          await markRelatedNotificationAsDone(currentUid, author.id);
           break;
         case 'reject':
           await ConnectionService.removeConnection(currentUid, author.id, false);
           setStatus('none');
           setShowRejectConfirm(false);
+          // Marca notificação relacionada como concluída
+          await markRelatedNotificationAsDone(currentUid, author.id);
           break;
         case 'remove':
           await ConnectionService.removeConnection(currentUid, author.id, true);

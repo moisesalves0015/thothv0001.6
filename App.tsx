@@ -12,6 +12,7 @@ import InstallPWA from './components/InstallPWA';
 import { WifiOff, Wifi, RefreshCcw } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
 import { usePullToRefresh } from './hooks/usePullToRefresh';
+import { PushNotificationService } from './modules/notification/push.service';
 
 // Pages - Lazy loading para otimização mobile
 const Landing = lazy(() => import('./pages/Landing/Landing'));
@@ -84,6 +85,40 @@ const MainLayout: React.FC = () => {
 
 const AppRoutes: React.FC = () => {
   const { user, loading } = useAuth();
+
+  // Inicializa Push Notifications quando usuário faz login
+  useEffect(() => {
+    if (user && PushNotificationService.isSupported()) {
+      // Solicita permissão e registra token
+      PushNotificationService.requestPermissionAndGetToken(user.uid)
+        .then(token => {
+          if (token) {
+            console.log('Push notifications enabled');
+          }
+        })
+        .catch(error => {
+          console.error('Error enabling push notifications:', error);
+        });
+
+      // Escuta mensagens em foreground
+      const unsubscribe = PushNotificationService.onForegroundMessage((payload) => {
+        // Mostra toast quando recebe notificação com app aberto
+        toast.info(payload.notification?.title || 'Nova Notificação', {
+          description: payload.notification?.body,
+          action: payload.data?.type === 'connection' ? {
+            label: 'Ver',
+            onClick: () => window.location.href = '/notificacoes'
+          } : undefined
+        });
+      });
+
+      return () => {
+        if (typeof unsubscribe === 'function') {
+          unsubscribe();
+        }
+      };
+    }
+  }, [user]);
 
   if (loading) return <AppLoadingPage />;
 

@@ -69,6 +69,17 @@ export class NotificationService {
     }
 
     /**
+     * Marca notificação como ação concluída (já visto)
+     */
+    static async markActionDone(notificationId: string): Promise<void> {
+        const ref = doc(db, "notifications", notificationId);
+        await updateDoc(ref, {
+            isRead: true,
+            actionDone: true
+        });
+    }
+
+    /**
      * Remove uma notificação
      */
     static async deleteNotification(userId: string, notificationId: string): Promise<void> {

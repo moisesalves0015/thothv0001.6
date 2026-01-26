@@ -61,10 +61,10 @@ const Notificacoes: React.FC = () => {
         await ConnectionService.removeConnection(user.uid, notif.metadata.fromUserId, false);
       }
 
-      // Mark as read and done
-      await NotificationService.markAsRead(user.uid, notif.id);
-      // Auto-delete connection request notifs? Or just mark as read. 
-      // Let's mark as read for history.
+      // Marca como lida E ação concluída
+      if (notif.id) {
+        await NotificationService.markActionDone(notif.id);
+      }
     } catch (e) {
       console.error("Error handling connection request:", e);
     } finally {
