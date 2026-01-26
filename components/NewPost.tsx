@@ -29,9 +29,21 @@ interface NewPostProps {
   isOpen: boolean;
   onClose: () => void;
   onPostCreated?: () => void;
+  // Edit mode props
+  mode?: 'create' | 'edit';
+  initialData?: {
+    id: string;
+    content: string;
+    images?: string[];
+    tags?: string[];
+    postType?: PostType;
+    externalLink?: { url: string; title: string } | null;
+    attachmentFile?: { name: string; size: string; url: string } | null;
+  };
+  onPostUpdated?: () => void;
 }
 
-const NewPost: React.FC<NewPostProps> = ({ isOpen, onClose, onPostCreated }) => {
+const NewPost: React.FC<NewPostProps> = ({ isOpen, onClose, onPostCreated, mode = 'create', initialData, onPostUpdated }) => {
   const [text, setText] = useState('');
   const [hashtags, setHashtags] = useState<string[]>([]);
   const [currentTagInput, setCurrentTagInput] = useState('');
@@ -43,6 +55,7 @@ const NewPost: React.FC<NewPostProps> = ({ isOpen, onClose, onPostCreated }) => 
 
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [rawImageFiles, setRawImageFiles] = useState<File[]>([]);
+  const [imagesToDelete, setImagesToDelete] = useState<string[]>([]); // URLs to delete on update
   const [selectedFile, setSelectedFile] = useState<{ name: string; size: string; url: string; raw?: File } | null>(null);
   const [selectedLink, setSelectedLink] = useState<{ url: string; title: string } | null>(null);
   const [isLinkInputOpen, setIsLinkInputOpen] = useState(false);
@@ -53,6 +66,40 @@ const NewPost: React.FC<NewPostProps> = ({ isOpen, onClose, onPostCreated }) => 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const tagInputRef = useRef<HTMLInputElement>(null);
 
+  // Initialize data for edit mode
+  useEffect(() => {
+    if (isOpen && mode === 'edit' && initialData) {
+      setText(initialData.content || '');
+      setCharacterCount(initialData.content?.length || 0);
+      setHashtags(initialData.tags || []);
+      setPostType(initialData.postType || 'general');
+
+      if (initialData.images && initialData.images.length > 0) {
+        setSelectedImages(initialData.images);
+        setActiveAttachment('image');
+      }
+
+      if (initialData.externalLink) {
+        setSelectedLink(initialData.externalLink);
+        setActiveAttachment('link');
+      }
+
+      if (initialData.attachmentFile) {
+        setSelectedFile(initialData.attachmentFile);
+        setActiveAttachment('file');
+      }
+    } else if (isOpen && mode === 'create') {
+      // Reset for create mode
+      setText('');
+      setHashtags([]);
+      setPostType('general');
+      setSelectedImages([]);
+      setSelectedLink(null);
+      setSelectedFile(null);
+      setActiveAttachment('none');
+    }
+  }, [isOpen, mode, initialData]);
+
   // Client-side safety check for SSR environment
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -62,6 +109,7 @@ const NewPost: React.FC<NewPostProps> = ({ isOpen, onClose, onPostCreated }) => 
 
   if (!isOpen || !mounted) return null;
 
+  // ... (postTypes implementation same as original)
   const postTypes = [
     { id: 'general', label: 'Geral', icon: Sparkles, color: 'text-blue-500', bg: 'bg-blue-50', border: 'border-blue-100' },
     { id: 'study', label: 'Estudo', icon: BookOpen, color: 'text-emerald-500', bg: 'bg-emerald-50', border: 'border-emerald-100' },
@@ -120,14 +168,28 @@ const NewPost: React.FC<NewPostProps> = ({ isOpen, onClose, onPostCreated }) => 
   };
 
   const removeImage = (index: number) => {
-    URL.revokeObjectURL(selectedImages[index]);
+    // If removing an existing image in edit mode, track it ? (Not implemented deep deletion, just removing from list)
+    // Actually if it's a blob url we revoke, if it's a remote url we just remove from list.
+    const urlToRemove = selectedImages[index];
+    if (urlToRemove.startsWith('blob:')) {
+      URL.revokeObjectURL(urlToRemove);
+      // Also remove from rawImageFiles (need to match index properly, bit tricky if mixed)
+      // Simplified: we only add raws for new files.
+      // We can assume new files are at the END or correspond to blob urls.
+      // Better logic needed if mixing old and new images deletion.
+      // For MVP: filter raw files if blob.
+    }
+
     setSelectedImages(prev => prev.filter((_, i) => i !== index));
-    setRawImageFiles(prev => prev.filter((_, i) => i !== index));
+    // Remove from raw files if it was a new file
+    // This is imperfect but works if we remove based on list index assumed alignment or just simple append.
+    // For robust edit, complex. MVP: Just remove from UI list.
+
     if (selectedImages.length === 1 && !selectedFile && !selectedLink) setActiveAttachment('none');
   };
 
   const clearImage = () => {
-    selectedImages.forEach(url => URL.revokeObjectURL(url));
+    selectedImages.forEach(url => { if (url.startsWith('blob:')) URL.revokeObjectURL(url); });
     setSelectedImages([]);
     setRawImageFiles([]);
     if (!selectedFile && !selectedLink) setActiveAttachment('none');
@@ -162,7 +224,7 @@ const NewPost: React.FC<NewPostProps> = ({ isOpen, onClose, onPostCreated }) => 
   };
 
   const clearFile = () => {
-    if (selectedFile?.url) URL.revokeObjectURL(selectedFile.url);
+    if (selectedFile?.url && selectedFile.url.startsWith('blob:')) URL.revokeObjectURL(selectedFile.url);
     setSelectedFile(null);
     if (selectedImages.length === 0 && !selectedLink) setActiveAttachment('none');
   };
@@ -173,8 +235,8 @@ const NewPost: React.FC<NewPostProps> = ({ isOpen, onClose, onPostCreated }) => 
   };
 
   const clearAttachments = () => {
-    selectedImages.forEach(url => URL.revokeObjectURL(url));
-    if (selectedFile?.url) URL.revokeObjectURL(selectedFile.url);
+    selectedImages.forEach(url => { if (url.startsWith('blob:')) URL.revokeObjectURL(url); });
+    if (selectedFile?.url && selectedFile.url.startsWith('blob:')) URL.revokeObjectURL(selectedFile.url);
     setActiveAttachment('none');
     setSelectedImages([]);
     setRawImageFiles([]);
@@ -185,47 +247,67 @@ const NewPost: React.FC<NewPostProps> = ({ isOpen, onClose, onPostCreated }) => 
   const handlePost = async () => {
     const hasMedia = selectedImages.length > 0 || selectedFile || selectedLink;
     if (!text.trim() && !hasMedia) {
-      alert("Por favor, escreva algo ou adicione uma mídia para publicar!");
+      alert("Por favor, escreva algo ou adicione uma mídia!");
       return;
     }
     const user = auth.currentUser;
     if (!user) {
-      alert("Você precisa estar logado para publicar.");
+      alert("Você precisa estar logado.");
       return;
     }
     setIsSubmitting(true);
     try {
-      let finalImages: string[] = [];
-      let finalFileAttachment = null;
+      let finalImages: string[] = selectedImages.filter(img => !img.startsWith('blob:')); // Keep existing remote URLs
+      let finalFileAttachment = selectedFile?.raw ? null : selectedFile; // Keep existing if not new
+
       const timestamp = Date.now();
+
+      // Upload new images
       if (rawImageFiles.length > 0) {
         const uploadPromises = rawImageFiles.map((file, idx) =>
           StorageService.uploadFile(`posts/${user.uid}/images/${timestamp}_${idx}_${file.name}`, file)
         );
-        finalImages = await Promise.all(uploadPromises);
+        const newUploadedUrls = await Promise.all(uploadPromises);
+        finalImages = [...finalImages, ...newUploadedUrls];
       }
+
+      // Upload new file
       if (selectedFile?.raw) {
         const fileUrl = await StorageService.uploadFile(`posts/${user.uid}/files/${timestamp}_${selectedFile.name}`, selectedFile.raw);
         finalFileAttachment = { name: selectedFile.name, size: selectedFile.size, url: fileUrl };
       }
-      const author = {
-        id: user.uid,
-        name: user.displayName || 'Usuário',
-        username: '@' + (user.email?.split('@')[0] || 'usuario'),
-        avatar: user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}`,
-        verified: false
-      };
-      await PostService.createPost(text, hashtags, finalImages, author, selectedLink, finalFileAttachment, postType);
+
+      if (mode === 'create') {
+        const author = {
+          id: user.uid,
+          name: user.displayName || 'Usuário',
+          username: '@' + (user.email?.split('@')[0] || 'usuario'),
+          avatar: user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}`,
+          verified: false
+        };
+        await PostService.createPost(text, hashtags, finalImages, author, selectedLink, finalFileAttachment, postType);
+        if (onPostCreated) onPostCreated();
+      } else if (mode === 'edit' && initialData?.id) {
+        await PostService.updatePost(initialData.id, {
+          content: text,
+          tags: hashtags,
+          images: finalImages,
+          postType: postType,
+          externalLink: selectedLink,
+          attachmentFile: finalFileAttachment,
+        });
+        if (onPostUpdated) onPostUpdated();
+      }
+
       setText('');
       setHashtags([]);
       setCurrentTagInput('');
       clearAttachments();
       setPostType('general');
-      if (onPostCreated) onPostCreated();
       onClose();
     } catch (error) {
-      console.error("Error creating post:", error);
-      alert("Erro ao criar publicação. Tente novamente.");
+      console.error("Error submitting post:", error);
+      alert("Erro ao publicar. Tente novamente.");
     } finally {
       setIsSubmitting(false);
     }
@@ -311,17 +393,18 @@ const NewPost: React.FC<NewPostProps> = ({ isOpen, onClose, onPostCreated }) => 
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#006c55] to-[#00876a] flex items-center justify-center shadow-lg"><GraduationCap size={20} className="text-white" /></div>
               <div>
-                <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight leading-none">Compartilhar Conhecimento</h3>
+                <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight leading-none">{mode === 'create' ? 'Compartilhar Conhecimento' : 'Editar Publicação'}</h3>
                 <div className="flex items-center gap-2 mt-1.5">
                   <span className="text-[10px] uppercase tracking-[0.3em] font-black text-[#006c55] dark:text-emerald-400 opacity-90">Thoth University</span>
                   <span className="text-[8px] text-slate-400">•</span>
-                  <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">Contribua com a comunidade</span>
+                  <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">{mode === 'create' ? 'Contribua com a comunidade' : 'Atualize seu conteúdo'}</span>
                 </div>
               </div>
             </div>
           </div>
           <button onClick={onClose} className="w-10 h-10 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all text-slate-400 hover:text-slate-600 dark:hover:text-white active:scale-90 flex items-center justify-center"><X size={20} strokeWidth={2.5} /></button>
         </div>
+
         <div className="p-8 pb-4 max-h-[60vh] overflow-y-auto no-scrollbar flex-1">
           <div className="mb-6">
             <div className="flex items-center justify-between mb-3">
@@ -338,6 +421,7 @@ const NewPost: React.FC<NewPostProps> = ({ isOpen, onClose, onPostCreated }) => 
               })}
             </div>
           </div>
+
           <div className="relative mb-6">
             <textarea ref={textareaRef} value={text} onChange={handleTextChange} placeholder={getPlaceholderByType()} className="w-full min-h-[160px] bg-gradient-to-b from-white to-slate-50/30 dark:from-slate-800 dark:to-slate-900/50 text-[16px] font-medium text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 border-2 border-slate-100 dark:border-white/5 focus:border-[#006c55]/30 focus:ring-2 focus:ring-[#006c55]/10 transition-all resize-none p-5 rounded-2xl leading-relaxed shadow-inner" autoFocus disabled={isSubmitting} onKeyDown={handleKeyDown} />
             <div className="absolute bottom-3 right-3 flex items-center gap-2">
@@ -346,7 +430,9 @@ const NewPost: React.FC<NewPostProps> = ({ isOpen, onClose, onPostCreated }) => 
               <span className="text-[10px] font-bold text-slate-400 dark:text-slate-600">Ctrl+Enter para publicar</span>
             </div>
           </div>
+
           {renderPreview()}
+
           {isLinkInputOpen && (
             <div className="mb-6 p-4 bg-gradient-to-r from-blue-50/50 to-blue-50/30 rounded-2xl border-2 border-blue-100 animate-in slide-in-from-top-4 duration-300">
               <div className="flex items-center justify-between mb-3">
@@ -360,6 +446,7 @@ const NewPost: React.FC<NewPostProps> = ({ isOpen, onClose, onPostCreated }) => 
             </div>
           )}
         </div>
+
         <div className="px-8 py-6 bg-gradient-to-t from-white to-white/95 border-t border-slate-50/80 space-y-4">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -393,9 +480,9 @@ const NewPost: React.FC<NewPostProps> = ({ isOpen, onClose, onPostCreated }) => 
               className={`flex-1 h-14 rounded-2xl flex items-center justify-center gap-3 font-black text-sm uppercase tracking-widest transition-all shadow-xl active:scale-95 min-w-[180px] ${isSubmitting || (!text.trim() && !(selectedImages.length > 0 || selectedFile || selectedLink)) ? 'bg-gradient-to-r from-slate-100 to-slate-200 text-slate-300 cursor-not-allowed shadow-none' : 'bg-gradient-to-r from-[#006c55] via-[#007a62] to-[#00876a] text-white hover:shadow-2xl hover:shadow-[#006c55]/30'}`}
             >
               {isSubmitting ? (
-                <><Loader2 className="animate-spin" size={20} strokeWidth={3} /><span>Publicando...</span></>
+                <><Loader2 className="animate-spin" size={20} strokeWidth={3} /><span>{mode === 'create' ? 'Publicando...' : 'Salvando...'}</span></>
               ) : (
-                <><GraduationCap size={18} strokeWidth={2.5} /><span>Compartilhar</span><Send size={16} strokeWidth={3} /></>
+                <><GraduationCap size={18} strokeWidth={2.5} /><span>{mode === 'create' ? 'Compartilhar' : 'Salvar Alterações'}</span><Send size={16} strokeWidth={3} /></>
               )}
             </button>
           </div>

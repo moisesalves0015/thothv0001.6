@@ -166,4 +166,20 @@ export class UserService {
         const snap = await getDoc(userRef);
         return snap.exists() ? snap.data() : null;
     }
+
+    /**
+     * Busca o perfil completo de um usuário pelo Username.
+     * Primeiro resolve o username para UID usando a coleção de índice 'usernames',
+     * depois busca o perfil completo.
+     */
+    static async getUserByUsername(username: string) {
+        const usernameLower = username.trim().toLowerCase();
+        const usernameRef = doc(db, "usernames", usernameLower);
+        const usernameSnap = await getDoc(usernameRef);
+
+        if (!usernameSnap.exists()) return null;
+
+        const uid = usernameSnap.data().uid;
+        return this.getUserProfile(uid);
+    }
 }

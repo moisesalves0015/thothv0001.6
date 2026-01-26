@@ -90,18 +90,44 @@ export const PostService = {
      * Deletes a post and all its reposts (cascade deletion)
      */
     async deletePost(postId: string): Promise<void> {
-        // 1. Delete the post itself
         const postRef = doc(db, POSTS_COLLECTION, postId);
-        await deleteDoc(postRef);
 
-        // 2. Cascade delete: find and delete all reposts
-        const q = query(
-            collection(db, POSTS_COLLECTION),
-            where('originalPostId', '==', postId)
-        );
-        const snap = await getDocs(q);
-        const batchDeletion = snap.docs.map(doc => deleteDoc(doc.ref));
-        await Promise.all(batchDeletion);
+        try {
+            // 1. Get post data to check relationships
+            const postSnap = await getDoc(postRef);
+            if (!postSnap.exists()) return;
+            const postData = postSnap.data();
+
+            // 2. If it's a repost, remove from original post's repostedBy list
+            if (postData.originalPostId) {
+                const originalRef = doc(db, POSTS_COLLECTION, postData.originalPostId);
+                const originalSnap = await getDoc(originalRef);
+
+                if (originalSnap.exists()) {
+                    const originalData = originalSnap.data();
+                    // Remove user from repostedBy array
+                    const newRepostedBy = (originalData.repostedBy || []).filter((u: any) => u.uid !== postData.author.id);
+                    await updateDoc(originalRef, { repostedBy: newRepostedBy });
+                }
+            }
+
+            // 3. Delete the post itself
+            await deleteDoc(postRef);
+
+            // 4. Cascade delete: if it's an original post, delete all its reposts
+            if (!postData.originalPostId) {
+                const q = query(
+                    collection(db, POSTS_COLLECTION),
+                    where('originalPostId', '==', postId)
+                );
+                const snap = await getDocs(q);
+                const batchDeletion = snap.docs.map(doc => deleteDoc(doc.ref));
+                await Promise.all(batchDeletion);
+            }
+        } catch (error) {
+            console.error("Error deleting post:", error);
+            throw error;
+        }
     },
 
     /**
@@ -121,6 +147,11 @@ export const PostService = {
                 externalLink: post.externalLink || null,
                 attachmentFile: post.attachmentFile || null,
                 tags: post.tags || [],
+                // Campos essenciais para Repost
+                originalPostId: post.originalPostId || null,
+                repostedBy: post.repostedBy || [],
+                originalAuthor: post.originalAuthor || null,
+                originalTimestamp: post.originalTimestamp || null,
                 bookmarkedAt: Timestamp.now()
             };
             await setDoc(bookmarkRef, bookmarkData);
@@ -172,6 +203,7 @@ export const PostService = {
                 verified: false,
             },
             originalAuthor: rootAuthor,
+            originalTimestamp: (originalPost as any).originalTimestamp || originalPost.timestamp,
             likes: 0,
             likedBy: [],
             replies: 0,
@@ -225,6 +257,8 @@ export const PostService = {
                     likedBy: data.likedBy || [],
                     repostedBy: data.repostedBy || [],
                     originalPostId: data.originalPostId || null,
+                    originalAuthor: data.originalAuthor || null, // Incluído para exibir autor correto em reposts
+                    originalTimestamp: data.originalTimestamp || null, // Incluído para exibir data correta em reposts
                     replies: data.replies || 0,
                     images: data.images || [],
                     tags: data.tags || [],

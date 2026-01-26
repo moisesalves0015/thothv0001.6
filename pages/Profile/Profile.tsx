@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useParams } from 'react-router-dom';
 import {
   User,
   Users,
@@ -116,10 +117,14 @@ const ProfileBadgeMural: React.FC = () => {
 
 const Profile: React.FC = () => {
   const { user, userProfile } = useAuth();
+  const { username } = useParams<{ username?: string }>(); // Pega username da URL se existir
+
   const [activeTab, setActiveTab] = useState('timeline');
-  const [isOwner, setIsOwner] = useState(true);
+  const [isOwner, setIsOwner] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [profileNotFound, setProfileNotFound] = useState(false);
+
   const [posts, setPosts] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
   const [profileData, setProfileData] = useState<any>({
@@ -141,57 +146,99 @@ const Profile: React.FC = () => {
     }
   });
 
+  // Efeito principal para carregar dados do perfil
   useEffect(() => {
-    if (!user) return;
+    let unsubscribeUser: (() => void) | undefined;
+    let unsubscribePosts: (() => void) | undefined;
+    let unsubscribeProjects: (() => void) | undefined;
 
-    const profileUid = user.uid;
-    setIsOwner(true); // Temporário, até termos rotas com UID
+    const loadProfile = async () => {
+      setLoading(true);
+      setProfileNotFound(false);
+      let targetUid = '';
 
-    const userRef = doc(db, 'users', profileUid);
-    const unsubscribe = onSnapshot(userRef, (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        setProfileData({
-          ...data,
-          skills: data.skills || [],
-          interests: data.interests || [],
-          trajectory: data.trajectory || [],
-          certifications: data.certifications || [],
-          stats: {
-            connections: data.stats?.connections || 0,
-            projects: data.stats?.projects || 0,
-            posts: data.stats?.posts || 0,
-            badges: data.stats?.badges || 12
+      try {
+        // 1. Determinar qual UID carregar
+        if (username) {
+          // Se tem username na URL, busca o UID correspondente
+          const profile = await UserService.getUserByUsername(username);
+          if (!profile) {
+            setProfileNotFound(true);
+            setLoading(false);
+            return;
           }
+          targetUid = profile.uid;
+        } else if (user) {
+          // Se não tem username na URL (rota /perfil), usa o logado
+          targetUid = user.uid;
+        } else {
+          // Sem user logado e sem param na URL (não deveria acontecer por causa do ProtectedRoute, mas por segurança)
+          setLoading(false);
+          return;
+        }
+
+        // 2. Definir se é dono do perfil
+        setIsOwner(user?.uid === targetUid);
+
+        // 3. Carregar dados em tempo real (Snapshot)
+        const userRef = doc(db, 'users', targetUid);
+        unsubscribeUser = onSnapshot(userRef, (docSnap) => {
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            setProfileData({
+              ...data,
+              skills: data.skills || [],
+              interests: data.interests || [],
+              trajectory: data.trajectory || [],
+              certifications: data.certifications || [],
+              stats: {
+                connections: data.stats?.connections || 0,
+                projects: data.stats?.projects || 0,
+                posts: data.stats?.posts || 0,
+                badges: data.stats?.badges || 12
+              }
+            });
+          } else {
+            // Caso documento seja deletado enquanto visualiza
+            setProfileNotFound(true);
+          }
+          setLoading(false);
         });
+
+        // 4. Carregar Posts e Projetos
+        const postsQuery = query(
+          collection(db, 'posts'),
+          where('author.id', '==', targetUid),
+          orderBy('createdAt', 'desc')
+        );
+        unsubscribePosts = onSnapshot(postsQuery, (snap) => {
+          setPosts(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        });
+
+        const projectsQuery = query(
+          collection(db, 'projects'),
+          where('ownerId', '==', targetUid),
+          orderBy('createdAt', 'desc')
+        );
+        unsubscribeProjects = onSnapshot(projectsQuery, (snap) => {
+          setProjects(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        });
+
+      } catch (error) {
+        console.error("Erro ao carregar perfil:", error);
+        setProfileNotFound(true);
+        setLoading(false);
       }
-      setLoading(false);
-    });
+    };
 
-    const postsQuery = query(
-      collection(db, 'posts'),
-      where('author.id', '==', profileUid),
-      orderBy('createdAt', 'desc')
-    );
-    const unsubPosts = onSnapshot(postsQuery, (snap) => {
-      setPosts(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    });
-
-    const projectsQuery = query(
-      collection(db, 'projects'),
-      where('ownerId', '==', profileUid),
-      orderBy('createdAt', 'desc')
-    );
-    const unsubProjects = onSnapshot(projectsQuery, (snap) => {
-      setProjects(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    });
+    loadProfile();
 
     return () => {
-      unsubscribe();
-      unsubPosts();
-      unsubProjects();
+      if (unsubscribeUser) unsubscribeUser();
+      if (unsubscribePosts) unsubscribePosts();
+      if (unsubscribeProjects) unsubscribeProjects();
     };
-  }, [user]);
+  }, [username, user]); // Recarrega se mudar URL ou usuário logado
 
   const userDisplayName = profileData.name || profileData.fullName || userProfile?.name || "Estudante Thoth";
   const userAvatar = profileData.photoURL || user?.photoURL || `https://api.dicebear.com/7.x/initials/svg?seed=${user?.uid || 'Thoth'}`;
@@ -233,11 +280,24 @@ const Profile: React.FC = () => {
     }
   };
 
+
+  if (profileNotFound) return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 animate-in fade-in">
+      <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center text-slate-400">
+        <User size={40} />
+      </div>
+      <div className="text-center">
+        <h3 className="text-lg font-black text-slate-900 uppercase tracking-tighter">Perfil não encontrado</h3>
+        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">O link pode estar quebrado ou o usuário não existe.</p>
+      </div>
+    </div>
+  );
+
   if (loading) return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 animate-pulse">
       <div className="w-20 h-20 bg-slate-100 rounded-full border-4 border-[#006c55]/20 border-t-[#006c55] animate-spin" />
       <div className="text-center">
-        <h3 className="text-lg font-black text-slate-900 uppercase tracking-tighter">Preparando seu Portfólio</h3>
+        <h3 className="text-lg font-black text-slate-900 uppercase tracking-tighter">Preparando Portfólio</h3>
         <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Sincronizando com a Rede Thoth</p>
       </div>
     </div>

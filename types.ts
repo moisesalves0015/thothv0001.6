@@ -48,6 +48,8 @@ export interface Post {
   likedBy?: string[]; // Array of UIDs
   repostedBy?: { uid: string; name: string }[];
   originalPostId?: string; // If it's a repost
+  originalAuthor?: Author; // Dados do autor original em caso de repost
+  originalTimestamp?: string; // Timestamp do post original em caso de repost
 }
 
 /**

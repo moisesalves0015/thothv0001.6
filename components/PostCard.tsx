@@ -1,6 +1,7 @@
 ﻿import React, { useState, useRef, useEffect } from 'react';
 import { Post } from '../types';
 import ImageModal from './ImageModal';
+import NewPost from './NewPost';
 import {
   BookOpen,
   GraduationCap,
@@ -9,9 +10,6 @@ import {
   Target,
   Bookmark,
   Repeat2,
-  Link,
-  FileText,
-  Download,
   Globe,
   Loader2,
   Trash2,
@@ -25,6 +23,8 @@ import {
   BarChart2,
   Heart,
   MoreVertical,
+  Download,
+  FileText,
   RefreshCw
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -37,9 +37,10 @@ interface PostCardProps {
   onBookmarkToggle?: (postId: string, bookmarked: boolean) => void;
   onLikeToggle?: (postId: string, liked: boolean) => void;
   onDelete?: (postId: string) => void;
+  onRepostSuccess?: () => void;
 }
 
-const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggle, onDelete }) => {
+const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggle, onDelete, onRepostSuccess }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isBookmarked, setIsBookmarked] = useState(false);
@@ -49,6 +50,10 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
   const [isDeleting, setIsDeleting] = useState(false);
   const [modalData, setModalData] = useState<{ images: string[], index: number } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  const [likeCount, setLikeCount] = useState(post.likes || 0);
+  const [shareCount, setShareCount] = useState(post.repostedBy?.length || 0);
+  const [isReposting, setIsReposting] = useState(false);
 
   // Sync state with post data
   useEffect(() => {
@@ -69,13 +74,6 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
     setLikeCount(post.likes || 0);
     setShareCount(post.repostedBy?.length || 0);
   }, [user, post.id, post.likedBy, post.likes, post.repostedBy]);
-
-  const [likeCount, setLikeCount] = useState(post.likes || 0);
-  const [shareCount, setShareCount] = useState(post.repostedBy?.length || 0);
-  const [isReposting, setIsReposting] = useState(false);
-
-  const charLimit = 280;
-  const isLongText = post.content.length > charLimit;
 
   const openModal = (idx: number) => {
     setModalData({ images: post.images, index: idx });
@@ -151,6 +149,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
       await PostService.repost(post, currentUser);
       setShareCount(prev => prev + 1);
       toast.success('Publicação repostada com sucesso!');
+      if (onRepostSuccess) onRepostSuccess();
     } catch (e) {
       console.error("Error reposting:", e);
       toast.error('Erro ao repostar publicação.');
@@ -160,20 +159,13 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
     }
   };
 
+  // State for edit modal
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
   const handleEdit = async () => {
     if (post.author.id !== user?.uid) return;
-    const newContent = window.prompt("Edite sua publicação:", post.content);
-    if (newContent !== null && newContent.trim() !== "" && newContent !== post.content) {
-      try {
-        await PostService.updatePost(post.id, { content: newContent });
-        post.content = newContent; // Atualização local simples
-        toast.success("Publicação atualizada!");
-        setIsMenuOpen(false);
-      } catch (e) {
-        console.error("Error updating post:", e);
-        toast.error("Erro ao atualizar publicação.");
-      }
-    }
+    setIsEditModalOpen(true);
+    setIsMenuOpen(false);
   };
 
   const handleDelete = async () => {
@@ -194,12 +186,40 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
     }
   };
 
-  const handleAction = (action: string) => {
-    console.log(`Action chosen: ${action}`);
+  const handleAction = async (action: string) => {
     setIsMenuOpen(false);
-    // Future implementation for Report, Hide, etc.
-    if (action === 'report') alert('Denúncia enviada com sucesso.');
-    if (action === 'hide') alert('Esta publicação não aparecerá mais para você.');
+
+    switch (action) {
+      case 'copy':
+        try {
+          const link = `${window.location.origin}/post/${post.id}`;
+          await navigator.clipboard.writeText(link);
+          toast.success('Link copiado para a área de transferência!');
+        } catch (err) {
+          toast.error('Erro ao copiar link.');
+        }
+        break;
+
+      case 'report':
+        toast.success('Denúncia recebida. Analisaremos o conteúdo em breve.');
+        break;
+
+      case 'hide':
+        toast.info('Esta publicação não será mais exibida para você.');
+        if (onDelete) onDelete(post.id);
+        break;
+
+      case 'edit':
+        handleEdit();
+        break;
+
+      case 'bookmark':
+        handleBookmark();
+        break;
+
+      default:
+        console.log(`Action ${action} not implemented`);
+    }
   };
 
   const formatTimestamp = (timestamp: string) => {
@@ -215,33 +235,35 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
     if (imgCount === 0) return null;
 
     const typeConfig = getPostTypeConfig(post.postType);
-    const hasText = post.content.trim().length > 0;
+    const containerHeight = 'h-full';
 
-    // Altura baseada no conteúdo e se é repost
-    const isRepost = !!post.originalPostId;
-    const containerHeight = isRepost ? 'h-auto max-h-[400px]' : (hasText ? 'h-[200px]' : 'h-[300px]');
+    const Wrapper = ({ children, onClick }: any) => (
+      <div className="relative w-full h-full cursor-pointer overflow-hidden group transition-all duration-300" onClick={onClick}>
+        {children}
+      </div>
+    );
 
     if (imgCount === 1) {
       return (
-        <div className={`relative w-full ${containerHeight} mb-4 cursor-pointer overflow-hidden rounded-2xl border-2 border-slate-100 flex-shrink-0 shadow-lg bg-gradient-to-br from-white to-slate-50 group transition-all duration-300`} onClick={() => openModal(0)}>
+        <Wrapper onClick={() => openModal(0)}>
           <img src={post.images[0]} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" alt="Publicação" />
           <div className="absolute top-3 left-3">
-            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg ${typeConfig.bg} ${typeConfig.border} border backdrop-blur-sm`}>
+            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg ${typeConfig.bg} ${typeConfig.border} border backdrop-blur-sm shadow-sm`}>
               {React.createElement(typeConfig.icon, { size: 12, className: typeConfig.color })}
               <span className={`text-[9px] font-black uppercase tracking-tighter ${typeConfig.color}`}>{typeConfig.label}</span>
             </div>
           </div>
-        </div>
+        </Wrapper>
       );
     }
 
     if (imgCount === 2) {
       return (
-        <div className={`grid grid-cols-2 gap-2 mb-4 ${containerHeight} overflow-hidden rounded-2xl flex-shrink-0 relative transition-all duration-300`}>
+        <div className="grid grid-cols-2 gap-1 w-full h-full">
           {post.images.slice(0, 2).map((img, idx) => (
-            <div key={idx} className="relative h-full cursor-pointer overflow-hidden group" onClick={() => openModal(idx)}>
-              <img src={img} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt={`Imagem ${idx}`} />
-            </div>
+            <Wrapper key={idx} onClick={() => openModal(idx)}>
+              <img src={img} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt={`Img ${idx}`} />
+            </Wrapper>
           ))}
         </div>
       );
@@ -336,128 +358,154 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
     );
   };
 
+  const [isOverflowing, setIsOverflowing] = useState(false);
+  const textRef = useRef<HTMLParagraphElement>(null);
+
+  useEffect(() => {
+    if (textRef.current && !isExpanded) {
+      const el = textRef.current;
+      setIsOverflowing(el.scrollHeight > el.clientHeight);
+    }
+  }, [post.content, isExpanded, post.images]);
+
+  const displayAuthor = post.originalPostId && post.originalAuthor ? post.originalAuthor : post.author;
+  const isRepost = !!post.originalPostId;
+  const hasImages = (post.images?.length || 0) > 0;
+  const safeContent = post.content || "";
+
+  const [areTagsExpanded, setAreTagsExpanded] = useState(false);
+  const MAX_VISIBLE_TAGS = 5;
+  const visibleTags = post.tags ? (areTagsExpanded ? post.tags : post.tags.slice(0, MAX_VISIBLE_TAGS)) : [];
+  const remainingTags = (post.tags?.length || 0) - MAX_VISIBLE_TAGS;
+
   return (
     <>
       <div className="flex-shrink-0 w-[350px] h-[500px] flex flex-col bg-gradient-to-br from-white via-white to-white/95 dark:from-slate-800 dark:via-slate-900 dark:to-slate-900 rounded-3xl p-6 shadow-lg border border-white/60 dark:border-white/5 snap-center hover:shadow-2xl transition-all duration-500 relative overflow-hidden group">
-        {post.originalPostId && (
-          <div className="flex items-center gap-1.5 mb-2 px-1">
-            <Repeat2 size={12} className="text-[#006c55] dark:text-emerald-400" />
-            <span className="text-[10px] font-bold text-[#006c55] dark:text-emerald-400 uppercase tracking-wider">
-              {post.repostedBy && post.repostedBy[0]?.uid === user?.uid ? 'Você repostou' : `${post.repostedBy?.[0]?.name} repostou`}
-            </span>
-          </div>
-        )}
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-[#006c55] to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-        <div className="flex items-start justify-between mb-4 flex-shrink-0 relative">
-          <div className="flex items-start gap-3 overflow-hidden flex-1 min-w-0">
-            <div className="relative flex-shrink-0">
-              <img src={post.author.avatar} className="w-12 h-12 rounded-2xl object-cover border-2 border-white dark:border-slate-700 shadow-lg" alt={post.author.name} />
-              {post.author.verified && <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-gradient-to-r from-[#006c55] to-[#00876a] rounded-full flex items-center justify-center border-2 border-white dark:border-slate-800"><CheckCircle size={8} className="text-white" fill="white" /></div>}
+
+        {/* HEADER DE QUEM RECOMPARTILHOU (Só aparece se for repost) e MENU se for repost */}
+        {isRepost && (
+          <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-100 dark:border-white/5 flex-shrink-0">
+            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <Repeat2 size={16} className="text-[#006c55]" />
+                <img src={post.author.avatar} className="w-6 h-6 rounded-lg object-cover" alt={post.author.name} />
+              </div>
+              <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                <span className="text-[12px] font-black text-slate-700 dark:text-slate-300 truncate">{post.repostedBy && post.repostedBy[0]?.uid === user?.uid ? 'Você' : post.author.name}</span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">repostou</span>
+              </div>
             </div>
-            <div className="flex flex-col min-w-0 flex-1">
-              <div className="flex items-center gap-2 mb-0.5 min-w-0">
-                <h4 className="text-[14px] font-black text-slate-900 dark:text-white leading-tight truncate shrink-1">{post.author.name}</h4>
-                {post.author.verified && <span className="text-[8px] font-black text-[#006c55] dark:text-emerald-400 bg-[#006c55]/10 dark:bg-emerald-400/10 px-1.5 py-0.5 rounded-md uppercase tracking-tighter flex-shrink-0">V</span>}
-              </div>
-              <div className="flex flex-col text-[11px] text-slate-500 dark:text-slate-400">
-                <span className="font-bold truncate">{post.author.username}</span>
-                <div className="flex items-center gap-1 mt-0.5 opacity-70"><Clock size={10} /><span>{formatTimestamp(post.timestamp)}</span></div>
-              </div>
-              {post.originalPostId && (post as any).originalAuthor && (
-                <div className="flex flex-col mt-2 mb-1 bg-emerald-50/50 dark:bg-emerald-900/10 px-3 py-2 rounded-2xl border border-emerald-100/50 shadow-sm">
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <div className="bg-emerald-100 dark:bg-emerald-900/50 p-1 rounded-full">
-                      <RefreshCw size={8} className="text-emerald-600 dark:text-emerald-400" />
-                    </div>
-                    <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Postagem Original</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <img src={(post as any).originalAuthor.avatar} className="w-8 h-8 rounded-xl object-cover border-2 border-white dark:border-slate-800 shadow-md" alt="Author" />
-                    <div className="flex flex-col min-w-0">
-                      <span className="text-[13px] font-black text-slate-900 dark:text-white truncate leading-none">{(post as any).originalAuthor.name}</span>
-                      <span className="text-[11px] font-bold text-slate-500 truncate mt-1 leading-none">@{(post as any).originalAuthor.username}</span>
-                    </div>
-                  </div>
+
+            {/* Menu no Repost Header */}
+            <div className="relative flex-shrink-0 ml-2" ref={menuRef}>
+              <button onClick={(e) => { e.stopPropagation(); setIsMenuOpen(!isMenuOpen); }} className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-all"><MoreVertical size={16} /></button>
+              {isMenuOpen && (
+                <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-white/10 py-1.5 z-50 animate-in fade-in slide-in-from-top-2 duration-200" onClick={(e) => e.stopPropagation()}>
+                  {/* Se dono do post exibido (no caso de repost, editamos o repost e não original) */}
+                  {user?.uid === post.author.id ? (
+                    <>
+                      <button onClick={() => handleDelete()} className="w-full flex items-center gap-2 px-4 py-2 text-[11px] font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 text-left transition-colors"><Trash2 size={12} /> Apagar Repost</button>
+                    </>
+                  ) : (
+                    <>
+                      <button onClick={() => handleAction('hide')} className="w-full flex items-center gap-2 px-4 py-2 text-[11px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors"><EyeOff size={12} /> Não tenho interesse</button>
+                      <button onClick={() => handleAction('report')} className="w-full flex items-center gap-2 px-4 py-2 text-[11px] font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 text-left transition-colors"><AlertTriangle size={12} /> Denunciar</button>
+                    </>
+                  )}
                 </div>
               )}
             </div>
           </div>
-          <div className="flex items-center gap-1 flex-shrink-0 ml-2" ref={menuRef}>
-            <button onClick={handleBookmark} className={`p-2 rounded-xl transition-all active:scale-95 ${isBookmarked ? 'text-[#006c55] dark:text-emerald-400 bg-gradient-to-br from-[#006c55]/10 to-[#006c55]/5 dark:from-emerald-400/10 dark:to-emerald-400/5' : 'text-slate-400 hover:text-[#006c55] dark:hover:text-emerald-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`} title={isBookmarked ? "Remover" : "Salvar"}><Bookmark size={16} strokeWidth={isBookmarked ? 2.5 : 2} fill={isBookmarked ? "currentColor" : "none"} /></button>
-            <button onClick={() => setIsMenuOpen(!isMenuOpen)} className={`p-2 rounded-xl transition-all active:scale-95 ${isMenuOpen ? 'text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'}`} title="Opções"><MoreVertical size={16} /></button>
-            {isMenuOpen && <div className="absolute right-0 top-10 w-56 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-2xl shadow-2xl z-50 py-2 animate-in fade-in slide-in-from-top-2 duration-200">
-              {/* Opções para o Dono */}
-              {user?.uid === post.author.id ? (
-                <>
-                  <button
-                    onClick={handleRepost}
-                    disabled={isReposting}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors"
-                  >
-                    {isReposting ? <Loader2 size={14} className="animate-spin" /> : <Repeat2 size={14} />}
-                    Repostar no meu feed
-                  </button>
-                  <button
-                    onClick={handleEdit}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors"
-                  >
-                    <Edit3 size={14} /> Editar publicação
-                  </button>
-                  <button className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors">
-                    <BarChart2 size={14} /> Estatísticas
-                  </button>
-                  <div className="h-px bg-slate-100 dark:bg-slate-800 my-2 mx-4"></div>
-                  <button
-                    onClick={handleDelete}
-                    disabled={isDeleting}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 text-left transition-colors"
-                  >
-                    {isDeleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-                    Apagar publicação
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button
-                    onClick={handleRepost}
-                    disabled={isReposting}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors disabled:opacity-50"
-                  >
-                    {isReposting ? <Loader2 size={14} className="animate-spin" /> : <Repeat2 size={14} />}
-                    Repostar
-                  </button>
-                  <button onClick={() => handleAction('copy_link')} className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors">
-                    <Link size={14} /> Copiar link
-                  </button>
-                  <button onClick={() => handleAction('hide')} className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors">
-                    <EyeOff size={14} /> Não tenho interesse
-                  </button>
-                  <div className="h-px bg-slate-100 dark:bg-slate-800 my-2 mx-4"></div>
-                  <button onClick={() => handleAction('report')} className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 text-left transition-colors">
-                    <AlertTriangle size={14} /> Denunciar
-                  </button>
-                </>
+        )}
+
+        {/* HEADER DO AUTOR PRINCIPAL (Original ou do Post) */}
+        <div className="flex items-start justify-between mb-4 flex-shrink-0 relative">
+          <div className="flex items-start gap-3 overflow-hidden flex-1 min-w-0">
+            <div className="relative flex-shrink-0">
+              <img src={displayAuthor.avatar} className="w-12 h-12 rounded-2xl object-cover border-2 border-white dark:border-slate-700 shadow-lg" alt={displayAuthor.name} />
+              {displayAuthor.verified && <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-gradient-to-r from-[#006c55] to-[#00876a] rounded-full flex items-center justify-center border-2 border-white dark:border-slate-800"><CheckCircle size={8} className="text-white" fill="white" /></div>}
+            </div>
+            <div className="flex flex-col min-w-0 flex-1">
+              <div className="flex items-center gap-2 mb-0.5 min-w-0">
+                <h4 className="text-[14px] font-black text-slate-900 dark:text-white leading-tight truncate shrink-1">{displayAuthor.name}</h4>
+                {displayAuthor.verified && <span className="text-[8px] font-black text-[#006c55] dark:text-emerald-400 bg-[#006c55]/10 dark:bg-emerald-400/10 px-1.5 py-0.5 rounded-md uppercase tracking-tighter flex-shrink-0">V</span>}
+              </div>
+              <div className="flex flex-col text-[11px] text-slate-500 dark:text-slate-400">
+                <span className="font-bold truncate">{displayAuthor.username?.startsWith('@') ? displayAuthor.username : `@${displayAuthor.username}`}</span>
+                {/* Data sempre visível agora - Se for repost, tenta mostrar a data original se disponível no post, senão mostra timestamp do post atual mesmo (fallback) */}
+                <div className="flex items-center gap-1 mt-0.5 opacity-70"><Clock size={10} /><span>{formatTimestamp((post as any).originalTimestamp || (post as any).originalCreatedAt || post.timestamp)}</span></div>
+              </div>
+            </div>
+          </div>
+
+          {/* Menu de Opções - Só aparece aqui se NÃO for repost. Se for repost, o menu está lá em cima. */}
+          {!isRepost && (
+            <div className="relative flex-shrink-0 ml-2" ref={menuRef}>
+              <button onClick={(e) => { e.stopPropagation(); setIsMenuOpen(!isMenuOpen); }} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-all">
+                <MoreVertical size={16} />
+              </button>
+              {isMenuOpen && (
+                <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-100 dark:border-white/10 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200" onClick={(e) => e.stopPropagation()}>
+                  {user?.uid === displayAuthor.id ? (
+                    <>
+                      <button onClick={() => handleEdit()} className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors"><Edit3 size={14} /> Editar</button>
+                      <button onClick={handleDelete} disabled={isDeleting} className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 text-left transition-colors disabled:opacity-50">{isDeleting ? 'Excluindo...' : 'Excluir'}</button>
+                      <div className="h-px bg-slate-100 dark:bg-slate-800 my-2 mx-4"></div>
+                      <button onClick={() => handleAction('bookmark')} className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors"><Bookmark size={14} /> {isBookmarked ? 'Remover' : 'Salvar'}</button>
+                    </>
+                  ) : (
+                    <>
+                      <button onClick={() => handleAction('bookmark')} className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors"><Bookmark size={14} /> {isBookmarked ? 'Remover' : 'Salvar'}</button>
+                      <button onClick={() => handleAction('hide')} className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors"><EyeOff size={14} /> Não tenho interesse</button>
+                      <div className="h-px bg-slate-100 dark:bg-slate-800 my-2 mx-4"></div>
+                      <button onClick={() => handleAction('report')} className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 text-left transition-colors"><AlertTriangle size={14} /> Denunciar</button>
+                    </>
+                  )}
+                </div>
               )}
-            </div>}
-          </div>
+            </div>
+          )}
         </div>
-        {/* Conteúdo Principal (Texto e Mídia) */}
-        <div className={`flex-1 flex flex-col min-h-0 ${post.originalPostId ? 'bg-slate-50/50 dark:bg-slate-800/30 rounded-2xl p-3 border border-slate-100 dark:border-white/5 mb-3' : ''}`}>
-          {renderCollage()}
-          <div className="flex-1 overflow-y-auto no-scrollbar pr-1">
-            <p className="text-[14px] text-slate-800 dark:text-slate-200 leading-relaxed mb-3 font-medium">
-              {isExpanded ? post.content : (isLongText ? post.content.substring(0, charLimit) + "..." : post.content)}
-              {isLongText && <button onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }} className="inline-block ml-2 text-[11px] font-black text-[#006c55] dark:text-emerald-400 hover:underline cursor-pointer uppercase tracking-tighter">{isExpanded ? ' Menos' : ' Mais'}</button>}
-            </p>
-            {renderLinkAttachment()}
-            {renderFileAttachment()}
-          </div>
+
+        {/* Conteúdo Principal Flexível */}
+        <div className="flex-1 flex flex-col min-h-0 relative">
+          {/* Imagem (flex-1) */}
+          {hasImages && (
+            <div className="flex-1 min-h-0 w-full rounded-2xl overflow-hidden mb-3 border border-slate-100/50 bg-slate-50">
+              {renderCollage()}
+            </div>
+          )}
+
+          {/* Texto (flex-none, max 5 lines) */}
+          {safeContent && (
+            <div className={`flex-shrink-0 w-full mb-2 ${!hasImages ? 'flex-1 overflow-y-auto no-scrollbar' : ''}`}>
+              <div className="relative">
+                <p
+                  ref={textRef}
+                  className={`text-[13px] text-slate-800 dark:text-slate-200 leading-relaxed font-medium whitespace-pre-wrap ${!isExpanded && hasImages ? 'line-clamp-5' : ''}`}
+                >
+                  {safeContent}
+                </p>
+                {hasImages && isOverflowing && (
+                  <div className={`${isExpanded ? 'mt-1' : 'absolute bottom-0 right-0 bg-gradient-to-l from-white via-white to-transparent pl-8'}`}>
+                    <button onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }} className="text-[11px] font-black text-[#006c55] hover:underline uppercase tracking-tighter">
+                      {isExpanded ? 'Ver menos' : '...Mais'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {renderLinkAttachment()}
+          {renderFileAttachment()}
         </div>
 
         {/* Hashtags e Rodapé Fixo */}
         <div className="flex-shrink-0">
           {post.tags && post.tags.length > 0 && <div className="flex flex-wrap gap-1.5 mb-3">
-            {post.tags.slice(0, 6).map(tag => (
+            {visibleTags.map(tag => (
               <span
                 key={tag}
                 onClick={() => handleHashtagClick(tag)}
@@ -466,20 +514,79 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
                 #{tag}
               </span>
             ))}
+
+            {/* Botão +N */}
+            {!areTagsExpanded && remainingTags > 0 && (
+              <button
+                onClick={(e) => { e.stopPropagation(); setAreTagsExpanded(true); }}
+                className="text-[9px] font-extrabold text-[#006c55] dark:text-emerald-400 px-2.5 py-1.5 rounded-lg uppercase tracking-wider transition-all hover:scale-105 cursor-pointer border border-[#006c55]/20 hover:bg-[#006c55]/10"
+              >
+                +{remainingTags}
+              </button>
+            )}
+
+            {/* Botão Ver menos */}
+            {areTagsExpanded && remainingTags > 0 && (
+              <button
+                onClick={(e) => { e.stopPropagation(); setAreTagsExpanded(false); }}
+                className="text-[9px] font-extrabold text-slate-400 hover:text-[#006c55] px-2 py-1.5 uppercase tracking-wider transition-colors ml-1"
+              >
+                Ver menos
+              </button>
+            )}
           </div>}
 
           <div className="flex items-center justify-between pt-3 border-t border-slate-100/80 dark:border-white/5">
             <div className="flex items-center gap-4">
               <button onClick={handleLike} className={`flex items-center gap-1.5 transition-all active:scale-95 ${isLiked ? 'text-red-500' : 'text-slate-400 hover:text-red-500'}`}><Heart size={16} strokeWidth={2.5} fill={isLiked ? "currentColor" : "none"} /><span className="text-[11px] font-bold">{likeCount}</span></button>
-              <button onClick={handleRepost} disabled={isReposting} className={`flex items-center gap-1.5 transition-all active:scale-95 ${isReposting ? 'opacity-50' : 'text-slate-400 hover:text-[#006c55]'}`}>
-                <Repeat2 size={16} strokeWidth={2.5} />
-                {!post.originalPostId && <span className="text-[11px] font-bold">{shareCount}</span>}
-              </button>
+
+              {/* Botão de Repost */}
+              {/* Lógica:
+                  1. Se for meu card de repost (isRepost && author == me): ESCONDER.
+                  2. Se não (Original ou Repost de outro): MOSTRAR.
+                  3. Se já repostei: Desabilitar e deixar verde.
+              */}
+              {!(isRepost && post.author.id === user?.uid) && (
+                <button
+                  onClick={handleRepost}
+                  disabled={isReposting || post.repostedBy?.some(u => u.uid === user?.uid)}
+                  className={`flex items-center gap-1.5 transition-all active:scale-95 ${post.repostedBy?.some(u => u.uid === user?.uid)
+                    ? 'text-[#006c55] cursor-default' // Já repostado: Verde, sem cursor pointer (se disabled não pegar estilo)
+                    : isReposting
+                      ? 'opacity-50'
+                      : 'text-slate-400 hover:text-[#006c55]'
+                    }`}
+                >
+                  <Repeat2 size={16} strokeWidth={2.5} />
+                  {!post.originalPostId && <span className="text-[11px] font-bold">{shareCount}</span>}
+                </button>
+              )}
             </div>
+            <button onClick={handleBookmark} className={`transition-all active:scale-95 ${isBookmarked ? 'text-[#006c55]' : 'text-slate-400 hover:text-[#006c55]'}`}>
+              <Bookmark size={16} strokeWidth={2.5} fill={isBookmarked ? "currentColor" : "none"} />
+            </button>
           </div>
         </div>
       </div>
       {modalData && <ImageModal images={modalData.images} initialIndex={modalData.index} onClose={() => setModalData(null)} />}
+
+      {/* Edit Modal */}
+      {isEditModalOpen && (
+        <NewPost
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          mode="edit"
+          initialData={post}
+          onPostUpdated={() => {
+            // Recarregar feed (ou update otimista mais complexo). 
+            // O ideal seria passar onPostUpdated como prop para o pai fazer refresh.
+            // Para MVP, damos reload simples chamando onRepostSuccess (se ele for refresh)
+            // Ou apenas toast.
+            toast.success("Publicação atualizada com sucesso!");
+            if (onRepostSuccess) onRepostSuccess();
+          }}
+        />
+      )}
     </>
   );
 };

@@ -89,10 +89,17 @@ const SidebarFeed: React.FC<SidebarConfig> = ({ title = "Feed do Conhecimento", 
 
   const filteredPosts = posts.filter(post => {
     if (activeFilter === 'all') return true;
+    if (activeFilter === 'bookmarks') return true; // Bookmarks já são filtrados no fetch
     return post.postType === activeFilter;
   });
 
   const getFilteredCount = (type: string) => {
+    if (type === 'bookmarks') {
+      // Se estamos visualizando os favoritos, a contagem é o total de posts carregados
+      if (activeFilter === 'bookmarks') return posts.length;
+      // Se estamos em outra view, não temos a contagem de favoritos carregada localmente -> retorna 0 (oculta badge)
+      return 0;
+    }
     return posts.filter(post => post.postType === type).length;
   };
 
@@ -122,23 +129,28 @@ const SidebarFeed: React.FC<SidebarConfig> = ({ title = "Feed do Conhecimento", 
             </span>
           </div>
 
-          <div className="flex items-center gap-3">
-            {/* Botão de Filtro */}
+          <div className="flex items-center gap-2">
+            {/* Botão Refresh */}
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="p-2 rounded-lg bg-white/60 text-slate-600 hover:text-[#006c55] hover:bg-white transition-all border border-white/90 shadow-sm active:scale-90"
+              title="Atualizar feed"
+            >
+              <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
+            </button>
+
+            {/* Botão de Filtro (Icon Only) */}
             <div className="relative" ref={filterRef}>
               <button
                 onClick={() => setIsFilterOpen(!isFilterOpen)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all ${isFilterOpen ?
+                className={`p-2 rounded-lg transition-all ${isFilterOpen ?
                   'bg-[#006c55] text-white' :
-                  'bg-white/60 text-slate-600 hover:bg-white border border-white/90'
-                  } shadow-sm active:scale-95`}
+                  'bg-white/60 text-slate-600 hover:text-[#006c55] hover:bg-white border border-white/90'
+                  } shadow-sm active:scale-90`}
+                title="Filtrar feed"
               >
                 <Filter size={14} />
-                <span className="text-[11px] font-bold hidden sm:inline">Filtrar</span>
-                {activeFilter !== 'all' && (
-                  <span className="w-5 h-5 bg-white/20 text-white text-[10px] font-black rounded-full flex items-center justify-center">
-                    {getFilteredCount(activeFilter)}
-                  </span>
-                )}
               </button>
 
               {/* Dropdown de Filtros */}
@@ -263,8 +275,10 @@ const SidebarFeed: React.FC<SidebarConfig> = ({ title = "Feed do Conhecimento", 
                     console.log(`Post ${postId} ${liked ? 'liked' : 'unliked'}`);
                   }}
                   onDelete={(postId) => {
-                    setPosts(prev => prev.filter(p => p.id !== postId));
+                    // Refresh completo para atualizar contadores (ex: repost count do original ao deletar repost)
+                    fetchPosts();
                   }}
+                  onRepostSuccess={fetchPosts}
                 />
               </div>
             ))}

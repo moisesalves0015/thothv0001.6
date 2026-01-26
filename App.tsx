@@ -13,6 +13,7 @@ import { WifiOff, Wifi, RefreshCcw } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
 import { usePullToRefresh } from './hooks/usePullToRefresh';
 import { PushNotificationService } from './modules/notification/push.service';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 // Pages - Lazy loading para otimização mobile
 const Landing = lazy(() => import('./pages/Landing/Landing'));
@@ -124,40 +125,45 @@ const AppRoutes: React.FC = () => {
 
   return (
     <Suspense fallback={<AppLoadingPage />}>
-      <Routes>
-        <Route path="/" element={<Landing />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/printers/login" element={<PrinterLogin />} />
-        <Route path="/printers/dashboard" element={<PrinterDashboard />} />
-        <Route
-          path="/portal-ultra-secreto-thoth-crm"
-          element={
-            <AdminRoute>
-              <AdminPortal />
-            </AdminRoute>
-          }
-        />
-        <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
-          <Route path="/home" element={<Home />} />
-          <Route path="/estudos" element={<Estudos />} />
-          <Route path="/disciplinas" element={<Disciplinas />} />
-          <Route path="/disciplinas/:id" element={<SubjectDetail />} />
-          <Route path="/explorar" element={<SearchPage />} />
-          <Route path="/conexoes" element={<Conexoes />} />
-          <Route path="/eventos" element={<Eventos />} />
-          <Route path="/pesquisas" element={<Pesquisas />} />
-          <Route path="/vagas" element={<Vagas />} />
-          <Route path="/badges/create" element={<BadgeCreator />} />
-          <Route path="/perfil" element={<Profile />} />
-          <Route path="/mensagens" element={<Mensagens />} />
-          <Route path="/notificacoes" element={<Notificacoes />} />
-          <Route path="/onboarding" element={<Onboarding />} />
-          <Route path="/configuracoes" element={<Settings />} />
-          <Route path="/suporte" element={<Support />} />
-        </Route>
-        <Route path="*" element={<Navigate to="/home" replace />} />
-      </Routes>
+      <ErrorBoundary>
+        <Routes>
+          <Route path="/" element={<Landing />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/printers/login" element={<PrinterLogin />} />
+          <Route path="/printers/dashboard" element={<PrinterDashboard />} />
+          <Route
+            path="/portal-ultra-secreto-thoth-crm"
+            element={
+              <AdminRoute>
+                <AdminPortal />
+              </AdminRoute>
+            }
+          />
+          <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
+            <Route path="/home" element={<Home />} />
+            <Route path="/estudos" element={<Estudos />} />
+            <Route path="/disciplinas" element={<Disciplinas />} />
+            <Route path="/disciplinas/:id" element={<SubjectDetail />} />
+            <Route path="/explorar" element={<SearchPage />} />
+            <Route path="/conexoes" element={<Conexoes />} />
+            <Route path="/eventos" element={<Eventos />} />
+            <Route path="/pesquisas" element={<Pesquisas />} />
+            <Route path="/vagas" element={<Vagas />} />
+            <Route path="/badges/create" element={<BadgeCreator />} />
+            <Route path="/perfil" element={<Profile />} />
+            {/* Rota dinâmica para perfis de usuário (ex: thoth.com/moises) */}
+            <Route path="/:username" element={<Profile />} />
+
+            <Route path="/mensagens" element={<Mensagens />} />
+            <Route path="/notificacoes" element={<Notificacoes />} />
+            <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/configuracoes" element={<Settings />} />
+            <Route path="/suporte" element={<Support />} />
+          </Route>
+          <Route path="*" element={<Navigate to="/home" replace />} />
+        </Routes>
+      </ErrorBoundary>
     </Suspense>
   );
 };
