@@ -15,6 +15,10 @@ interface CreateProfileData {
     university: string;
     phoneNumber: string;
     role?: string;
+    course?: string;
+    interests?: string[];
+    onboardingComplete?: boolean;
+    joinedAt?: string;
 }
 
 export class UserService {
@@ -137,7 +141,7 @@ export class UserService {
     /**
      * Atualiza dados parciais do perfil do usuário.
      */
-    static async updateProfile(uid: string, data: Partial<CreateProfileData & { photoURL: string; bio: string }>): Promise<void> {
+    static async updateProfile(uid: string, data: Partial<CreateProfileData & { photoURL: string; bio: string; interests?: string[] }>): Promise<void> {
         const userRef = doc(db, "users", uid);
         await setDoc(userRef, {
             ...data,

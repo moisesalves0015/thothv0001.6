@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { PostService } from '../modules/post/post.service';
 import { useAuth } from '../contexts/AuthContext';
+import { toast } from 'sonner';
 
 interface PostCardProps {
   post: Post;
@@ -111,6 +112,28 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
       // Revert optimistic update
       setIsLiked(!newLikedState);
       setLikeCount(prev => !newLikedState ? prev + 1 : prev - 1);
+    }
+  };
+
+  const handleRepost = async () => {
+    if (!user || isReposting) return;
+    setIsReposting(true);
+    try {
+      const currentUser = {
+        id: user.uid,
+        name: user.displayName || 'Estudante',
+        username: user.email?.split('@')[0] || 'estudante',
+        avatar: user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}`
+      };
+      await PostService.repost(post, currentUser);
+      setShareCount(prev => prev + 1);
+      toast.success('Publicação repostada com sucesso!');
+    } catch (e) {
+      console.error("Error reposting:", e);
+      toast.error('Erro ao repostar publicação.');
+    } finally {
+      setIsReposting(false);
+      setIsMenuOpen(false);
     }
   };
 
@@ -271,11 +294,11 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
   return (
     <>
       <div className="flex-shrink-0 w-[350px] h-[500px] flex flex-col bg-gradient-to-br from-white via-white to-white/95 dark:from-slate-800 dark:via-slate-900 dark:to-slate-900 rounded-3xl p-6 shadow-lg border border-white/60 dark:border-white/5 snap-center hover:shadow-2xl transition-all duration-500 relative overflow-hidden group">
-        {post.repostedBy && post.repostedBy.length > 0 && (
+        {post.originalPostId && (
           <div className="flex items-center gap-1.5 mb-2 px-1">
-            <Repeat2 size={12} className="text-slate-400" />
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-              {post.repostedBy[0]?.uid === user?.uid ? 'Você repostou' : `${post.repostedBy[0]?.name} repostou`}
+            <Repeat2 size={12} className="text-[#006c55] dark:text-emerald-400" />
+            <span className="text-[10px] font-bold text-[#006c55] dark:text-emerald-400 uppercase tracking-wider">
+              {post.repostedBy && post.repostedBy[0]?.uid === user?.uid ? 'Você repostou' : `${post.repostedBy?.[0]?.name} repostou`}
             </span>
           </div>
         )}
@@ -304,6 +327,14 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
               {/* Opções para o Dono */}
               {user?.uid === post.author.id ? (
                 <>
+                  <button
+                    onClick={handleRepost}
+                    disabled={isReposting}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors"
+                  >
+                    {isReposting ? <Loader2 size={14} className="animate-spin" /> : <Repeat2 size={14} />}
+                    Repostar no meu feed
+                  </button>
                   <button className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors">
                     <Edit3 size={14} /> Editar publicação
                   </button>
@@ -345,25 +376,30 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
             </div>}
           </div>
         </div>
-        {renderCollage()}
-        <div className="flex-1 flex flex-col min-h-0">
-          <div className="flex-1 overflow-y-auto no-scrollbar pr-2 mb-4">
+        {/* Conteúdo Principal (Texto e Mídia) */}
+        <div className={`flex-1 flex flex-col min-h-0 ${post.originalPostId ? 'bg-slate-50/50 dark:bg-slate-800/30 rounded-2xl p-3 border border-slate-100 dark:border-white/5 mb-3' : ''}`}>
+          {renderCollage()}
+          <div className="flex-1 overflow-y-auto no-scrollbar pr-1">
             <p className="text-[14px] text-slate-800 dark:text-slate-200 leading-relaxed mb-3 font-medium">
               {isExpanded ? post.content : (isLongText ? post.content.substring(0, charLimit) + "..." : post.content)}
               {isLongText && <button onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }} className="inline-block ml-2 text-[11px] font-black text-[#006c55] dark:text-emerald-400 hover:underline cursor-pointer uppercase tracking-tighter">{isExpanded ? ' Menos' : ' Mais'}</button>}
             </p>
             {renderLinkAttachment()}
             {renderFileAttachment()}
-            {post.tags && post.tags.length > 0 && <div className="flex flex-wrap gap-1.5 mb-4">
-              {post.tags.slice(0, 6).map(tag => <span key={tag} className="text-[9px] font-extrabold text-[#006c55] dark:text-emerald-400 bg-gradient-to-r from-[#006c55]/10 to-[#006c55]/5 dark:from-emerald-400/10 dark:to-emerald-400/5 px-2.5 py-1.5 rounded-lg uppercase tracking-wider transition-all hover:scale-105 cursor-pointer border border-[#006c55]/10 dark:border-white/5">#{tag}</span>)}
-            </div>}
           </div>
-          <div className="flex items-center justify-between pt-4 border-t border-slate-100/80 dark:border-white/5 flex-shrink-0">
+        </div>
+
+        {/* Hashtags e Rodapé Fixo */}
+        <div className="flex-shrink-0">
+          {post.tags && post.tags.length > 0 && <div className="flex flex-wrap gap-1.5 mb-3">
+            {post.tags.slice(0, 6).map(tag => <span key={tag} className="text-[9px] font-extrabold text-[#006c55] dark:text-emerald-400 bg-gradient-to-r from-[#006c55]/10 to-[#006c55]/5 dark:from-emerald-400/10 dark:to-emerald-400/5 px-2.5 py-1.5 rounded-lg uppercase tracking-wider transition-all hover:scale-105 cursor-pointer border border-[#006c55]/10 dark:border-white/5">#{tag}</span>)}
+          </div>}
+
+          <div className="flex items-center justify-between pt-3 border-t border-slate-100/80 dark:border-white/5">
             <div className="flex items-center gap-4">
               <button onClick={handleLike} className={`flex items-center gap-1.5 transition-all active:scale-95 ${isLiked ? 'text-red-500' : 'text-slate-400 hover:text-red-500'}`}><Heart size={16} strokeWidth={2.5} fill={isLiked ? "currentColor" : "none"} /><span className="text-[11px] font-bold">{likeCount}</span></button>
-              <button className="flex items-center gap-1.5 text-slate-400 hover:text-[#006c55] transition-colors active:scale-95"><Repeat2 size={16} strokeWidth={2.5} /><span className="text-[11px] font-bold">{shareCount}</span></button>
+              <button onClick={handleRepost} disabled={isReposting} className={`flex items-center gap-1.5 transition-all active:scale-95 ${isReposting ? 'opacity-50' : 'text-slate-400 hover:text-[#006c55]'}`}><Repeat2 size={16} strokeWidth={2.5} /><span className="text-[11px] font-bold">{shareCount}</span></button>
             </div>
-            <div className="flex items-center gap-2"></div>
           </div>
         </div>
       </div>

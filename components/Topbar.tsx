@@ -169,7 +169,7 @@ const Topbar = () => {
         />
       )}
 
-      <header className={`fixed top-0 left-0 w-full z-[1000] bg-white/95 dark:bg-slate-900/95 backdrop-blur-[12px] rounded-b-[16px] border border-white/60 dark:border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.1)] lg:hidden transition-all duration-300 topbar-glass ${menuOpen ? 'rounded-b-[24px]' : ''}`}>
+      <header className={`fixed top-0 left-0 w-full z-[1000] bg-white/95 dark:bg-slate-900/95 backdrop-blur-[12px] rounded-b-[16px] border border-white/60 dark:border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.1)] lg:hidden transition-all duration-300 topbar-glass ${menuOpen ? 'rounded-b-[24px]' : ''}`} style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <div className="flex items-center justify-between px-4 h-[64px]">
           <button
             className={`text-slate-700 dark:text-slate-200 transition-transform ${menuOpen ? 'rotate-90' : ''}`}
