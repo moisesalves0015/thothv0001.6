@@ -141,7 +141,16 @@ export class UserService {
     /**
      * Atualiza dados parciais do perfil do usuário.
      */
-    static async updateProfile(uid: string, data: Partial<CreateProfileData & { photoURL: string; bio: string; interests?: string[] }>): Promise<void> {
+    static async updateProfile(uid: string, data: Partial<CreateProfileData & {
+        photoURL: string;
+        bio: string;
+        interests?: any[];
+        skills?: any[];
+        trajectory?: any[];
+        location?: string;
+        website?: string;
+        period?: string;
+    }>): Promise<void> {
         const userRef = doc(db, "users", uid);
         await setDoc(userRef, {
             ...data,

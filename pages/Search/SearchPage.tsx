@@ -173,7 +173,7 @@ const SearchPage: React.FC = () => {
                             </div>
                         )}
                     </div>
-                ) : (
+                ) : activeTab === 'events' || activeTab === 'jobs' || activeTab === 'projects' ? (
                     <div className="glass-panel p-12 rounded-2xl text-center flex flex-col items-center">
                         <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4 text-slate-400">
                             {activeTab === 'events' && <Calendar size={32} />}
@@ -185,7 +185,7 @@ const SearchPage: React.FC = () => {
                             A busca por {activeTab === 'events' ? 'eventos' : activeTab === 'jobs' ? 'vagas' : 'projetos'} estará disponível nas próximas atualizações.
                         </p>
                     </div>
-                )}
+                ) : null}
             </div>
         </div >
     );

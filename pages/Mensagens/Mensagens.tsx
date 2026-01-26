@@ -57,12 +57,6 @@ interface Assignment {
   dueDate: string;
   course: string;
   attachments: number;
-  id: string;
-  title: string;
-  description: string;
-  dueDate: string;
-  course: string;
-  attachments: number;
   submitted: boolean;
 }
 

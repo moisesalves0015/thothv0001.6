@@ -98,20 +98,22 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
   };
 
   return (
-    <div className="flex-shrink-0 w-[190px] h-[260px] relative rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 group border border-white/20">
-      {/* Background Image */}
-      <img
-        src={author.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${author.name}`}
-        alt={author.name}
-        className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
-      />
+    <div className="flex-shrink-0 w-[190px] h-[260px] relative rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 group border border-white/20">
+      <div className="absolute inset-0 rounded-2xl overflow-hidden">
+        {/* Background Image */}
+        <img
+          src={author.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${author.name}`}
+          alt={author.name}
+          className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
+        />
+      </div>
 
       {/* Glass Panel Overlay */}
       <div className="absolute bottom-2 left-2 right-2 p-3 rounded-xl bg-white/85 backdrop-blur-xl border border-white/40 flex flex-col gap-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.1)] transition-all duration-300">
 
         {/* User Info */}
         <div className="flex flex-col">
-          <div className="flex items-start justify-between mb-1">
+          <div className="flex items-start justify-between mb-0.5">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1 mb-0.5">
                 <h4 className="text-[13px] font-black text-slate-900 leading-tight truncate">
@@ -123,67 +125,17 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
                   </div>
                 )}
               </div>
-              <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-500 leading-tight truncate">
+              <div className="flex items-center gap-1 text-[10px] font-bold text-slate-500 leading-tight truncate">
                 {author.university && (
-                  <>
-                    <GraduationCap size={8} />
-                    <span className="truncate">{author.university}</span>
-                  </>
+                  <span className="truncate">{author.university}</span>
                 )}
               </div>
             </div>
-
-            {/* Status Indicator */}
-            {status === 'accepted' && (
-              <div className="flex items-center gap-1 px-1.5 py-0.5 bg-emerald-50 rounded-md border border-emerald-100">
-                <UserCheck size={8} className="text-emerald-600" />
-                <span className="text-[7px] font-black text-emerald-600 uppercase tracking-tighter">Conectado</span>
-              </div>
-            )}
           </div>
-
-          {/* Course/Additional Info */}
-          {author.course && (
-            <div className="flex items-center gap-1 text-[8px] font-medium text-slate-400 mt-0.5">
-              <BookOpen size={8} />
-              <span className="truncate">{author.course}</span>
-            </div>
-          )}
-        </div>
-
-        {/* Stats */}
-        <div className="flex items-center gap-3 pt-1.5 border-t border-slate-100/80">
-          <div className="flex items-center gap-1">
-            <User size={10} className="text-slate-400" />
-            <span className="text-[10px] font-black text-slate-700">
-              {(author.stats?.followers || 0).toLocaleString()}
-            </span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Layers size={10} className="text-slate-400" />
-            <span className="text-[10px] font-black text-slate-700">
-              {author.stats?.projects || 0}
-            </span>
-          </div>
-          {author.location && (
-            <div className="flex items-center gap-1">
-              <MapPin size={10} className="text-slate-400" />
-              <span className="text-[10px] font-black text-slate-700 truncate max-w-[40px]">
-                {author.location.split(',')[0]}
-              </span>
-            </div>
-          )}
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center justify-between pt-1.5 border-t border-slate-100/80">
-          <div className="text-[9px] font-bold text-slate-400">
-            {status === 'none' && 'Não conectado'}
-            {status === 'pending_sent' && 'Solicitação enviada'}
-            {status === 'pending_received' && 'Solicitou conexão'}
-            {status === 'accepted' && 'Conectado'}
-          </div>
-
+        <div className="flex items-center justify-end pt-1.5 border-t border-slate-100/80">
           <div className="flex items-center gap-1.5">
             {/* Estado: Nenhuma conexão */}
             {status === 'none' && (
@@ -268,11 +220,11 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
                       <MoreVertical size={12} strokeWidth={2.5} />
                     </button>
 
-                    {/* Menu Dropdown */}
+                    {/* Menu Dropdown - Posicionado para cima para evitar corte */}
                     {showMenu && (
                       <>
-                        <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
-                        <div className="absolute right-0 top-full mt-1 w-48 bg-white/95 backdrop-blur-xl border border-white/40 rounded-xl shadow-2xl z-50 py-1.5 animate-in fade-in zoom-in-95 duration-200">
+                        <div className="fixed inset-0 z-[1001]" onClick={() => setShowMenu(false)} />
+                        <div className="absolute right-0 bottom-full mb-2 w-48 bg-white/95 backdrop-blur-xl border border-white/40 rounded-xl shadow-2xl z-[1002] py-1.5 animate-in fade-in slide-in-from-bottom-2 duration-200">
                           <button className="w-full flex items-center gap-2 px-3 py-2 text-[11px] font-bold text-slate-700 hover:bg-slate-50 transition-colors">
                             <MessageCircle size={12} /> Enviar mensagem
                           </button>

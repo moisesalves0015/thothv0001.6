@@ -87,11 +87,21 @@ export const PostService = {
     },
 
     /**
-     * Deletes a post
+     * Deletes a post and all its reposts (cascade deletion)
      */
     async deletePost(postId: string): Promise<void> {
+        // 1. Delete the post itself
         const postRef = doc(db, POSTS_COLLECTION, postId);
         await deleteDoc(postRef);
+
+        // 2. Cascade delete: find and delete all reposts
+        const q = query(
+            collection(db, POSTS_COLLECTION),
+            where('originalPostId', '==', postId)
+        );
+        const snap = await getDocs(q);
+        const batchDeletion = snap.docs.map(doc => deleteDoc(doc.ref));
+        await Promise.all(batchDeletion);
     },
 
     /**

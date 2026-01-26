@@ -1,14 +1,13 @@
-
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { 
-  User, 
+import {
+  User,
   Users,
-  Shield, 
-  Award, 
-  MapPin, 
-  Link as LinkIcon, 
-  Briefcase, 
-  GraduationCap, 
+  Shield,
+  Award,
+  MapPin,
+  Link as LinkIcon,
+  Briefcase,
+  GraduationCap,
   Calendar,
   MessageCircle,
   Share2,
@@ -22,25 +21,35 @@ import {
   Globe,
   Star,
   BookOpen,
-  Loader2
+  Loader2,
+  Edit3,
+  Settings,
+  Bell,
+  Lock,
+  Zap,
+  Target,
+  Heart,
+  Code,
+  Palette,
+  Brain,
+  Mail,
+  MoreVertical
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import PostCard from '../../components/PostCard';
 import { MOCK_POSTS, MOCK_CONNECTIONS } from '../../constants';
-import { collection, onSnapshot, query, orderBy, where } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, where, doc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { BadgeSlot } from '../../types';
+import { UserService } from '../../modules/user/user.service';
 
-// Componente do Mural Interno do Perfil (Identico ao BadgeSystemBox mas sem botão de criar)
+// Componente do Mural Interno do Perfil
 const ProfileBadgeMural: React.FC = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
   const [tileSize, setTileSize] = useState(33);
   const gridRef = useRef<HTMLDivElement>(null);
   const [slots, setSlots] = useState<BadgeSlot[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const LOGIC_COLS = 20;
-  const LOGIC_ROWS = 6;
 
   useEffect(() => {
     const q = query(collection(db, 'badges'), orderBy('createdAt', 'desc'));
@@ -73,29 +82,29 @@ const ProfileBadgeMural: React.FC = () => {
   };
 
   return (
-    <div className="w-full h-[400px] lg:h-[350px] bg-slate-50/50 rounded-3xl border-2 border-dashed border-slate-200/50 relative overflow-hidden select-none">
+    <div className="w-full h-[400px] lg:h-[350px] bg-gradient-to-br from-slate-50/50 to-white/30 rounded-3xl border border-white/60 overflow-hidden shadow-inner relative select-none backdrop-blur-sm">
       {loading && (
-        <div className="absolute inset-0 z-50 bg-white/40 backdrop-blur-sm flex items-center justify-center">
+        <div className="absolute inset-0 z-50 bg-white/70 backdrop-blur-sm flex items-center justify-center">
           <Loader2 className="animate-spin text-[#006c55]" size={32} />
         </div>
       )}
-      <div ref={gridRef} className="absolute inset-0 grid" style={{ 
+      <div ref={gridRef} className="absolute inset-0 grid" style={{
         gridTemplateColumns: `repeat(${isMobile ? 10 : 20}, 1fr)`,
-        gridTemplateRows: `repeat(${isMobile ? 12 : 6}, 1fr)` 
+        gridTemplateRows: `repeat(${isMobile ? 12 : 6}, 1fr)`
       }}>
         {Array.from({ length: (isMobile ? 10 : 20) * (isMobile ? 12 : 6) }).map((_, i) => (
-          <div key={i} className="border-[0.5px] border-slate-200/20" />
+          <div key={i} className="border-[0.5px] border-slate-200/10" />
         ))}
         {slots.map((slot) => {
           const { vx, vy } = toVisual(slot.x, slot.y);
           return (
-            <div key={slot.badge.id} className="absolute" style={{
+            <div key={slot.badge.id} className="absolute animate-in zoom-in-95 duration-500" style={{
               width: `${(slot.badge.width || 1) * tileSize}px`,
               height: `${(slot.badge.height || 1) * tileSize}px`,
               transform: `translate(${vx * tileSize}px, ${vy * tileSize}px)`
             }}>
-              <div className="w-full h-full bg-white rounded-none border-[0.5px] border-white/50 overflow-hidden shadow-sm">
-                <img src={slot.badge.imageUrl} className="w-full h-full object-cover" alt={slot.badge.name} />
+              <div className="w-full h-full bg-white/90 rounded-lg border border-white/50 overflow-hidden shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 cursor-pointer group">
+                <img src={slot.badge.imageUrl} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt={slot.badge.name} />
               </div>
             </div>
           );
@@ -106,330 +115,447 @@ const ProfileBadgeMural: React.FC = () => {
 };
 
 const Profile: React.FC = () => {
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
   const [activeTab, setActiveTab] = useState('timeline');
-
-  const userDisplayName = user?.displayName || "Estudante Thoth";
-  const userAvatar = user?.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.displayName || 'Thoth'}`;
-
-  const profileInfo = {
-    course: "Design de Interfaces & UX",
-    university: "Universidade Thoth de Tecnologia",
-    period: "7º Período",
-    bio: "Explorando as fronteiras entre o design emocional e a inteligência artificial. Atualmente focado em construir ecossistemas de aprendizado mais humanos e acessíveis.",
-    location: "São Paulo, Brasil",
-    website: "https://portfolio.thoth.ai",
-    skills: ["Figma", "React", "UX Research", "Motion Design", "Python", "IA Generativa"],
-    interests: ["Cognição Humana", "Web3", "Sustentabilidade", "Educação Digital"],
-    academic: {
-      cr: "9.2",
-      hours: "180/200h",
-      progress: "75%",
-      ranking: "Top 5%"
-    },
+  const [isOwner, setIsOwner] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [posts, setPosts] = useState<any[]>([]);
+  const [projects, setProjects] = useState<any[]>([]);
+  const [profileData, setProfileData] = useState<any>({
+    bio: "",
+    course: "",
+    university: "",
+    period: "",
+    location: "",
+    website: "",
+    skills: [],
+    interests: [],
+    trajectory: [],
+    certifications: [],
     stats: {
-      connections: 1240,
-      projects: 15,
-      posts: 42,
-      score: 850
+      connections: 0,
+      projects: 0,
+      posts: 0,
+      badges: 0
+    }
+  });
+
+  useEffect(() => {
+    if (!user) return;
+
+    const profileUid = user.uid;
+    setIsOwner(true); // Temporário, até termos rotas com UID
+
+    const userRef = doc(db, 'users', profileUid);
+    const unsubscribe = onSnapshot(userRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setProfileData({
+          ...data,
+          skills: data.skills || [],
+          interests: data.interests || [],
+          trajectory: data.trajectory || [],
+          certifications: data.certifications || [],
+          stats: {
+            connections: data.stats?.connections || 0,
+            projects: data.stats?.projects || 0,
+            posts: data.stats?.posts || 0,
+            badges: data.stats?.badges || 12
+          }
+        });
+      }
+      setLoading(false);
+    });
+
+    const postsQuery = query(
+      collection(db, 'posts'),
+      where('author.id', '==', profileUid),
+      orderBy('createdAt', 'desc')
+    );
+    const unsubPosts = onSnapshot(postsQuery, (snap) => {
+      setPosts(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+
+    const projectsQuery = query(
+      collection(db, 'projects'),
+      where('ownerId', '==', profileUid),
+      orderBy('createdAt', 'desc')
+    );
+    const unsubProjects = onSnapshot(projectsQuery, (snap) => {
+      setProjects(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+
+    return () => {
+      unsubscribe();
+      unsubPosts();
+      unsubProjects();
+    };
+  }, [user]);
+
+  const userDisplayName = profileData.name || profileData.fullName || userProfile?.name || "Estudante Thoth";
+  const userAvatar = profileData.photoURL || user?.photoURL || `https://api.dicebear.com/7.x/initials/svg?seed=${user?.uid || 'Thoth'}`;
+
+  const skillCategories = useMemo(() => {
+    const skills = profileData.skills || [];
+    if (skills.length === 0) return [];
+    return [
+      { icon: Palette, label: "Design & UX", skills: skills.slice(0, 3) },
+      { icon: Code, label: "Tecnologia", skills: skills.slice(3, 6) },
+      { icon: Brain, label: "Expertise", skills: skills.slice(6) }
+    ].filter(cat => cat.skills.length > 0);
+  }, [profileData.skills]);
+
+  const interestTags = useMemo(() => {
+    const interests = profileData.interests || [];
+    if (interests.length === 0) return [];
+    const colors = [
+      "bg-purple-50 text-purple-600 border-purple-100",
+      "bg-emerald-50 text-emerald-600 border-emerald-100",
+      "bg-amber-50 text-amber-600 border-amber-100",
+      "bg-blue-50 text-blue-600 border-blue-100"
+    ];
+    const icons = [Globe, Heart, Zap, Target];
+    return interests.map((label: string, i: number) => ({
+      icon: icons[i % icons.length],
+      label,
+      color: colors[i % colors.length]
+    }));
+  }, [profileData.interests]);
+
+  const handleSaveProfile = async (newData: any) => {
+    if (!user) return;
+    try {
+      await UserService.updateProfile(user.uid, newData);
+      setIsEditing(false);
+    } catch (e) {
+      console.error("Erro ao salvar perfil:", e);
     }
   };
 
+  if (loading) return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 animate-pulse">
+      <div className="w-20 h-20 bg-slate-100 rounded-full border-4 border-[#006c55]/20 border-t-[#006c55] animate-spin" />
+      <div className="text-center">
+        <h3 className="text-lg font-black text-slate-900 uppercase tracking-tighter">Preparando seu Portfólio</h3>
+        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Sincronizando com a Rede Thoth</p>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="flex flex-col gap-8 pb-20 animate-in fade-in duration-700">
-      
-      {/* 1. HEADER SOCIAL (CAPA E AVATAR) */}
-      <section className="relative w-full glass-panel rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/60">
-        <div className="h-48 md:h-64 w-full relative bg-[#006c55]/10 overflow-hidden">
-          <img 
-            src="https://images.unsplash.com/photo-1523050853063-91589436026e?auto=format&fit=crop&q=80&w=1200" 
-            className="w-full h-full object-cover opacity-60 mix-blend-overlay"
-            alt="Capa"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-white/90 to-transparent"></div>
-          <button className="absolute top-6 right-6 p-3 bg-white/20 backdrop-blur-md rounded-xl text-white hover:bg-white hover:text-[#006c55] transition-all group">
-            <Camera size={20} className="group-hover:scale-110 transition-transform" />
-          </button>
+    <div className="profile-container flex flex-col gap-8 pb-20 animate-in fade-in duration-700">
+      <section className="relative w-full rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/60 bg-gradient-to-br from-white via-white to-slate-50">
+        <div className="h-48 md:h-64 w-full relative overflow-hidden">
+          <img src="https://images.unsplash.com/photo-1558655146-364adaf1fcc9?auto=format&fit=crop&q=80&w=2000" className="w-full h-full object-cover" alt="Capa" />
+          <div className="absolute inset-0 bg-gradient-to-t from-white via-white/90 to-transparent"></div>
+          <div className="absolute top-6 right-6 flex gap-2">
+            {isOwner && (
+              <button onClick={() => setIsEditing(true)} className="p-3 bg-white/90 backdrop-blur-md rounded-xl text-slate-700 hover:bg-white hover:text-[#006c55] hover:shadow-lg transition-all group">
+                <Camera size={20} className="group-hover:scale-110 transition-transform" />
+              </button>
+            )}
+            <button className="p-3 bg-white/90 backdrop-blur-md rounded-xl text-slate-700 hover:bg-white hover:text-[#006c55] hover:shadow-lg transition-all">
+              <Share2 size={20} />
+            </button>
+          </div>
         </div>
 
         <div className="px-8 pb-8 flex flex-col md:flex-row items-end gap-6 -mt-16 relative z-10">
           <div className="relative group">
-            <img src={userAvatar} className="w-32 h-32 md:w-40 md:h-40 rounded-full border-[6px] border-white shadow-2xl object-cover bg-white" alt="Avatar" />
-            <div className="absolute bottom-2 right-2 w-8 h-8 bg-emerald-500 rounded-full border-4 border-white flex items-center justify-center text-white shadow-lg">
-              <Shield size={14} fill="currentColor" />
+            <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-[6px] border-white shadow-2xl overflow-hidden bg-white">
+              <img src={userAvatar} className="w-full h-full object-cover" alt="Avatar" />
+            </div>
+            {isOwner && (
+              <div onClick={() => setIsEditing(true)} className="absolute bottom-2 right-2 w-10 h-10 bg-gradient-to-br from-[#006c55] to-[#00a884] rounded-full border-4 border-white flex items-center justify-center text-white shadow-lg hover:scale-110 transition-transform cursor-pointer">
+                <Edit3 size={16} />
+              </div>
+            )}
+            <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 px-3 py-1.5 bg-gradient-to-r from-[#006c55] to-[#00a884] text-white text-[10px] font-black uppercase tracking-widest rounded-full whitespace-nowrap shadow-lg">
+              {profileData.period || 'Graduando'}
             </div>
           </div>
 
           <div className="flex-1 pb-2">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-3">
               <div>
-                <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2 leading-none">{userDisplayName}</h1>
-                <p className="text-sm font-bold text-[#006c55] uppercase tracking-[0.2em]">{profileInfo.course} • {profileInfo.period}</p>
+                <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight mb-1 leading-none">{userDisplayName}</h1>
+                <div className="flex items-center gap-3">
+                  <p className="text-sm font-bold text-[#006c55] uppercase tracking-[0.2em]">{profileData.course || 'Estudante'}</p>
+                  <div className="w-1 h-1 bg-slate-300 rounded-full"></div>
+                  <p className="text-sm font-medium text-slate-500">{profileData.university || 'Instituição não definida'}</p>
+                </div>
               </div>
               <div className="flex gap-2">
-                <button className="px-6 py-3 bg-[#006c55] text-white rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-lg shadow-[#006c55]/20 hover:scale-105 transition-all flex items-center gap-2">
-                  <Plus size={16} /> Editar Perfil
-                </button>
-                <button className="p-3 bg-white border border-slate-200 text-slate-400 rounded-2xl hover:text-slate-900 transition-all">
-                  <Share2 size={20} />
-                </button>
+                {isOwner && (
+                  <button onClick={() => setIsEditing(true)} className="px-5 py-3 bg-gradient-to-r from-[#006c55] to-[#00a884] text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-[#006c55]/20 hover:shadow-xl hover:scale-105 transition-all flex items-center gap-2">
+                    <Plus size={16} /> Editar Perfil
+                  </button>
+                )}
               </div>
+            </div>
+
+            <div className="flex gap-8 pt-4 border-t border-slate-100">
+              {[
+                { label: 'Conexões', value: profileData.stats?.connections || 0 },
+                { label: 'Projetos', value: projects.length || profileData.stats?.projects || 0 },
+                { label: 'Publicações', value: posts.length || profileData.stats?.posts || 0 },
+                { label: 'Emblemas', value: profileData.stats?.badges || 12 }
+              ].map(stat => (
+                <div key={stat.label} className="flex flex-col">
+                  <span className="text-2xl font-black text-slate-900">{stat.value}</span>
+                  <span className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">{stat.label}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
 
-        <div className="px-8 border-t border-slate-100 flex gap-8 overflow-x-auto no-scrollbar">
+        <div className="px-8 border-t border-slate-100 flex gap-8 overflow-x-auto no-scrollbar bg-white/50 backdrop-blur-sm">
           {[
-            { id: 'timeline', label: 'Timeline', icon: Layers },
+            { id: 'timeline', label: 'Timeline', icon: Layers, count: posts.length },
             { id: 'about', label: 'Sobre', icon: User },
-            { id: 'projects', label: 'Projetos', icon: Briefcase },
-            { id: 'badges', label: 'Emblemas', icon: Award }
+            { id: 'projects', label: 'Projetos', icon: Briefcase, count: projects.length },
+            { id: 'badges', label: 'Emblemas', icon: Award, count: profileData.stats.badges },
+            { id: 'activity', label: 'Atividade', icon: TrendingUp },
+            { id: 'network', label: 'Rede', icon: Users }
           ].map(tab => (
-            <button 
+            <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 py-5 border-b-2 transition-all whitespace-nowrap ${
-                activeTab === tab.id ? 'border-[#006c55] text-[#006c55] font-black' : 'border-transparent text-slate-400 font-bold hover:text-slate-600'
-              }`}
+              className={`flex items-center gap-2 py-5 border-b-2 transition-all whitespace-nowrap group relative ${activeTab === tab.id
+                ? 'border-[#006c55] text-[#006c55] font-black'
+                : 'border-transparent text-slate-400 font-bold hover:text-slate-600'
+                }`}
             >
               <tab.icon size={16} />
               <span className="text-[11px] uppercase tracking-widest">{tab.label}</span>
+              {tab.count !== undefined && (
+                <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${activeTab === tab.id ? 'bg-[#006c55] text-white' : 'bg-slate-100 text-slate-500'}`}>
+                  {tab.count}
+                </span>
+              )}
             </button>
           ))}
         </div>
       </section>
 
-      {/* 2. GRID PRINCIPAL */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        
-        {/* COLUNA LATERAL (INFO & ANALYTICS) */}
+        {/* Sidebar Col */}
         <div className="lg:col-span-4 space-y-8">
-          
-          {/* Card: Bio */}
-          <div className="glass-panel p-8 rounded-[2.5rem] bg-white border border-slate-100 shadow-xl">
-             <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.3em] mb-6">Apresentação</h3>
-             <p className="text-sm font-medium text-slate-600 leading-relaxed mb-8">{profileInfo.bio}</p>
-             <div className="space-y-4 pt-6 border-t border-slate-50">
-                <div className="flex items-center gap-3 text-slate-500">
-                  <MapPin size={16} className="text-[#006c55]" />
-                  <span className="text-xs font-bold uppercase tracking-tighter">{profileInfo.location}</span>
-                </div>
-                <div className="flex items-center gap-3 text-slate-500">
-                  <GraduationCap size={16} className="text-[#006c55]" />
-                  <span className="text-xs font-bold uppercase tracking-tighter">{profileInfo.university}</span>
-                </div>
-                <a href={profileInfo.website} target="_blank" className="flex items-center gap-3 text-[#006c55] hover:underline">
-                  <LinkIcon size={16} />
-                  <span className="text-xs font-bold uppercase tracking-tighter">Portfólio Digital</span>
-                </a>
-             </div>
+          <div className="glass-panel-profile p-8 rounded-3xl bg-white border border-slate-100 shadow-lg">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.3em]">Apresentação</h3>
+              {isOwner && <button onClick={() => setIsEditing(true)}><Edit3 size={14} className="text-[#006c55]" /></button>}
+            </div>
+            {profileData.bio ? (
+              <p className="text-sm font-medium text-slate-600 leading-relaxed mb-8 italic">"{profileData.bio}"</p>
+            ) : isOwner ? (
+              <button onClick={() => setIsEditing(true)} className="w-full py-8 border-2 border-dashed border-slate-100 rounded-3xl text-slate-400 text-xs font-bold hover:bg-slate-50 transition-all flex flex-col items-center gap-2 mb-8">
+                <Plus size={20} /> Adicionar biografia
+              </button>
+            ) : <p className="text-sm text-slate-400 italic mb-8">Nenhuma bio disponível.</p>}
+            <div className="space-y-4 pt-6 border-t border-slate-50">
+              <div className="flex items-center gap-3 text-slate-500">
+                <MapPin size={16} className="text-[#006c55]" />
+                <span className="text-xs font-bold uppercase tracking-tighter">{profileData.location || 'Local não definido'}</span>
+              </div>
+              <div className="flex items-center gap-3 text-slate-500">
+                <GraduationCap size={16} className="text-[#006c55]" />
+                <span className="text-xs font-bold uppercase tracking-tighter">{profileData.university || 'Instituição não definida'}</span>
+              </div>
+            </div>
           </div>
 
-          {/* Card: Analytics Acadêmico (Novo) */}
-          <div className="glass-panel p-8 rounded-[2.5rem] bg-slate-900 text-white shadow-2xl relative overflow-hidden">
-             <div className="absolute top-0 right-0 w-32 h-32 bg-[#d9f1a2]/10 rounded-full blur-3xl"></div>
-             <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.3em] mb-6">Thoth Analytics</h3>
-             <div className="grid grid-cols-2 gap-6">
-                <div>
-                   <p className="text-[9px] font-black uppercase text-slate-500 mb-1">Média Global (CR)</p>
-                   <div className="flex items-center gap-2">
-                      <span className="text-3xl font-black text-[#d9f1a2]">{profileInfo.academic.cr}</span>
-                      <TrendingUp size={16} className="text-emerald-400" />
-                   </div>
+          <div className="glass-panel-profile p-8 rounded-3xl bg-white border border-slate-100 shadow-lg">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.3em]">Expertise</h3>
+              {isOwner && <button onClick={() => setIsEditing(true)} className="text-xs font-bold text-[#006c55]">+ Adicionar</button>}
+            </div>
+            <div className="space-y-6">
+              {skillCategories.length > 0 ? skillCategories.map((category, idx) => (
+                <div key={idx} className="space-y-2">
+                  <div className="flex items-center gap-2 text-slate-700">
+                    <category.icon size={14} className="text-[#006c55]" />
+                    <span className="text-xs font-bold uppercase tracking-wider">{category.label}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {category.skills.map((skill, i) => (
+                      <span key={i} className="px-2.5 py-1 bg-slate-50 text-slate-700 rounded-lg text-[9px] font-bold uppercase tracking-widest border border-slate-100">
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-                <div>
-                   <p className="text-[9px] font-black uppercase text-slate-500 mb-1">Ranking Curso</p>
-                   <span className="text-xl font-black">{profileInfo.academic.ranking}</span>
-                </div>
-                <div className="col-span-2">
-                   <p className="text-[9px] font-black uppercase text-slate-500 mb-2">Horas Complementares: {profileInfo.academic.hours}</p>
-                   <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
-                      <div className="h-full bg-[#d9f1a2]" style={{ width: '85%' }}></div>
-                   </div>
-                </div>
-             </div>
+              )) : isOwner ? (
+                <button onClick={() => setIsEditing(true)} className="w-full py-8 border-2 border-dashed border-slate-100 rounded-3xl text-slate-400 text-xs font-bold flex flex-col items-center gap-2">
+                  <Plus size={20} /> Habilidades
+                </button>
+              ) : <p className="text-xs text-slate-400 italic">Sem habilidades.</p>}
+            </div>
           </div>
 
-          {/* Card: Conexões (Novo) */}
-          <div className="glass-panel p-8 rounded-[2.5rem] bg-white border border-slate-100 shadow-xl">
-             <div className="flex items-center justify-between mb-6">
-                <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.3em]">Conexões Relevantes</h3>
-                <span className="text-[9px] font-black text-[#006c55]">{profileInfo.stats.connections}</span>
-             </div>
-             <div className="flex flex-wrap gap-2">
-                {MOCK_CONNECTIONS.slice(0, 8).map((conn, i) => (
-                  <img key={i} src={conn.avatar} className="w-10 h-10 rounded-xl border-2 border-white shadow-sm hover:scale-110 transition-transform cursor-pointer" alt="Friend" />
-                ))}
-                <div className="w-10 h-10 rounded-xl bg-slate-50 border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 text-[10px] font-bold cursor-pointer hover:bg-slate-100 transition-colors">
-                  +{profileInfo.stats.connections - 8}
-                </div>
-             </div>
-          </div>
-
-          {/* Card: Expertise & Interesses */}
-          <div className="glass-panel p-8 rounded-[2.5rem] bg-white border border-slate-100 shadow-xl">
-             <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.3em] mb-4">Hard Skills</h3>
-             <div className="flex flex-wrap gap-2 mb-8">
-                {profileInfo.skills.map(skill => (
-                  <span key={skill} className="px-3 py-1.5 bg-[#006c55]/5 text-[#006c55] rounded-lg text-[9px] font-black uppercase tracking-widest border border-[#006c55]/10">{skill}</span>
-                ))}
-             </div>
-             <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.3em] mb-4">Interesses de Pesquisa</h3>
-             <div className="flex flex-wrap gap-2">
-                {profileInfo.interests.map(interest => (
-                  <span key={interest} className="px-3 py-1.5 bg-slate-50 text-slate-500 rounded-lg text-[9px] font-black uppercase tracking-widest border border-slate-100">{interest}</span>
-                ))}
-             </div>
+          <div className="glass-panel-profile p-8 rounded-3xl bg-white border border-slate-100 shadow-lg">
+            <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.3em] mb-4">Interesses</h3>
+            <div className="flex flex-wrap gap-2">
+              {interestTags.length > 0 ? interestTags.map((interest, idx) => (
+                <span key={idx} className={`px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border flex items-center gap-1.5 ${interest.color}`}>
+                  <interest.icon size={10} />
+                  {interest.label}
+                </span>
+              )) : isOwner ? (
+                <button onClick={() => setIsEditing(true)} className="w-full py-4 border-2 border-dashed border-slate-100 rounded-xl text-slate-400 text-[10px] font-black uppercase">+ Definir Interesses</button>
+              ) : <p className="text-xs text-slate-400 italic">Sem interesses.</p>}
+            </div>
           </div>
         </div>
 
-        {/* COLUNA PRINCIPAL (DINÂMICA) */}
+        {/* Main Col */}
         <div className="lg:col-span-8 space-y-8">
-          
-          {/* TAB: TIMELINE */}
           {activeTab === 'timeline' && (
             <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
-              <div className="flex items-center justify-between px-2">
-                 <h2 className="text-xl font-black text-slate-900 tracking-tight">Publicações Recentes</h2>
-                 <button className="flex items-center gap-2 text-[10px] font-black uppercase text-[#006c55] tracking-widest hover:underline"><Sparkles size={12}/> Gerar Insight por IA</button>
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight">Linha do Tempo</h2>
+                <button className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#006c55] to-[#00a884] text-white text-xs font-black uppercase tracking-widest rounded-2xl">
+                  <Sparkles size={14} /> Insight IA
+                </button>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {MOCK_POSTS.slice(0, 4).map(post => (
-                  <PostCard key={post.id} post={{...post, author: { ...post.author, name: userDisplayName, avatar: userAvatar }}} />
-                ))}
-              </div>
+              {posts.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {posts.map(post => <PostCard key={post.id} post={post} />)}
+                </div>
+              ) : (
+                <div className="glass-panel-profile p-20 flex flex-col items-center justify-center text-center bg-white border border-slate-100 rounded-[3rem]">
+                  <Layers size={40} className="text-slate-200 mb-4" />
+                  <h3 className="text-xl font-black text-slate-900 mb-2">Timeline vazia</h3>
+                  {isOwner && <button className="px-8 py-4 bg-[#006c55] text-white rounded-2xl font-black text-xs uppercase tracking-widest">Criar Publicação</button>}
+                </div>
+              )}
             </div>
           )}
 
-          {/* TAB: SOBRE (Trajetória & Certificados) */}
           {activeTab === 'about' && (
-            <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
-               <div className="glass-panel p-10 rounded-[3rem] bg-white border border-white shadow-xl">
-                  <h2 className="text-2xl font-black text-slate-900 mb-8 tracking-tight">Trajetória Acadêmica</h2>
-                  <div className="space-y-12">
-                     <div className="flex gap-6 relative">
-                        <div className="absolute left-6 top-12 bottom-[-48px] w-px bg-slate-100"></div>
-                        <div className="w-12 h-12 rounded-2xl bg-[#006c55] text-white flex items-center justify-center shrink-0 shadow-lg z-10"><Briefcase size={22} /></div>
-                        <div className="flex-1">
-                           <span className="text-[10px] font-black uppercase text-[#006c55] tracking-widest mb-1 block">Estagiário de UX Design</span>
-                           <h4 className="text-lg font-black text-slate-900 tracking-tight">Thoth Labs • Inovação Digital</h4>
-                           <p className="text-xs font-bold text-slate-400 uppercase tracking-tighter mb-4">Jan 2024 – Presente</p>
-                           <p className="text-sm text-slate-600 leading-relaxed max-w-xl">Atuando no desenvolvimento de interfaces inteligentes para o sistema Thoth Print.</p>
-                        </div>
-                     </div>
-                     <div className="flex gap-6 relative">
-                        <div className="w-12 h-12 rounded-2xl bg-blue-500 text-white flex items-center justify-center shrink-0 shadow-lg z-10"><GraduationCap size={22} /></div>
-                        <div className="flex-1">
-                           <span className="text-[10px] font-black uppercase text-blue-500 tracking-widest mb-1 block">Pesquisador Voluntário</span>
-                           <h4 className="text-lg font-black text-slate-900 tracking-tight">Grupo de Estudo: IA e Educação</h4>
-                           <p className="text-xs font-bold text-slate-400 uppercase tracking-tighter mb-4">Ago 2023 – Dez 2023</p>
-                           <p className="text-sm text-slate-600 leading-relaxed max-w-xl">Análise de impacto do uso de LLMs na retenção de conteúdo para alunos de graduação.</p>
-                        </div>
-                     </div>
-                  </div>
-               </div>
-
-               {/* Seção de Certificações (Nova) */}
-               <div className="glass-panel p-10 rounded-[3rem] bg-white border border-white shadow-xl">
-                  <h2 className="text-2xl font-black text-slate-900 mb-8 tracking-tight">Certificações e Cursos</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     {[
-                       { title: 'Google UX Design Professional', issuer: 'Coursera', date: 'Out 2023', icon: Globe },
-                       { title: 'React Performance Master', issuer: 'Rocketseat', date: 'Dez 2023', icon: Layers },
-                       { title: 'IA Generativa para Criativos', issuer: 'Thoth Academy', date: 'Jan 2024', icon: Sparkles }
-                     ].map((cert, i) => (
-                       <div key={i} className="flex items-center gap-4 p-4 rounded-2xl border border-slate-50 bg-slate-50/30 hover:bg-slate-50 transition-colors cursor-pointer">
-                          <div className="w-12 h-12 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-[#006c55]"><cert.icon size={20} /></div>
-                          <div>
-                             <h4 className="text-xs font-black text-slate-900 leading-tight mb-1">{cert.title}</h4>
-                             <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">{cert.issuer} • {cert.date}</p>
-                          </div>
-                       </div>
-                     ))}
-                  </div>
-               </div>
-            </div>
-          )}
-
-          {/* TAB: PROJETOS */}
-          {activeTab === 'projects' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in slide-in-from-bottom-4 duration-500">
-               {[1, 2, 3].map(i => (
-                 <div key={i} className="glass-panel group rounded-[2.5rem] bg-white border border-slate-100 shadow-xl overflow-hidden flex flex-col hover:translate-y-[-8px] transition-all">
-                    <div className="h-44 bg-slate-100 relative overflow-hidden">
-                       <img src={`https://picsum.photos/seed/proj${i}/600/400`} className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-700" />
-                       <div className="absolute top-4 left-4 px-4 py-1.5 bg-white/90 backdrop-blur-md rounded-full text-[9px] font-black uppercase tracking-widest text-[#006c55]">Estudo de Caso</div>
-                    </div>
-                    <div className="p-8 flex flex-col flex-1">
-                       <h3 className="text-xl font-black text-slate-900 mb-2 tracking-tight">Sistema de Grid Thoth {i}</h3>
-                       <p className="text-xs text-slate-500 font-medium leading-relaxed mb-6 line-clamp-2">Redesign completo da experiência de navegação mobile para estudantes de arquitetura e design.</p>
-                       <div className="mt-auto flex items-center justify-between border-t border-slate-50 pt-6">
-                          <div className="flex items-center gap-1.5 text-slate-400">
-                             <Calendar size={12} />
-                             <span className="text-[10px] font-bold uppercase tracking-tight">Mar 2024</span>
-                          </div>
-                          <button className="p-3 bg-slate-50 text-slate-400 hover:text-[#006c55] hover:bg-[#006c55]/10 rounded-xl transition-all"><ExternalLink size={18} /></button>
-                       </div>
-                    </div>
-                 </div>
-               ))}
-            </div>
-          )}
-
-          {/* TAB: EMBLEMAS (MURAL COMPLETO IGUAL HOME) */}
-          {activeTab === 'badges' && (
-             <div className="animate-in slide-in-from-bottom-4 duration-500 space-y-8">
-                <div className="glass-panel p-10 rounded-[3rem] bg-white border border-white shadow-xl">
-                   <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-12">
+            <div className="space-y-8 animate-in slide-in-from-bottom-4">
+              <div className="glass-panel-profile p-10 rounded-3xl bg-white border border-slate-100 shadow-xl">
+                <div className="flex items-center justify-between mb-8">
+                  <h2 className="text-2xl font-black text-slate-900 tracking-tight">Trajetória Acadêmica</h2>
+                  {isOwner && <button onClick={() => setIsEditing(true)}><Plus size={20} className="text-[#006c55]" /></button>}
+                </div>
+                <div className="space-y-10">
+                  {profileData.trajectory.length > 0 ? profileData.trajectory.map((item: any, idx: number) => (
+                    <div key={idx} className="flex gap-6 relative group">
+                      <div className="w-12 h-12 rounded-2xl bg-[#006c55] text-white flex items-center justify-center shrink-0 shadow-lg"><Briefcase size={22} /></div>
                       <div>
-                         <h2 className="text-2xl font-black text-slate-900 tracking-tight leading-none mb-2">Mural de Ativos Interativo</h2>
-                         <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Ativos vitalícios conquistados na rede Thoth</p>
+                        <span className="text-[10px] font-black uppercase text-slate-500">{item.company}</span>
+                        <h4 className="text-lg font-black text-slate-900">{item.title}</h4>
+                        <p className="text-xs font-bold text-slate-400 uppercase">{item.period}</p>
+                        <p className="text-sm text-slate-600 mt-2">{item.description}</p>
                       </div>
-                      <div className="px-6 py-3 bg-[#006c55]/10 rounded-2xl border border-[#006c55]/10 flex items-center gap-3">
-                         <Award size={24} className="text-[#006c55]" />
-                         <div>
-                            <p className="text-[9px] font-black text-[#006c55] uppercase tracking-widest leading-none">Total de Pontos</p>
-                            <p className="text-lg font-black text-slate-900 leading-none">12.450 pts</p>
-                         </div>
-                      </div>
-                   </div>
-
-                   {/* Mural de Emblemas (Interativo 20x6) */}
-                   <ProfileBadgeMural />
-
-                   <div className="mt-12 flex flex-col md:flex-row items-center justify-between p-6 bg-slate-50/50 border border-slate-100 rounded-3xl gap-6">
-                      <div className="flex items-center gap-4 text-slate-500">
-                         <div className="flex items-center gap-2"><Star size={14} className="text-amber-400" /><span className="text-[10px] font-black uppercase">8 Raros</span></div>
-                         <div className="flex items-center gap-2"><CheckCircle2 size={14} className="text-[#006c55]" /><span className="text-[10px] font-black uppercase">15 Verificados</span></div>
-                      </div>
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Todos os emblemas são registrados via Protocolo TICS</p>
-                   </div>
-                </div>
-
-                {/* Caixa de Emblemas Recomendados (Novo) */}
-                <div className="glass-panel p-10 rounded-[3rem] bg-white border border-white shadow-xl">
-                    <h3 className="text-xl font-black text-slate-900 mb-6 tracking-tight">Como conquistar mais emblemas?</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {[
-                          { title: 'Top Influencer', desc: 'Chegue a 1.500 conexões', icon: Users },
-                          { title: 'Project Master', desc: 'Finalize 20 projetos', icon: Briefcase },
-                          { title: 'Study Guru', desc: '50 sessões de estudo', icon: BookOpen }
-                        ].map((item, i) => (
-                           <div key={i} className="p-6 bg-slate-50/50 rounded-2xl border border-slate-100 text-center flex flex-col items-center">
-                              <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-slate-300 mb-4 border border-slate-100 shadow-sm"><item.icon size={24} /></div>
-                              <h4 className="text-xs font-black text-slate-900 mb-1">{item.title}</h4>
-                              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">{item.desc}</p>
-                           </div>
-                        ))}
                     </div>
+                  )) : isOwner && <button onClick={() => setIsEditing(true)} className="w-full py-12 border-2 border-dashed border-slate-100 rounded-3xl text-slate-400 font-bold text-xs uppercase">Registrar Experiência</button>}
                 </div>
-             </div>
+              </div>
+
+              <div className="glass-panel-profile p-10 rounded-3xl bg-white border border-slate-100 shadow-xl">
+                <h2 className="text-2xl font-black text-slate-900 mb-8">Certificações</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {profileData.certifications.length > 0 ? profileData.certifications.map((cert: any, i: number) => (
+                    <div key={i} className="p-4 rounded-2xl border border-slate-50 bg-slate-50/50 flex items-center gap-4">
+                      <Award size={20} className="text-[#006c55]" />
+                      <div>
+                        <h4 className="text-xs font-black text-slate-900">{cert.title}</h4>
+                        <p className="text-[9px] font-bold uppercase text-slate-400">{cert.issuer}</p>
+                      </div>
+                    </div>
+                  )) : isOwner && <button onClick={() => setIsEditing(true)} className="w-full py-8 border-2 border-dashed border-slate-100 rounded-2xl text-slate-400 text-xs font-bold">+ Adicionar Certificação</button>}
+                </div>
+              </div>
+            </div>
           )}
 
+          {activeTab === 'projects' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in slide-in-from-bottom-4">
+              {projects.length > 0 ? projects.map(project => (
+                <div key={project.id} className="rounded-3xl bg-white border border-slate-100 shadow-lg overflow-hidden flex flex-col">
+                  <div className="h-48 relative">
+                    <img src={project.coverImage || "https://images.unsplash.com/photo-1551650975-87deedd944c3"} className="w-full h-full object-cover" alt="Proj" />
+                    <div className="absolute top-4 left-4 px-4 py-1.5 bg-white/90 rounded-full text-[9px] font-black uppercase text-[#006c55]">{project.category || 'Projeto'}</div>
+                  </div>
+                  <div className="p-8">
+                    <h3 className="text-xl font-black text-slate-900 mb-3">{project.title}</h3>
+                    <p className="text-sm text-slate-500 line-clamp-2">{project.description}</p>
+                  </div>
+                </div>
+              )) : (
+                <div className="col-span-full glass-panel-profile p-20 flex flex-col items-center justify-center text-center bg-white border border-slate-100 rounded-[3rem]">
+                  <Briefcase size={40} className="text-slate-200 mb-4" />
+                  <h3 className="text-xl font-black text-slate-900 mb-2">Sem projetos</h3>
+                  {isOwner && <button className="px-8 py-4 bg-[#006c55] text-white rounded-2xl font-black text-xs uppercase">Criar Projeto</button>}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'badges' && (
+            <div className="animate-in slide-in-from-bottom-4 space-y-8">
+              <div className="glass-panel-profile p-10 rounded-3xl bg-white border border-slate-100 shadow-xl">
+                <h2 className="text-2xl font-black text-slate-900 mb-2">Mural de Ativos</h2>
+                <ProfileBadgeMural />
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
+      {isEditing && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4">
+            <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Editar Perfil</h3>
+              <button onClick={() => setIsEditing(false)} className="p-2 text-slate-400 hover:text-slate-600 font-bold">X</button>
+            </div>
+            <div className="p-8 space-y-6 max-h-[70vh] overflow-y-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase text-slate-400">Nome</label>
+                  <input id="edit-name" type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm" defaultValue={profileData.name || profileData.fullName} />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase text-slate-400">Curso</label>
+                  <input id="edit-course" type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm" defaultValue={profileData.course} />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase text-slate-400">Universidade</label>
+                  <input id="edit-univ" type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm" defaultValue={profileData.university} />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase text-slate-400">Localização</label>
+                  <input id="edit-loc" type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm" defaultValue={profileData.location} />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase text-slate-400">Bio</label>
+                <textarea id="edit-bio" className="w-full h-32 bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm" defaultValue={profileData.bio} />
+              </div>
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-50">
+                <button onClick={() => setIsEditing(false)} className="px-6 py-3 text-slate-600 font-bold">Cancelar</button>
+                <button onClick={() => {
+                  handleSaveProfile({
+                    name: (document.getElementById('edit-name') as HTMLInputElement).value,
+                    course: (document.getElementById('edit-course') as HTMLInputElement).value,
+                    university: (document.getElementById('edit-univ') as HTMLInputElement).value,
+                    location: (document.getElementById('edit-loc') as HTMLInputElement).value,
+                    bio: (document.getElementById('edit-bio') as HTMLTextAreaElement).value,
+                  });
+                }} className="px-8 py-3 bg-[#006c55] text-white rounded-xl font-black uppercase tracking-widest">Salvar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <style>{`
+        .glass-panel-profile { backdrop-filter: blur(10px); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>

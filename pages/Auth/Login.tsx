@@ -15,10 +15,10 @@ const Login: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
-    
+
     try {
       await AuthService.login(email, password);
-      navigate('/');
+      navigate('/home');
     } catch (err) {
       const error = err as { code?: string; message?: string };
       console.error("Auth Error:", error.code);
@@ -57,8 +57,8 @@ const Login: React.FC = () => {
             <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">E-mail</label>
             <div className="relative group">
               <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-[#006c55]" size={18} />
-              <input 
-                type="email" 
+              <input
+                type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -74,8 +74,8 @@ const Login: React.FC = () => {
             </div>
             <div className="relative group">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-[#006c55]" size={18} />
-              <input 
-                type="password" 
+              <input
+                type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -85,7 +85,7 @@ const Login: React.FC = () => {
             </div>
           </div>
 
-          <button 
+          <button
             type="submit"
             disabled={loading}
             className="w-full h-14 bg-[#006c55] hover:bg-[#005a46] text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-all shadow-xl shadow-[#006c55]/20 active:scale-[0.98] flex items-center justify-center gap-2"

@@ -217,8 +217,9 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
     const typeConfig = getPostTypeConfig(post.postType);
     const hasText = post.content.trim().length > 0;
 
-    // Altura baseada no conteúdo
-    const containerHeight = hasText ? 'h-[200px]' : 'h-[300px]';
+    // Altura baseada no conteúdo e se é repost
+    const isRepost = !!post.originalPostId;
+    const containerHeight = isRepost ? 'h-auto max-h-[400px]' : (hasText ? 'h-[200px]' : 'h-[300px]');
 
     if (imgCount === 1) {
       return (
@@ -363,9 +364,20 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
                 <div className="flex items-center gap-1 mt-0.5 opacity-70"><Clock size={10} /><span>{formatTimestamp(post.timestamp)}</span></div>
               </div>
               {post.originalPostId && (post as any).originalAuthor && (
-                <div className="flex items-center gap-1 mt-1 text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-lg w-fit">
-                  <RefreshCw size={10} />
-                  <span>Original de {(post as any).originalAuthor.username}</span>
+                <div className="flex flex-col mt-2 mb-1 bg-emerald-50/50 dark:bg-emerald-900/10 px-3 py-2 rounded-2xl border border-emerald-100/50 shadow-sm">
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <div className="bg-emerald-100 dark:bg-emerald-900/50 p-1 rounded-full">
+                      <RefreshCw size={8} className="text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Postagem Original</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <img src={(post as any).originalAuthor.avatar} className="w-8 h-8 rounded-xl object-cover border-2 border-white dark:border-slate-800 shadow-md" alt="Author" />
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-[13px] font-black text-slate-900 dark:text-white truncate leading-none">{(post as any).originalAuthor.name}</span>
+                      <span className="text-[11px] font-bold text-slate-500 truncate mt-1 leading-none">@{(post as any).originalAuthor.username}</span>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

@@ -18,37 +18,71 @@ export class SearchService {
      * Busca usuários pelo username ou nome.
      * Estratégia: Busca principal pelo username_lower (indexado e único).
      */
+    /**
+     * Busca usuários pelo username ou nome.
+     */
     static async searchUsers(searchQuery: string): Promise<Author[]> {
         const term = searchQuery.trim().toLowerCase();
         if (!term || term.length < 2) return [];
 
         const usersRef = collection(db, "users");
-
-        // Query por username (prefix search)
-        // Ex: termo "moi" acha "moises", "moises.alves"
-        const q = query(
-            usersRef,
-            orderBy("username_lower"),
-            startAt(term),
-            endAt(term + '\uf8ff'),
-            limit(20)
-        );
-
-        const snap = await getDocs(q);
         const results: Author[] = [];
+        const seenIds = new Set();
 
-        snap.forEach(docSnap => {
-            const data = docSnap.data();
-            results.push({
-                id: docSnap.id,
-                name: data.name || data.fullName || "Usuário",
-                username: data.username,
-                avatar: data.photoURL,
-                university: data.university,
-                verified: false, // TODO
-                stats: data.stats
+        const processSnap = (snap: any) => {
+            snap.forEach((docSnap: any) => {
+                if (!seenIds.has(docSnap.id)) {
+                    const data = docSnap.data();
+                    seenIds.add(docSnap.id);
+                    results.push({
+                        id: docSnap.id,
+                        name: data.name || data.fullName || data.displayName || "Usuário",
+                        username: data.username || data.handle || "usuario",
+                        avatar: data.photoURL || data.avatar,
+                        university: data.university || "",
+                        verified: data.verified || false,
+                        stats: data.stats
+                    });
+                }
             });
-        });
+        };
+
+        // Estratégia 1: Busca por Username (Prefixo)
+        try {
+            const qUsername = query(
+                usersRef,
+                orderBy("username"),
+                startAt(searchQuery.trim()),
+                endAt(searchQuery.trim() + '\uf8ff'),
+                limit(10)
+            );
+            const snap = await getDocs(qUsername);
+            processSnap(snap);
+        } catch (e) { console.warn("Primary username search failed", e); }
+
+        // Estratégia 2: Busca por Nome (Prefixo)
+        if (results.length < 10) {
+            try {
+                const qName = query(
+                    usersRef,
+                    orderBy("name"),
+                    startAt(searchQuery.trim()),
+                    endAt(searchQuery.trim() + '\uf8ff'),
+                    limit(10)
+                );
+                const snap = await getDocs(qName);
+                processSnap(snap);
+            } catch (e) { console.warn("Name search failed", e); }
+        }
+
+        // Estratégia 3: Fallback Simples (Igualdade)
+        if (results.length === 0) {
+            try {
+                const qSimple = query(usersRef, where("username", "==", searchQuery.trim()), limit(5));
+                const snap = await getDocs(qSimple);
+                processSnap(snap);
+            } catch (e) { }
+        }
 
         return results;
     }
@@ -58,42 +92,52 @@ export class SearchService {
      */
     static async searchPosts(searchQuery: string): Promise<any[]> {
         const term = searchQuery.trim().toLowerCase();
+        const rawTerm = searchQuery.trim();
         if (!term || term.length < 2) return [];
 
         const postsRef = collection(db, "posts");
-        let q;
-
-        if (term.startsWith('#')) {
-            const hashtag = term.substring(1);
-            q = query(
-                postsRef,
-                where("tags", "array-contains", hashtag),
-                orderBy("createdAt", "desc"),
-                limit(30)
-            );
-        } else {
-            // Busca simplificada por texto (o Firestore não suporta busca full-text nativa sem plugins)
-            // Aqui buscamos posts que contenham o termo como tag ou em campos específicos
-            q = query(
-                postsRef,
-                where("tags", "array-contains", term),
-                orderBy("createdAt", "desc"),
-                limit(30)
-            );
-        }
-
-        const snap = await getDocs(q);
         const results: any[] = [];
+        const seenIds = new Set();
 
-        snap.forEach(docSnap => {
-            const data = docSnap.data() as any;
-            results.push({
-                id: docSnap.id,
-                ...data,
-                // Garantir formatação de data para o PostCard (o service de post fará o resto)
-                timestamp: data.createdAt ? 'Postado em ' + data.createdAt.toDate().toLocaleDateString() : 'agora'
+        const processPostSnap = (snap: any) => {
+            snap.forEach((docSnap: any) => {
+                if (!seenIds.has(docSnap.id)) {
+                    const data = docSnap.data();
+                    seenIds.add(docSnap.id);
+                    results.push({
+                        id: docSnap.id,
+                        ...data,
+                        timestamp: data.createdAt ? 'Postado em ' + data.createdAt.toDate().toLocaleDateString() : 'agora'
+                    });
+                }
             });
-        });
+        };
+
+        // Estratégia 1: Hashtag
+        if (rawTerm.startsWith('#')) {
+            const hashtag = rawTerm.substring(1);
+            try {
+                const q = query(postsRef, where("tags", "array-contains", hashtag), limit(20));
+                const snap = await getDocs(q);
+                processPostSnap(snap);
+            } catch (e) { console.error("Hashtag search failed", e); }
+        } else {
+            // Estratégia 2: Tag exata
+            try {
+                const q = query(postsRef, where("tags", "array-contains", term), limit(20));
+                const snap = await getDocs(q);
+                processPostSnap(snap);
+            } catch (e) { }
+
+            // Estratégia 3: Post Type
+            if (results.length === 0) {
+                try {
+                    const qType = query(postsRef, where("postType", "==", term), limit(10));
+                    const snap = await getDocs(qType);
+                    processPostSnap(snap);
+                } catch (e) { }
+            }
+        }
 
         return results;
     }
