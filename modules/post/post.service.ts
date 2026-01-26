@@ -184,7 +184,10 @@ export const PostService = {
         const rootPostId = originalPost.originalPostId || originalPost.id;
         const rootAuthor = (originalPost as any).originalAuthor || originalPost.author;
 
-        // 2. Create a new post that references the root
+        // 2. Get the original timestamp - if it's already a repost, use its originalTimestamp, otherwise use its timestamp
+        const originalCreatedAt = (originalPost as any).originalTimestamp || originalPost.timestamp;
+
+        // 3. Create a new post that references the root
         const docRef = await addDoc(collection(db, POSTS_COLLECTION), {
             content: originalPost.content,
             tags: originalPost.tags || [],
@@ -203,7 +206,7 @@ export const PostService = {
                 verified: false,
             },
             originalAuthor: rootAuthor,
-            originalTimestamp: (originalPost as any).originalTimestamp || originalPost.timestamp,
+            originalTimestamp: originalCreatedAt,
             likes: 0,
             likedBy: [],
             replies: 0,
@@ -211,7 +214,7 @@ export const PostService = {
             updatedAt: Timestamp.now()
         });
 
-        // 3. Update the ROOT post's repost count
+        // 4. Update the ROOT post's repost count
         const rootRef = doc(db, POSTS_COLLECTION, rootPostId);
         await updateDoc(rootRef, {
             repostedBy: arrayUnion({ uid: currentUser.id, name: currentUser.name })
@@ -252,7 +255,7 @@ export const PostService = {
                     id: doc.id,
                     author: data.author,
                     content: data.content,
-                    timestamp: this.formatAccurateTimeAgo(data.createdAt),
+                    timestamp: data.createdAt,
                     likes: data.likes || 0,
                     likedBy: data.likedBy || [],
                     repostedBy: data.repostedBy || [],

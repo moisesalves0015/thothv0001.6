@@ -222,8 +222,34 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
     }
   };
 
-  const formatTimestamp = (timestamp: string) => {
-    return timestamp;
+  const formatTimestamp = (timestamp: any) => {
+    console.log('formatTimestamp called with:', timestamp, 'type:', typeof timestamp);
+    if (!timestamp) return '';
+
+    let date: Date;
+
+    // Handle Firestore Timestamp or similar objects with seconds
+    if (timestamp && typeof timestamp === 'object' && 'seconds' in timestamp) {
+      date = new Date(timestamp.seconds * 1000);
+    } else {
+      date = new Date(timestamp);
+    }
+
+    // Check if valid date
+    if (isNaN(date.getTime())) {
+      console.log('Invalid date from timestamp:', timestamp);
+      return '';
+    }
+
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (diffInSeconds < 60) return 'agora mesmo';
+    if (diffInSeconds < 3600) return `há ${Math.floor(diffInSeconds / 60)} min`;
+    if (diffInSeconds < 86400) return `há ${Math.floor(diffInSeconds / 3600)} h`;
+    if (diffInSeconds < 604800) return `há ${Math.floor(diffInSeconds / 86400)} dias`;
+
+    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
   const handleHashtagClick = (tag: string) => {
@@ -391,9 +417,12 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
                 <Repeat2 size={16} className="text-[#006c55]" />
                 <img src={post.author.avatar} className="w-6 h-6 rounded-lg object-cover" alt={post.author.name} />
               </div>
-              <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                <span className="text-[12px] font-black text-slate-700 dark:text-slate-300 truncate">{post.repostedBy && post.repostedBy[0]?.uid === user?.uid ? 'Você' : post.author.name}</span>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">repostou</span>
+              <div className="flex flex-col min-w-0 flex-1 justify-center">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[12px] font-black text-slate-700 dark:text-slate-300 truncate">{post.repostedBy && post.repostedBy[0]?.uid === user?.uid ? 'Você' : post.author.name}</span>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">repostou</span>
+                </div>
+                <span className="text-[9px] font-bold text-slate-400 opacity-80">{formatTimestamp(post.timestamp)}</span>
               </div>
             </div>
 
@@ -423,7 +452,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
         <div className="flex items-start justify-between mb-4 flex-shrink-0 relative">
           <div className="flex items-start gap-3 overflow-hidden flex-1 min-w-0">
             <div className="relative flex-shrink-0">
-              <img src={displayAuthor.avatar} className="w-12 h-12 rounded-2xl object-cover border-2 border-white dark:border-slate-700 shadow-lg" alt={displayAuthor.name} />
+              <img src={displayAuthor.avatar} className="w-12 h-12 rounded-2xl object-cover border-2 border-white dark:border-slate-700 shadow-sm" alt={displayAuthor.name} />
               {displayAuthor.verified && <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-gradient-to-r from-[#006c55] to-[#00876a] rounded-full flex items-center justify-center border-2 border-white dark:border-slate-800"><CheckCircle size={8} className="text-white" fill="white" /></div>}
             </div>
             <div className="flex flex-col min-w-0 flex-1">
@@ -434,7 +463,16 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
               <div className="flex flex-col text-[11px] text-slate-500 dark:text-slate-400">
                 <span className="font-bold truncate">{displayAuthor.username?.startsWith('@') ? displayAuthor.username : `@${displayAuthor.username}`}</span>
                 {/* Data sempre visível agora - Se for repost, tenta mostrar a data original se disponível no post, senão mostra timestamp do post atual mesmo (fallback) */}
-                <div className="flex items-center gap-1 mt-0.5 opacity-70"><Clock size={10} /><span>{formatTimestamp((post as any).originalTimestamp || (post as any).originalCreatedAt || post.timestamp)}</span></div>
+                <div className="flex items-center gap-1 mt-0.5 opacity-70">
+                  <Clock size={10} />
+                  <span>{(() => {
+                    // For reposts, try to use originalTimestamp, otherwise fall back to the post's timestamp
+                    const timestampToUse = isRepost
+                      ? (post.originalTimestamp || post.timestamp)
+                      : post.timestamp;
+                    return formatTimestamp(timestampToUse);
+                  })()}</span>
+                </div>
               </div>
             </div>
           </div>

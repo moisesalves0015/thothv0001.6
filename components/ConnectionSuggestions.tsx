@@ -244,7 +244,7 @@ const ConnectionSuggestions: React.FC = () => {
             </div>
 
             {/* Scroll Controls */}
-            <div className="flex gap-2">
+            <div className="hidden md:flex gap-2">
               <button
                 onClick={() => handleScroll('left')}
                 className="p-2 rounded-lg bg-white/60 text-[#006c55] hover:bg-white transition-all border border-white/90 shadow-sm active:scale-90"

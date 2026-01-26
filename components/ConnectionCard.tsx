@@ -130,7 +130,7 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
       </div>
 
       {/* Glass Panel Overlay */}
-      <div className="absolute bottom-2 left-2 right-2 p-3 rounded-xl bg-white/85 backdrop-blur-xl border border-white/40 flex flex-col gap-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.1)] transition-all duration-300">
+      <div className="absolute bottom-2 left-2 right-2 p-2 rounded-xl bg-white/85 backdrop-blur-xl border border-white/40 flex flex-col gap-1 shadow-[0_8px_32px_rgba(0,0,0,0.1)] transition-all duration-300">
 
         {/* User Info */}
         <div className="flex flex-col">
@@ -156,7 +156,7 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center justify-end pt-1.5 border-t border-slate-100/80">
+        <div className="flex items-center justify-end pt-1 border-t border-slate-100/80">
           <div className="flex items-center gap-1.5">
             {/* Estado: Nenhuma conexão */}
             {status === 'none' && (

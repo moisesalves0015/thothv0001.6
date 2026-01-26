@@ -151,9 +151,10 @@ const RemindersBox: React.FC = () => {
     const diffTime = dueDate.getTime() - now.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    if (diffDays === 1) return { text: "em 1 dia", color: "text-red-500 bg-red-50 border-red-100" };
-    if (diffDays === 2) return { text: "em 2 dias", color: "text-orange-500 bg-orange-50 border-orange-100" };
-    if (diffDays === 3) return { text: "em 3 dias", color: "text-amber-500 bg-amber-50 border-amber-100" };
+    if (diffDays < 0) return { text: "Atrasado", color: "text-rose-600 bg-rose-50 border-rose-100" };
+    if (diffDays === 0) return { text: "Hoje", color: "text-emerald-600 bg-emerald-50 border-emerald-100" };
+    if (diffDays === 1) return { text: "Amanhã", color: "text-blue-600 bg-blue-50 border-blue-100" };
+    if (diffDays <= 3) return { text: `em ${diffDays} dias`, color: "text-amber-500 bg-amber-50 border-amber-100" };
     return null;
   };
 
@@ -308,8 +309,11 @@ const RemindersBox: React.FC = () => {
       ? reminders
       : reminders.filter(r => r.type === activeFilter);
 
-    // Sort by proximity (Closest first)
-    return [...filtered].sort((a, b) => a.timestamp - b.timestamp);
+    // Sort: Non-completed first, then by date
+    return [...filtered].sort((a, b) => {
+      if (a.completed === b.completed) return a.timestamp - b.timestamp;
+      return a.completed ? 1 : -1;
+    });
   }, [reminders, activeFilter]);
 
   const getTypeConfig = (type?: string) => {
@@ -347,13 +351,13 @@ const RemindersBox: React.FC = () => {
             <div className="relative" ref={filterRef}>
               <button
                 onClick={() => setIsFilterOpen(!isFilterOpen)}
-                className={`flex items-center gap-2 px-3 py-2 rounded-xl transition-all ${isFilterOpen ?
+                className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all ${isFilterOpen ?
                   'bg-[#006c55] text-white' :
                   'bg-white/60 text-slate-600 hover:bg-white border border-white/90'
                   } shadow-sm active:scale-95`}
+                title="Filtrar"
               >
-                <FilterIcon size={12} />
-                <span className="text-[10px] font-bold hidden sm:inline">Filtrar</span>
+                <FilterIcon size={18} />
                 {activeFilter !== 'all' && (
                   <span className="w-4 h-4 bg-white/20 text-white text-[8px] font-black rounded-full flex items-center justify-center">
                     {reminders.filter(r => r.type === activeFilter).length}
@@ -728,7 +732,7 @@ const RemindersBox: React.FC = () => {
               <span className="text-sm font-black uppercase tracking-widest text-[#006c55] capitalize">
                 {calendarData.monthName} {calendarData.year}
               </span>
-              <div className="flex gap-2">
+              <div className="hidden md:flex gap-2">
                 <button onClick={prevMonth} className="p-2 text-slate-400 hover:text-[#006c55] transition-colors">
                   <ChevronLeft size={18} />
                 </button>
