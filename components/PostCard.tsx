@@ -12,16 +12,19 @@ import {
   Link,
   FileText,
   Download,
-  MoreVertical,
-  MessageCircle,
-  Heart,
-  BarChart2,
+  Globe,
+  Loader2,
+  Trash2,
+  Edit3,
+  EyeOff,
+  AlertTriangle,
   Clock,
-  CheckCircle,
   ExternalLink,
   Paperclip,
-  Globe,
-  Loader2
+  CheckCircle,
+  BarChart2,
+  Heart,
+  MoreVertical
 } from 'lucide-react';
 import { PostService } from '../modules/post/post.service';
 import { useAuth } from '../contexts/AuthContext';
@@ -30,14 +33,16 @@ interface PostCardProps {
   post: Post;
   onBookmarkToggle?: (postId: string, bookmarked: boolean) => void;
   onLikeToggle?: (postId: string, liked: boolean) => void;
+  onDelete?: (postId: string) => void;
 }
 
-const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggle }) => {
+const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggle, onDelete }) => {
   const { user } = useAuth();
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isLiked, setIsLiked] = useState(user ? post.likedBy?.includes(user.uid) : false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [modalData, setModalData] = useState<{ images: string[], index: number } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -77,10 +82,18 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
     return type && configs[type as keyof typeof configs] ? configs[type as keyof typeof configs] : configs.general;
   };
 
-  const handleBookmark = () => {
-    setIsBookmarked(!isBookmarked);
-    if (onBookmarkToggle) {
-      onBookmarkToggle(post.id, !isBookmarked);
+  const handleBookmark = async () => {
+    if (!user) return;
+    const newBookmarkedState = !isBookmarked;
+    setIsBookmarked(newBookmarkedState);
+    try {
+      await PostService.toggleBookmark(user.uid, post, newBookmarkedState);
+      if (onBookmarkToggle) {
+        onBookmarkToggle(post.id, newBookmarkedState);
+      }
+    } catch (e) {
+      console.error("Error toggling bookmark:", e);
+      setIsBookmarked(!newBookmarkedState);
     }
   };
 
@@ -101,25 +114,29 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
     }
   };
 
-  const handleRepost = async () => {
-    if (!user || isReposting) return;
-    setIsReposting(true);
+  const handleDelete = async () => {
+    if (!user || isDeleting || post.author.id !== user.uid) return;
+    if (!window.confirm("Tem certeza que deseja apagar esta publicação? Esta ação é irreversível.")) return;
+
+    setIsDeleting(true);
     try {
-      await PostService.repost(post, {
-        id: user.uid,
-        name: user.displayName || 'Usuário',
-        username: '@' + (user.email?.split('@')[0] || 'usuario'),
-        avatar: user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}`
-      });
-      setShareCount(prev => prev + 1);
+      await PostService.deletePost(post.id);
+      if (onDelete) onDelete(post.id);
       setIsMenuOpen(false);
-      alert("Repostado com sucesso!");
     } catch (e) {
-      console.error("Error reposting:", e);
-      alert("Erro ao repostar.");
+      console.error("Error deleting post:", e);
+      alert("Erro ao apagar publicação.");
     } finally {
-      setIsReposting(false);
+      setIsDeleting(false);
     }
+  };
+
+  const handleAction = (action: string) => {
+    console.log(`Action chosen: ${action}`);
+    setIsMenuOpen(false);
+    // Future implementation for Report, Hide, etc.
+    if (action === 'report') alert('Denúncia enviada com sucesso.');
+    if (action === 'hide') alert('Esta publicação não aparecerá mais para você.');
   };
 
   const formatTimestamp = (timestamp: string) => {
@@ -284,18 +301,47 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
             <button onClick={handleBookmark} className={`p-2 rounded-xl transition-all active:scale-95 ${isBookmarked ? 'text-[#006c55] dark:text-emerald-400 bg-gradient-to-br from-[#006c55]/10 to-[#006c55]/5 dark:from-emerald-400/10 dark:to-emerald-400/5' : 'text-slate-400 hover:text-[#006c55] dark:hover:text-emerald-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`} title={isBookmarked ? "Remover" : "Salvar"}><Bookmark size={16} strokeWidth={isBookmarked ? 2.5 : 2} fill={isBookmarked ? "currentColor" : "none"} /></button>
             <button onClick={() => setIsMenuOpen(!isMenuOpen)} className={`p-2 rounded-xl transition-all active:scale-95 ${isMenuOpen ? 'text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'}`} title="Opções"><MoreVertical size={16} /></button>
             {isMenuOpen && <div className="absolute right-0 top-10 w-56 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-2xl shadow-2xl z-50 py-2 animate-in fade-in slide-in-from-top-2 duration-200">
-              <button
-                onClick={handleRepost}
-                disabled={isReposting}
-                className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors disabled:opacity-50"
-              >
-                {isReposting ? <Loader2 size={14} className="animate-spin" /> : <Repeat2 size={14} />}
-                Repostar
-              </button>
-              <button className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors"><Link size={14} />Copiar link</button>
-              <button className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors"><BarChart2 size={14} />Estatísticas</button>
-              <div className="h-px bg-slate-100 dark:bg-slate-800 my-2 mx-4"></div>
-              <button className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 text-left transition-colors"><ExternalLink size={14} />Denunciar</button>
+              {/* Opções para o Dono */}
+              {user?.uid === post.author.id ? (
+                <>
+                  <button className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors">
+                    <Edit3 size={14} /> Editar publicação
+                  </button>
+                  <button className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors">
+                    <BarChart2 size={14} /> Estatísticas
+                  </button>
+                  <div className="h-px bg-slate-100 dark:bg-slate-800 my-2 mx-4"></div>
+                  <button
+                    onClick={handleDelete}
+                    disabled={isDeleting}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 text-left transition-colors"
+                  >
+                    {isDeleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                    Apagar publicação
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={handleRepost}
+                    disabled={isReposting}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors disabled:opacity-50"
+                  >
+                    {isReposting ? <Loader2 size={14} className="animate-spin" /> : <Repeat2 size={14} />}
+                    Repostar
+                  </button>
+                  <button onClick={() => handleAction('copy_link')} className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors">
+                    <Link size={14} /> Copiar link
+                  </button>
+                  <button onClick={() => handleAction('hide')} className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors">
+                    <EyeOff size={14} /> Não tenho interesse
+                  </button>
+                  <div className="h-px bg-slate-100 dark:bg-slate-800 my-2 mx-4"></div>
+                  <button onClick={() => handleAction('report')} className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 text-left transition-colors">
+                    <AlertTriangle size={14} /> Denunciar
+                  </button>
+                </>
+              )}
             </div>}
           </div>
         </div>
@@ -317,7 +363,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
               <button onClick={handleLike} className={`flex items-center gap-1.5 transition-all active:scale-95 ${isLiked ? 'text-red-500' : 'text-slate-400 hover:text-red-500'}`}><Heart size={16} strokeWidth={2.5} fill={isLiked ? "currentColor" : "none"} /><span className="text-[11px] font-bold">{likeCount}</span></button>
               <button className="flex items-center gap-1.5 text-slate-400 hover:text-[#006c55] transition-colors active:scale-95"><Repeat2 size={16} strokeWidth={2.5} /><span className="text-[11px] font-bold">{shareCount}</span></button>
             </div>
-            <div className="flex items-center gap-2"><div className="flex items-center gap-1 text-[10px] font-bold text-slate-400"><BarChart2 size={12} /><span>{Math.floor(Math.random() * 1000)} views</span></div></div>
+            <div className="flex items-center gap-2"></div>
           </div>
         </div>
       </div>

@@ -160,7 +160,7 @@ const Conexoes: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col gap-8 w-full max-w-[1600px] mx-auto animate-in fade-in duration-500 pb-20">
+    <div className="flex flex-col gap-12 w-full max-w-[1600px] mx-auto animate-in fade-in duration-500 pb-24">
 
       {/* Header */}
       <StatsHeader
@@ -182,7 +182,7 @@ const Conexoes: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-5">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8">
             {pendingRequests.map(req => (
               <div key={req.id} className="flex justify-center">
                 <ConnectionCard
@@ -216,7 +216,7 @@ const Conexoes: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-5">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8">
             {sentRequests.map(req => (
               <div key={req.id} className="flex justify-center relative group">
                 <ConnectionCard
@@ -258,7 +258,7 @@ const Conexoes: React.FC = () => {
               {[1, 2, 3, 4, 5, 6].map(i => <ConnectionCardSkeleton key={i} />)}
             </div>
           ) : filteredConnections.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5 animate-in fade-in duration-500">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-8 animate-in fade-in duration-500">
               {filteredConnections.map(conn => (
                 <div key={conn.id} className="flex justify-center relative group/card">
                   <ConnectionCard
@@ -329,7 +329,7 @@ const Conexoes: React.FC = () => {
           </button>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5 relative z-10">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-8 relative z-10">
           {loading ? (
             [1, 2, 3, 4, 5, 6].map(i => <ConnectionCardSkeleton key={i} />)
           ) : suggestions.slice(0, 18).map(sug => (

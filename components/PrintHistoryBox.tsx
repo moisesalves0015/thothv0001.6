@@ -253,20 +253,6 @@ const PrintHistoryBox: React.FC = () => {
                         {config.text}
                       </div>
 
-                      <div className="flex items-center gap-2">
-                        {req.status === 'pending' && (
-                          <span className="text-[9px] font-black text-amber-500 bg-amber-50 px-2 py-0.5 rounded border border-amber-100">
-                            #{requests.filter(r => !r.archived && r.status === 'pending' && r.timestamp < req.timestamp).length + 1}º Fila
-                          </span>
-                        )}
-                        {req.priority === 'urgent' && (
-                          <span className="text-[8px] font-black bg-purple-500 text-white px-1.5 py-0.5 rounded uppercase">Urgente</span>
-                        )}
-                        <span className="text-[9px] font-bold text-slate-500">
-                          {req.paymentMethod === 'paid' ? 'PAGO' : 'PAGAR NO BALCÃO'}
-                        </span>
-                      </div>
-
                       <button
                         onClick={() => setActiveMenu(activeMenu === req.id ? null : req.id)}
                         className="text-slate-300 hover:text-slate-600 transition-colors"
@@ -275,6 +261,23 @@ const PrintHistoryBox: React.FC = () => {
                       </button>
                     </div>
                   </div>
+                </div>
+
+                {/* Footer do Card */}
+                <div className="mt-3 pt-2 border-t border-white/40 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {req.status === 'pending' && (
+                      <span className="text-[9px] font-black text-amber-500 bg-amber-50 px-2 py-0.5 rounded border border-amber-100 uppercase tracking-tighter">
+                        #{requests.filter(r => !r.archived && r.status === 'pending' && r.timestamp < req.timestamp).length + 1}º Fila
+                      </span>
+                    )}
+                    {req.priority === 'urgent' && (
+                      <span className="text-[8px] font-black bg-purple-500 text-white px-1.5 py-0.5 rounded uppercase tracking-tighter">Urgente</span>
+                    )}
+                  </div>
+                  <span className={`text-[9px] font-black uppercase tracking-widest ${req.paymentMethod === 'paid' ? 'text-emerald-600' : 'text-slate-400'}`}>
+                    {req.paymentMethod === 'paid' ? '• PAGO' : '• PAGAR NO BALCÃO'}
+                  </span>
                 </div>
 
                 {isMenuActive && (

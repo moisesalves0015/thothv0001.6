@@ -16,7 +16,8 @@ import {
   Sparkles,
   Target,
   GraduationCap,
-  Calendar
+  Calendar,
+  Bookmark
 } from 'lucide-react';
 
 /**
@@ -28,14 +29,19 @@ const SidebarFeed: React.FC<SidebarConfig> = ({ title = "Feed do Conhecimento", 
   const [refreshing, setRefreshing] = useState(false);
   const [isPostModalOpen, setPostModalOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [activeFilter, setActiveFilter] = useState<'all' | 'study' | 'resource' | 'question' | 'event'>('all');
+  const [activeFilter, setActiveFilter] = useState<'all' | 'study' | 'resource' | 'question' | 'event' | 'bookmarks'>('all');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const filterRef = useRef<HTMLDivElement>(null);
 
   const fetchPosts = useCallback(async () => {
     try {
       if (auth.currentUser) {
-        const feedPosts = await PostService.getFeedPosts(auth.currentUser.uid);
+        let feedPosts: Post[] = [];
+        if (activeFilter === 'bookmarks') {
+          feedPosts = await PostService.getBookmarkedPosts(auth.currentUser.uid);
+        } else {
+          feedPosts = await PostService.getFeedPosts(auth.currentUser.uid);
+        }
         setPosts(feedPosts);
       }
     } catch (error) {
@@ -44,7 +50,7 @@ const SidebarFeed: React.FC<SidebarConfig> = ({ title = "Feed do Conhecimento", 
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [activeFilter]);
 
   useEffect(() => {
     fetchPosts();
@@ -95,7 +101,8 @@ const SidebarFeed: React.FC<SidebarConfig> = ({ title = "Feed do Conhecimento", 
     { id: 'study', label: 'Estudos', icon: BookOpen, color: 'text-emerald-500', bg: 'bg-emerald-50', border: 'border-emerald-100' },
     { id: 'resource', label: 'Recursos', icon: GraduationCap, color: 'text-amber-500', bg: 'bg-amber-100', border: 'border-amber-200' },
     { id: 'question', label: 'Dúvidas', icon: Target, color: 'text-red-500', bg: 'bg-red-50', border: 'border-red-100' },
-    { id: 'event', label: 'Eventos', icon: Calendar, color: 'text-purple-500', bg: 'bg-purple-50', border: 'border-purple-100' }
+    { id: 'event', label: 'Eventos', icon: Calendar, color: 'text-purple-500', bg: 'bg-purple-50', border: 'border-purple-100' },
+    { id: 'bookmarks', label: 'Salvos', icon: Bookmark, color: 'text-[#006c55]', bg: 'bg-emerald-50', border: 'border-emerald-100' }
   ];
 
   const getActiveFilterLabel = () => {
@@ -248,10 +255,15 @@ const SidebarFeed: React.FC<SidebarConfig> = ({ title = "Feed do Conhecimento", 
                 <PostCard
                   post={post}
                   onBookmarkToggle={(postId, bookmarked) => {
-                    console.log(`Post ${postId} ${bookmarked ? 'bookmarked' : 'unbookmarked'}`);
+                    if (activeFilter === 'bookmarks' && !bookmarked) {
+                      setPosts(prev => prev.filter(p => p.id !== postId));
+                    }
                   }}
                   onLikeToggle={(postId, liked) => {
                     console.log(`Post ${postId} ${liked ? 'liked' : 'unliked'}`);
+                  }}
+                  onDelete={(postId) => {
+                    setPosts(prev => prev.filter(p => p.id !== postId));
                   }}
                 />
               </div>

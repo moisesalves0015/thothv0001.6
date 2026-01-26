@@ -8,7 +8,9 @@ import {
     getDocs,
     Timestamp,
     startAfter,
-    DocumentSnapshot
+    DocumentSnapshot,
+    deleteDoc,
+    setDoc
 } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { Post, Author } from '../../types';
@@ -74,11 +76,44 @@ export const PostService = {
     },
 
     /**
+     * Deletes a post
+     */
+    async deletePost(postId: string): Promise<void> {
+        const postRef = doc(db, POSTS_COLLECTION, postId);
+        await deleteDoc(postRef);
+    },
+
+    /**
+     * Toggles bookmark on a post for a user
+     */
+    async toggleBookmark(userId: string, post: Post, isBookmarked: boolean): Promise<void> {
+        const bookmarkRef = doc(db, 'users', userId, 'bookmarks', post.id);
+        if (isBookmarked) {
+            await setDoc(bookmarkRef, {
+                ...post,
+                bookmarkedAt: Timestamp.now()
+            });
+        } else {
+            await deleteDoc(bookmarkRef);
+        }
+    },
+
+    /**
+     * Fetches bookmarked posts for a user
+     */
+    async getBookmarkedPosts(userId: string): Promise<Post[]> {
+        const bookmarksRef = collection(db, 'users', userId, 'bookmarks');
+        const q = query(bookmarksRef, orderBy('bookmarkedAt', 'desc'));
+        const snap = await getDocs(q);
+        return snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as Post));
+    },
+
+    /**
      * Reposts a post
      */
-    async repost(originalPost: Post, currentUser: Author): Promise<string> {
+    async repost(originalPost: Post, currentUser: { id: string, name: string, username: string, avatar: string }): Promise<string> {
         // 1. Create a new post that references the original
-        const newPostId = await addDoc(collection(db, POSTS_COLLECTION), {
+        const docRef = await addDoc(collection(db, POSTS_COLLECTION), {
             content: originalPost.content,
             tags: originalPost.tags || [],
             images: originalPost.images || [],
@@ -101,7 +136,7 @@ export const PostService = {
             repostedBy: arrayUnion({ uid: currentUser.id, name: currentUser.name })
         });
 
-        return newPostId.id;
+        return docRef.id;
     },
 
     /**

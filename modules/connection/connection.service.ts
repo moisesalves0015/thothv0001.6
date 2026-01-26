@@ -144,17 +144,22 @@ export class ConnectionService {
      */
     static async getSentRequests(uid: string): Promise<Author[]> {
         const ref = collection(db, "connections");
+        // FIX: Query using 'users' array-contains to match security rules
+        // Original query (requesterId == uid) failed because rules require checking if auth.uid is in 'users'
         const q = query(ref,
-            where("requesterId", "==", uid),
+            where("users", "array-contains", uid),
             where("status", "==", "pending")
         );
         const snap = await getDocs(q);
 
-        return snap.docs.map(d => {
-            const data = d.data();
-            const otherUid = data.users.find((id: string) => id !== uid);
-            return { ...data[otherUid], id: otherUid } as Author;
-        });
+        return snap.docs
+            .map(d => d.data())
+            // Filter in-memory to find requests initiated by ME
+            .filter(data => data.requesterId === uid)
+            .map(data => {
+                const otherUid = data.users.find((id: string) => id !== uid);
+                return { ...data[otherUid], id: otherUid } as Author;
+            });
     }
 
     /**
@@ -168,6 +173,8 @@ export class ConnectionService {
         if (!snap.exists()) return { status: 'none' };
 
         const data = snap.data();
+        if (!data) return { status: 'none' };
+
         if (data.status === 'accepted') return { status: 'accepted' };
         if (data.status === 'pending') {
             return { status: data.requesterId === currentUid ? 'pending_sent' : 'pending_received' };

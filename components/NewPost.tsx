@@ -354,7 +354,7 @@ const NewPost: React.FC<NewPostProps> = ({ isOpen, onClose, onPostCreated }) => 
                 <button onClick={() => setIsLinkInputOpen(false)} className="text-slate-400 hover:text-slate-600 p-1"><X size={18} /></button>
               </div>
               <div className="flex gap-2">
-                <input type="text" value={tempLink} onChange={(e) => setTempLink(e.target.value)} placeholder="Cole a URL aqui..." className="flex-1 bg-white border-2 border-blue-100 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 transition-all font-medium" autoFocus />
+                <input type="text" value={tempLink} onChange={(e) => setTempLink(e.target.value)} placeholder="Cole a URL aqui..." className="flex-1 bg-white border-2 border-blue-100 rounded-xl px-4 py-3 text-[16px] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 transition-all font-medium" autoFocus />
                 <button onClick={handleLinkAdd} className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-5 py-3 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all active:scale-95 font-bold text-xs uppercase shadow-lg shadow-blue-500/20">Incluir</button>
               </div>
             </div>
@@ -375,7 +375,7 @@ const NewPost: React.FC<NewPostProps> = ({ isOpen, onClose, onPostCreated }) => 
               ))}
             </div>
             <div className="flex gap-2">
-              <input ref={tagInputRef} type="text" value={currentTagInput} onChange={(e) => setCurrentTagInput(e.target.value)} onKeyDown={handleKeyDown} placeholder="Adicione tópicos..." className="flex-1 h-11 px-4 bg-white border-2 border-slate-100 rounded-xl focus:ring-2 focus:ring-[#006c55]/10 focus:border-[#006c55]/30 transition-all text-[13px] font-medium text-slate-700 placeholder:text-slate-400" disabled={isSubmitting || hashtags.length >= 5} maxLength={20} />
+              <input ref={tagInputRef} type="text" value={currentTagInput} onChange={(e) => setCurrentTagInput(e.target.value)} onKeyDown={handleKeyDown} placeholder="Adicione tópicos..." className="flex-1 h-11 px-4 bg-white border-2 border-slate-100 rounded-xl focus:ring-2 focus:ring-[#006c55]/10 focus:border-[#006c55]/30 transition-all text-[16px] font-medium text-slate-700 placeholder:text-slate-400" disabled={isSubmitting || hashtags.length >= 5} maxLength={20} />
               <button onClick={addHashtag} disabled={!currentTagInput.trim() || hashtags.length >= 5} className="h-11 px-4 bg-white border-2 border-slate-100 rounded-xl text-[#006c55] hover:bg-[#006c55]/5 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-bold text-xs uppercase">Add</button>
             </div>
           </div>
