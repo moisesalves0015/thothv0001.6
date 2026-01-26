@@ -1,7 +1,8 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAuth, setPersistence, browserSessionPersistence } from "firebase/auth";
+import { getAuth, setPersistence, browserLocalPersistence } from "firebase/auth";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
+import { getMessaging } from "firebase/messaging";
 
 
 const firebaseConfig = {
@@ -27,9 +28,13 @@ const db = initializeFirestore(app, {
 
 
 // Configura a persistência de forma assíncrona sem bloquear a exportação
-setPersistence(auth, browserSessionPersistence).catch(err => {
+// Configura a persistência de forma assíncrona sem bloquear a exportação
+// Para PWA, usamos browserLocalPersistence para manter o usuário logado mesmo fechar o app
+setPersistence(auth, browserLocalPersistence).catch(err => {
   console.warn("Firebase persistence warning:", err);
 });
 
-export { app, auth, db, storage };
+const messaging = typeof window !== 'undefined' ? getMessaging(app) : null;
+
+export { app, auth, db, storage, messaging };
 export default app;
