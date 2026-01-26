@@ -6,13 +6,13 @@ import { getMessaging } from "firebase/messaging";
 
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBZkStF0t5bcWJxK_EFRG9Hqb_nRIhqbMY",
-  authDomain: "thothv0001-4.firebaseapp.com",
-  projectId: "thothv0001-4",
-  storageBucket: "thothv0001-4.firebasestorage.app",
-  messagingSenderId: "881831991550",
-  appId: "1:881831991550:web:cd22ac9b127df1209a6daf",
-  measurementId: "G-2H7H2L52MW"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 // Singleton para o App

@@ -7,12 +7,12 @@ importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-comp
 // Configuração do Firebase (mesma do seu firebase/index.ts)
 // IMPORTANTE: Substitua com suas credenciais reais
 firebase.initializeApp({
-    apiKey: "AIzaSyBqVwZ9YvGxKxJ0kZqYxQxZxQxZxQxZxQx", // Substitua
-    authDomain: "your-project.firebaseapp.com", // Substitua
-    projectId: "your-project-id", // Substitua
-    storageBucket: "your-project.appspot.com", // Substitua
-    messagingSenderId: "123456789", // Substitua
-    appId: "1:123456789:web:abcdef" // Substitua
+    apiKey: "AIzaSyBZkStF0t5bcWJxK_EFRG9Hqb_nRIhqbMY",
+    authDomain: "thothv0001-4.firebaseapp.com",
+    projectId: "thothv0001-4",
+    storageBucket: "thothv0001-4.firebasestorage.app",
+    messagingSenderId: "881831991550",
+    appId: "1:881831991550:web:cd22ac9b127df1209a6daf"
 });
 
 const messaging = firebase.messaging();
