@@ -76,6 +76,17 @@ export const PostService = {
     },
 
     /**
+     * Updates a post content
+     */
+    async updatePost(postId: string, data: Partial<Post>): Promise<void> {
+        const postRef = doc(db, POSTS_COLLECTION, postId);
+        await updateDoc(postRef, {
+            ...data,
+            updatedAt: Timestamp.now()
+        });
+    },
+
+    /**
      * Deletes a post
      */
     async deletePost(postId: string): Promise<void> {
@@ -89,10 +100,20 @@ export const PostService = {
     async toggleBookmark(userId: string, post: Post, isBookmarked: boolean): Promise<void> {
         const bookmarkRef = doc(db, 'users', userId, 'bookmarks', post.id);
         if (isBookmarked) {
-            await setDoc(bookmarkRef, {
-                ...post,
+            // Garantir que salvamos um objeto limpo e serializável
+            const bookmarkData = {
+                id: post.id,
+                content: post.content,
+                author: post.author,
+                timestamp: post.timestamp,
+                images: post.images || [],
+                postType: post.postType || 'general',
+                externalLink: post.externalLink || null,
+                attachmentFile: post.attachmentFile || null,
+                tags: post.tags || [],
                 bookmarkedAt: Timestamp.now()
-            });
+            };
+            await setDoc(bookmarkRef, bookmarkData);
         } else {
             await deleteDoc(bookmarkRef);
         }
@@ -113,6 +134,7 @@ export const PostService = {
      */
     async repost(originalPost: Post, currentUser: { id: string, name: string, username: string, avatar: string }): Promise<string> {
         // 1. Create a new post that references the original
+        // Importante: O autor do NOVO documento deve ser o currentUser para passar nas regras de segurança
         const docRef = await addDoc(collection(db, POSTS_COLLECTION), {
             content: originalPost.content,
             tags: originalPost.tags || [],
@@ -122,7 +144,15 @@ export const PostService = {
             attachmentFile: originalPost.attachmentFile || null,
             originalPostId: originalPost.id,
             repostedBy: [{ uid: currentUser.id, name: currentUser.name }],
-            author: originalPost.author, // The original author is still the author
+            // O author agora é quem está repostando, mas guardamos a info do post original
+            author: {
+                id: currentUser.id,
+                name: currentUser.name,
+                username: currentUser.username,
+                avatar: currentUser.avatar,
+                verified: false, // Repost não herda verificado
+            },
+            originalAuthor: originalPost.author,
             likes: 0,
             likedBy: [],
             replies: 0,

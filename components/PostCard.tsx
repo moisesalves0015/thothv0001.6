@@ -137,6 +137,22 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
     }
   };
 
+  const handleEdit = async () => {
+    if (post.author.id !== user?.uid) return;
+    const newContent = window.prompt("Edite sua publicação:", post.content);
+    if (newContent !== null && newContent.trim() !== "" && newContent !== post.content) {
+      try {
+        await PostService.updatePost(post.id, { content: newContent });
+        post.content = newContent; // Atualização local simples
+        toast.success("Publicação atualizada!");
+        setIsMenuOpen(false);
+      } catch (e) {
+        console.error("Error updating post:", e);
+        toast.error("Erro ao atualizar publicação.");
+      }
+    }
+  };
+
   const handleDelete = async () => {
     if (!user || isDeleting || post.author.id !== user.uid) return;
     if (!window.confirm("Tem certeza que deseja apagar esta publicação? Esta ação é irreversível.")) return;
@@ -146,9 +162,10 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
       await PostService.deletePost(post.id);
       if (onDelete) onDelete(post.id);
       setIsMenuOpen(false);
+      toast.success("Publicação apagada.");
     } catch (e) {
       console.error("Error deleting post:", e);
-      alert("Erro ao apagar publicação.");
+      toast.error("Erro ao apagar publicação.");
     } finally {
       setIsDeleting(false);
     }
@@ -335,7 +352,10 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
                     {isReposting ? <Loader2 size={14} className="animate-spin" /> : <Repeat2 size={14} />}
                     Repostar no meu feed
                   </button>
-                  <button className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors">
+                  <button
+                    onClick={handleEdit}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors"
+                  >
                     <Edit3 size={14} /> Editar publicação
                   </button>
                   <button className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors">
