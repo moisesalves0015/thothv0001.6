@@ -24,8 +24,10 @@ import {
   CheckCircle,
   BarChart2,
   Heart,
-  MoreVertical
+  MoreVertical,
+  RefreshCw
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { PostService } from '../modules/post/post.service';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
@@ -39,13 +41,34 @@ interface PostCardProps {
 
 const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggle, onDelete }) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [isBookmarked, setIsBookmarked] = useState(false);
-  const [isLiked, setIsLiked] = useState(user ? post.likedBy?.includes(user.uid) : false);
+  const [isLiked, setIsLiked] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [modalData, setModalData] = useState<{ images: string[], index: number } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // Sync state with post data
+  useEffect(() => {
+    if (user) {
+      setIsLiked(post.likedBy?.includes(user.uid) || false);
+
+      const checkBookmark = async () => {
+        try {
+          const bookmarked = await PostService.isPostBookmarked(user.uid, post.id);
+          setIsBookmarked(bookmarked);
+        } catch (e) {
+          console.error("Error checking bookmark:", e);
+        }
+      };
+      checkBookmark();
+    }
+    // Sincronizar contadores quando o post mudar (ex: atualização vinda do feed)
+    setLikeCount(post.likes || 0);
+    setShareCount(post.repostedBy?.length || 0);
+  }, [user, post.id, post.likedBy, post.likes, post.repostedBy]);
 
   const [likeCount, setLikeCount] = useState(post.likes || 0);
   const [shareCount, setShareCount] = useState(post.repostedBy?.length || 0);
@@ -181,6 +204,10 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
 
   const formatTimestamp = (timestamp: string) => {
     return timestamp;
+  };
+
+  const handleHashtagClick = (tag: string) => {
+    navigate(`/explorar?q=${encodeURIComponent('#' + tag)}`);
   };
 
   const renderCollage = () => {
@@ -335,6 +362,12 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
                 <span className="font-bold truncate">{post.author.username}</span>
                 <div className="flex items-center gap-1 mt-0.5 opacity-70"><Clock size={10} /><span>{formatTimestamp(post.timestamp)}</span></div>
               </div>
+              {post.originalPostId && (post as any).originalAuthor && (
+                <div className="flex items-center gap-1 mt-1 text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-lg w-fit">
+                  <RefreshCw size={10} />
+                  <span>Original de {(post as any).originalAuthor.username}</span>
+                </div>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-1 flex-shrink-0 ml-2" ref={menuRef}>
@@ -412,13 +445,24 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
         {/* Hashtags e Rodapé Fixo */}
         <div className="flex-shrink-0">
           {post.tags && post.tags.length > 0 && <div className="flex flex-wrap gap-1.5 mb-3">
-            {post.tags.slice(0, 6).map(tag => <span key={tag} className="text-[9px] font-extrabold text-[#006c55] dark:text-emerald-400 bg-gradient-to-r from-[#006c55]/10 to-[#006c55]/5 dark:from-emerald-400/10 dark:to-emerald-400/5 px-2.5 py-1.5 rounded-lg uppercase tracking-wider transition-all hover:scale-105 cursor-pointer border border-[#006c55]/10 dark:border-white/5">#{tag}</span>)}
+            {post.tags.slice(0, 6).map(tag => (
+              <span
+                key={tag}
+                onClick={() => handleHashtagClick(tag)}
+                className="text-[9px] font-extrabold text-[#006c55] dark:text-emerald-400 bg-gradient-to-r from-[#006c55]/10 to-[#006c55]/5 dark:from-emerald-400/10 dark:to-emerald-400/5 px-2.5 py-1.5 rounded-lg uppercase tracking-wider transition-all hover:scale-105 cursor-pointer border border-[#006c55]/10 dark:border-white/5 active:bg-[#006c55] active:text-white"
+              >
+                #{tag}
+              </span>
+            ))}
           </div>}
 
           <div className="flex items-center justify-between pt-3 border-t border-slate-100/80 dark:border-white/5">
             <div className="flex items-center gap-4">
               <button onClick={handleLike} className={`flex items-center gap-1.5 transition-all active:scale-95 ${isLiked ? 'text-red-500' : 'text-slate-400 hover:text-red-500'}`}><Heart size={16} strokeWidth={2.5} fill={isLiked ? "currentColor" : "none"} /><span className="text-[11px] font-bold">{likeCount}</span></button>
-              <button onClick={handleRepost} disabled={isReposting} className={`flex items-center gap-1.5 transition-all active:scale-95 ${isReposting ? 'opacity-50' : 'text-slate-400 hover:text-[#006c55]'}`}><Repeat2 size={16} strokeWidth={2.5} /><span className="text-[11px] font-bold">{shareCount}</span></button>
+              <button onClick={handleRepost} disabled={isReposting} className={`flex items-center gap-1.5 transition-all active:scale-95 ${isReposting ? 'opacity-50' : 'text-slate-400 hover:text-[#006c55]'}`}>
+                <Repeat2 size={16} strokeWidth={2.5} />
+                {!post.originalPostId && <span className="text-[11px] font-bold">{shareCount}</span>}
+              </button>
             </div>
           </div>
         </div>

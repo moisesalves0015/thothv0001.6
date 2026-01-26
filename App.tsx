@@ -43,7 +43,7 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     <div className="min-h-screen flex flex-col lg:flex-row bg-transparent">
       <Topbar />
       <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
-      <main className={`flex-1 transition-all duration-300 min-h-screen lg:pt-[24px] ${isCollapsed ? 'lg:ml-[80px]' : 'lg:ml-[280px]'} ml-0 flex flex-col items-center overflow-x-hidden`} style={{ paddingTop: 'calc(96px + env(safe-area-inset-top))' }}>
+      <main className={`flex-1 transition-all duration-300 min-h-screen lg:pt-[24px] ${isCollapsed ? 'lg:ml-[80px]' : 'lg:ml-[280px]'} ml-0 flex flex-col items-center overflow-x-hidden`} style={{ paddingTop: 'calc(76px + env(safe-area-inset-top))' }}>
         <div className="w-full px-4 md:px-6 lg:px-0 lg:w-[1005px] flex flex-col box-border pb-12">
           <UtilityHeader />
           {children}

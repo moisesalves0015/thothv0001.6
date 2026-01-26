@@ -119,9 +119,6 @@ export const PostService = {
         }
     },
 
-    /**
-     * Fetches bookmarked posts for a user
-     */
     async getBookmarkedPosts(userId: string): Promise<Post[]> {
         const bookmarksRef = collection(db, 'users', userId, 'bookmarks');
         const q = query(bookmarksRef, orderBy('bookmarkedAt', 'desc'));
@@ -130,11 +127,23 @@ export const PostService = {
     },
 
     /**
+     * Checks if a specific post is bookmarked by a user
+     */
+    async isPostBookmarked(userId: string, postId: string): Promise<boolean> {
+        const bookmarkRef = doc(db, 'users', userId, 'bookmarks', postId);
+        const snap = await getDoc(bookmarkRef);
+        return snap.exists();
+    },
+
+    /**
      * Reposts a post
      */
     async repost(originalPost: Post, currentUser: { id: string, name: string, username: string, avatar: string }): Promise<string> {
-        // 1. Create a new post that references the original
-        // Importante: O autor do NOVO documento deve ser o currentUser para passar nas regras de segurança
+        // 1. Identificar o post raiz (de onde veio a informação original)
+        const rootPostId = originalPost.originalPostId || originalPost.id;
+        const rootAuthor = (originalPost as any).originalAuthor || originalPost.author;
+
+        // 2. Create a new post that references the root
         const docRef = await addDoc(collection(db, POSTS_COLLECTION), {
             content: originalPost.content,
             tags: originalPost.tags || [],
@@ -142,7 +151,7 @@ export const PostService = {
             postType: originalPost.postType || 'general',
             externalLink: originalPost.externalLink || null,
             attachmentFile: originalPost.attachmentFile || null,
-            originalPostId: originalPost.id,
+            originalPostId: rootPostId,
             repostedBy: [{ uid: currentUser.id, name: currentUser.name }],
             // O author agora é quem está repostando, mas guardamos a info do post original
             author: {
@@ -150,9 +159,9 @@ export const PostService = {
                 name: currentUser.name,
                 username: currentUser.username,
                 avatar: currentUser.avatar,
-                verified: false, // Repost não herda verificado
+                verified: false,
             },
-            originalAuthor: originalPost.author,
+            originalAuthor: rootAuthor,
             likes: 0,
             likedBy: [],
             replies: 0,
@@ -160,9 +169,9 @@ export const PostService = {
             updatedAt: Timestamp.now()
         });
 
-        // 2. Update the original post's repost count (optional metadata in repostedBy)
-        const originalRef = doc(db, POSTS_COLLECTION, originalPost.id);
-        await updateDoc(originalRef, {
+        // 3. Update the ROOT post's repost count
+        const rootRef = doc(db, POSTS_COLLECTION, rootPostId);
+        await updateDoc(rootRef, {
             repostedBy: arrayUnion({ uid: currentUser.id, name: currentUser.name })
         });
 

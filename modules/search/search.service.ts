@@ -52,4 +52,49 @@ export class SearchService {
 
         return results;
     }
+
+    /**
+     * Busca publicações pelo conteúdo ou hashtag.
+     */
+    static async searchPosts(searchQuery: string): Promise<any[]> {
+        const term = searchQuery.trim().toLowerCase();
+        if (!term || term.length < 2) return [];
+
+        const postsRef = collection(db, "posts");
+        let q;
+
+        if (term.startsWith('#')) {
+            const hashtag = term.substring(1);
+            q = query(
+                postsRef,
+                where("tags", "array-contains", hashtag),
+                orderBy("createdAt", "desc"),
+                limit(30)
+            );
+        } else {
+            // Busca simplificada por texto (o Firestore não suporta busca full-text nativa sem plugins)
+            // Aqui buscamos posts que contenham o termo como tag ou em campos específicos
+            q = query(
+                postsRef,
+                where("tags", "array-contains", term),
+                orderBy("createdAt", "desc"),
+                limit(30)
+            );
+        }
+
+        const snap = await getDocs(q);
+        const results: any[] = [];
+
+        snap.forEach(docSnap => {
+            const data = docSnap.data() as any;
+            results.push({
+                id: docSnap.id,
+                ...data,
+                // Garantir formatação de data para o PostCard (o service de post fará o resto)
+                timestamp: data.createdAt ? 'Postado em ' + data.createdAt.toDate().toLocaleDateString() : 'agora'
+            });
+        });
+
+        return results;
+    }
 }
