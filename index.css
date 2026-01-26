@@ -18,13 +18,53 @@ body {
     min-height: 100vh;
     font-size: 16px;
     background-color: #f1f5f9;
+    color: var(--color-text-dark);
+    position: relative;
+}
+
+/* Background image with better mobile support */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     background-image: url("https://i.pinimg.com/736x/99/b2/0c/99b20c6f0e8c81d5db7998cc91123825.jpg");
     background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
+    background-position: center center;
     background-repeat: no-repeat;
-    color: var(--color-text-dark);
+    z-index: -1;
+    /* Performance optimization */
+    will-change: transform;
+    transform: translateZ(0);
 }
+
+/* Mobile optimization - use scroll instead of fixed */
+@media (max-width: 768px) {
+    body::before {
+        position: absolute;
+        background-attachment: scroll;
+        background-size: cover;
+        min-height: 100vh;
+    }
+}
+
+/* Tablet and desktop - keep fixed parallax effect */
+@media (min-width: 769px) {
+    body::before {
+        background-attachment: fixed;
+    }
+}
+
+/* High resolution displays - better quality */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    body::before {
+        background-image: url("https://i.pinimg.com/736x/99/b2/0c/99b20c6f0e8c81d5db7998cc91123825.jpg");
+        /* You can replace with a higher resolution image if available */
+    }
+}
+
 
 /* SIDEBAR - DESIGN SINCRONIZADO COM FEED (GLASS-PANEL) */
 .sidebar {
