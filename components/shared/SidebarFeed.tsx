@@ -1,10 +1,10 @@
 ﻿import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { SidebarConfig } from '../types';
+import { SidebarConfig } from '../../types';
 import PostCard from './PostCard';
 import NewPost from './NewPost';
-import { PostService } from '../modules/post/post.service';
-import { auth } from '../firebase';
-import { Post } from '../types';
+import { useFeed } from '../../hooks/useFeed';
+import { auth } from '../../firebase'; // Keep auth if used elsewhere, check usage.
+import { Post } from '../../types'; // Keep for types if used
 import {
   RefreshCw,
   ChevronLeft,
@@ -24,41 +24,19 @@ import {
  * SidebarFeed Component - Feed de conhecimento universitário simplificado
  */
 const SidebarFeed: React.FC<SidebarConfig> = ({ title = "Feed do Conhecimento", maxPosts = 50 }) => {
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [isPostModalOpen, setPostModalOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState<'all' | 'study' | 'resource' | 'question' | 'event' | 'bookmarks'>('all');
+  const { posts, loading, refreshing, handleRefresh, fetchPosts, setPosts } = useFeed(activeFilter);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const filterRef = useRef<HTMLDivElement>(null);
 
-  const fetchPosts = useCallback(async () => {
-    try {
-      if (auth.currentUser) {
-        let feedPosts: Post[] = [];
-        if (activeFilter === 'bookmarks') {
-          feedPosts = await PostService.getBookmarkedPosts(auth.currentUser.uid);
-        } else {
-          feedPosts = await PostService.getFeedPosts(auth.currentUser.uid);
-        }
-        setPosts(feedPosts);
-        // Reset scroll to start whenever feed is updated
-        if (scrollContainerRef.current) {
-          scrollContainerRef.current.scrollTo({ left: 0, behavior: 'smooth' });
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching feed:", error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [activeFilter]);
-
+  // Reset scroll when posts change
   useEffect(() => {
-    fetchPosts();
-  }, [fetchPosts]);
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({ left: 0, behavior: 'smooth' });
+    }
+  }, [posts]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -76,10 +54,7 @@ const SidebarFeed: React.FC<SidebarConfig> = ({ title = "Feed do Conhecimento", 
     };
   }, [isFilterOpen]);
 
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await fetchPosts();
-  };
+  // handleRefresh removed (from hook)
 
   const handleScroll = (direction: 'left' | 'right') => {
     if (scrollContainerRef.current) {

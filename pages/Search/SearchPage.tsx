@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { User, Calendar, Briefcase, FileText, Search as SearchIcon, Sparkles } from 'lucide-react';
 import { SearchService } from '../../modules/search/search.service';
-import ConnectionCard from '../../components/ConnectionCard';
-import PostCard from '../../components/PostCard';
+import PostCard from '../../components/shared/PostCard';
+import ConnectionCard from '../../components/shared/ConnectionCard';
 import { Author, Post } from '../../types';
 import { auth, db } from '../../firebase';
 import { doc, getDoc } from 'firebase/firestore';

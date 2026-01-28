@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { PrintService } from '../modules/print/print.service';
-import { PrintRequest } from '../types';
+import { useAuth } from '../../../contexts/AuthContext';
+import { PrintService } from '../../../modules/print/print.service';
+import { PrintRequest } from '../../../types';
 import {
   Printer,
   Clock,
@@ -24,7 +24,7 @@ import {
   MapPin,
   Upload
 } from 'lucide-react';
-import { PrinterService, PrinterStation } from '../modules/print/printer.service';
+import { PrinterService, PrinterStation } from '../../../modules/print/printer.service';
 import * as pdfjsLib from 'pdfjs-dist';
 
 // Configurando o worker do PDF.js

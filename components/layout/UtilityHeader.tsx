@@ -12,11 +12,11 @@ import {
   LogOut,
   ChevronDown
 } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { signOut } from 'firebase/auth';
-import { auth } from '../firebase/index';
-import { ChatService } from '../modules/chat/chat.service';
-import { NotificationService } from '../modules/notification/notification.service';
+import { auth } from '../../firebase/index';
+import { ChatService } from '../../modules/chat/chat.service';
+import { NotificationService } from '../../modules/notification/notification.service';
 
 const UtilityHeader: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
-import { Author } from '../types';
+import { Author } from '../../types';
 import { User, Layers, Plus, Check, Loader2, Clock, MessageCircle, X, UserCheck, UserX, MoreVertical, BookOpen, MapPin, GraduationCap, Shield, Star } from 'lucide-react';
-import { ConnectionService } from '../modules/connection/connection.service';
-import { NotificationService } from '../modules/notification/notification.service';
+import { ConnectionService } from '../../modules/connection/connection.service';
+import { NotificationService } from '../../modules/notification/notification.service';
 
 interface ConnectionCardProps {
   author: Author;
@@ -219,7 +219,7 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
                 <button
                   onClick={async () => {
                     if (currentUid) {
-                      const chatId = await import('../modules/chat/chat.service').then(m =>
+                      const chatId = await import('../../modules/chat/chat.service').then(m =>
                         m.ChatService.getOrCreateDirectChat(currentUid, author.id, author)
                       );
                       window.location.href = `/mensagens?chatId=${chatId}`; // Force reload or use navigate if available in scope

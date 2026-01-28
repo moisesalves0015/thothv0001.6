@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Reminder } from '../types';
-import { auth } from '../firebase';
+import { Reminder } from '../../../types';
+import { auth } from '../../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { ReminderService } from '../modules/reminder/reminder.service';
+import { ReminderService } from '../../../modules/reminder/reminder.service';
 import {
   Plus,
   Check,
@@ -26,7 +26,7 @@ import {
   AlertTriangle,
   Pencil
 } from 'lucide-react';
-import { NotificationService } from '../modules/notification/notification.service';
+import { NotificationService } from '../../../modules/notification/notification.service';
 
 const RemindersBox: React.FC = () => {
   const today = new Date();

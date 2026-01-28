@@ -14,9 +14,9 @@ import {
   Layers
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import PostCard from '../../components/PostCard';
-import BadgeSystemBox from '../../components/BadgeSystemBox';
-import SidebarFeed from '../../components/SidebarFeed';
+import PostCard from '../../components/shared/PostCard';
+import BadgeSystemBox from '../../components/shared/BadgeSystemBox';
+import SidebarFeed from '../../components/shared/SidebarFeed';
 import { collection, onSnapshot, query, orderBy, where, doc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { UserService } from '../../modules/user/user.service';

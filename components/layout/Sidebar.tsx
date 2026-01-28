@@ -13,8 +13,8 @@ import {
     Printer,
     GraduationCap
 } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
-import { PrinterService } from '../modules/print/printer.service';
+import { useAuth } from '../../contexts/AuthContext';
+import { PrinterService } from '../../modules/print/printer.service';
 
 interface SidebarProps {
     isCollapsed: boolean;

@@ -17,10 +17,10 @@ import {
   Target,
   Info
 } from 'lucide-react';
-import { StorageService } from '../modules/storage/storage.service';
-import { PostService } from '../modules/post/post.service';
-import { auth } from '../firebase';
-import { Author } from '../types';
+import { StorageService } from '../../modules/storage/storage.service';
+import { PostService } from '../../modules/post/post.service';
+import { auth } from '../../firebase';
+import { Author } from '../../types';
 
 type AttachmentType = 'none' | 'image' | 'file' | 'link';
 type PostType = 'general' | 'study' | 'resource' | 'event' | 'question';

@@ -1,5 +1,5 @@
 ﻿import React, { useState, useRef, useEffect } from 'react';
-import { Post } from '../types';
+import { Post } from '../../types';
 import ImageModal from './ImageModal';
 import NewPost from './NewPost';
 import {
@@ -28,8 +28,8 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { PostService } from '../modules/post/post.service';
-import { useAuth } from '../contexts/AuthContext';
+import { PostService } from '../../modules/post/post.service';
+import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'sonner';
 
 interface PostCardProps {

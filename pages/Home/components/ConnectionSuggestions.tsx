@@ -1,9 +1,6 @@
-﻿import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { ConnectionService } from '../modules/connection/connection.service';
-import { auth, db } from '../firebase';
-import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
-import { Author } from '../types';
+﻿import React, { useRef } from 'react';
+import { useConnectionSuggestions } from '../../../hooks/useConnectionSuggestions';
+import { auth } from '../../../firebase';
 import {
   ChevronLeft,
   ChevronRight,
@@ -15,92 +12,30 @@ import {
   UserPlus,
   Sparkles
 } from 'lucide-react';
-import ConnectionCard from './ConnectionCard';
+import ConnectionCard from '../../../components/shared/ConnectionCard';
+import ConnectionCardSkeleton from '../../../components/shared/ConnectionCardSkeleton';
 
 const ConnectionSuggestions: React.FC = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [suggestions, setSuggestions] = useState<Author[]>([]);
-  const [filteredSuggestions, setFilteredSuggestions] = useState<Author[]>([]);
-  const [currentUserData, setCurrentUserData] = useState<Author | undefined>(undefined);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [activeFilter, setActiveFilter] = useState<'all' | 'university' | 'course'>('all');
+  const {
+    suggestions,
+    loading,
+    refreshing,
+    searchQuery,
+    setSearchQuery,
+    isFilterOpen,
+    setIsFilterOpen,
+    activeFilter,
+    setActiveFilter,
+    refresh,
+    removeSuggestion,
+    getFilterCount,
+    currentUserData,
+    allSuggestionsCount
+  } = useConnectionSuggestions();
 
-  const fetchSuggestions = useCallback(async (userId: string) => {
-    try {
-      const list = await ConnectionService.getSuggestions(userId);
-      setSuggestions(list);
-      setFilteredSuggestions(list);
-    } catch (error) {
-      console.error("Error fetching suggestions:", error);
-    }
-  }, []);
-
-  const loadUserData = useCallback(async (user: any) => {
-    try {
-      const userDocRef = doc(db, "users", user.uid);
-      const userSnap = await getDoc(userDocRef);
-      if (userSnap.exists()) {
-        const data = userSnap.data();
-        const userData: Author = {
-          id: user.uid,
-          name: data.fullName || user.displayName || "Usuário",
-          username: data.username || `@${user.email?.split('@')[0] || 'usuario'}`,
-          avatar: data.photoURL || user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}`,
-          university: data.university,
-          course: data.course,
-          stats: data.stats || { followers: 0, projects: 0 }
-        };
-        setCurrentUserData(userData);
-        await fetchSuggestions(user.uid);
-      }
-    } catch (error) {
-      console.error("Error loading user data:", error);
-    }
-  }, [fetchSuggestions]);
-
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        await loadUserData(user);
-        setLoading(false);
-      }
-    });
-
-    return () => unsub();
-  }, [loadUserData]);
-
-  useEffect(() => {
-    let filtered = suggestions;
-
-    // Apply search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(user =>
-        user.name.toLowerCase().includes(query) ||
-        user.username?.toLowerCase().includes(query) ||
-        user.university?.toLowerCase().includes(query) ||
-        user.course?.toLowerCase().includes(query)
-      );
-    }
-
-    // Apply category filter
-    if (activeFilter !== 'all') {
-      filtered = filtered.filter(user => {
-        if (activeFilter === 'university') {
-          return user.university && user.university === currentUserData?.university;
-        }
-        if (activeFilter === 'course') {
-          return user.course && user.course === currentUserData?.course;
-        }
-        return true;
-      });
-    }
-
-    setFilteredSuggestions(filtered);
-  }, [suggestions, searchQuery, activeFilter, currentUserData]);
+  // Alias for compatibility with existing JSX or just use 'suggestions' directly
+  const filteredSuggestions = suggestions;
 
   const handleScroll = (direction: 'left' | 'right') => {
     if (scrollRef.current) {
@@ -112,28 +47,8 @@ const ConnectionSuggestions: React.FC = () => {
     }
   };
 
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    if (auth.currentUser) {
-      await fetchSuggestions(auth.currentUser.uid);
-    }
-    setTimeout(() => setRefreshing(false), 1000);
-  };
-
   const handleConnectionAction = (userId: string) => {
-    // Atualizar localmente após ação
-    setFilteredSuggestions(prev => prev.filter(user => user.id !== userId));
-  };
-
-  const getFilterCount = (type: 'university' | 'course') => {
-    if (!currentUserData) return 0;
-
-    return suggestions.filter(user => {
-      if (type === 'university') {
-        return user.university && user.university === currentUserData.university;
-      }
-      return user.course && user.course === currentUserData.course;
-    }).length;
+    removeSuggestion(userId);
   };
 
   if (loading) {
@@ -179,7 +94,7 @@ const ConnectionSuggestions: React.FC = () => {
           <div className="flex items-center gap-2">
             {/* Refresh Button */}
             <button
-              onClick={handleRefresh}
+              onClick={refresh}
               disabled={refreshing}
               className="p-2 rounded-lg bg-white/60 text-slate-600 hover:text-[#006c55] hover:bg-white transition-all border border-white/90 shadow-sm active:scale-90"
               title="Atualizar sugestões"
@@ -206,7 +121,7 @@ const ConnectionSuggestions: React.FC = () => {
                     <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">Filtrar por</span>
                   </div>
                   {[
-                    { id: 'all', label: 'Todas', icon: Sparkles, count: suggestions.length },
+                    { id: 'all', label: 'Todas', icon: Sparkles, count: allSuggestionsCount },
                     { id: 'university', label: 'Mesma Universidade', icon: Users, count: getFilterCount('university') },
                     { id: 'course', label: 'Mesmo Curso', icon: Users, count: getFilterCount('course') }
                   ].map((filter) => {

@@ -1,9 +1,9 @@
 import React from 'react';
-import SidebarFeed from '../../components/SidebarFeed';
-import ConnectionSuggestions from '../../components/ConnectionSuggestions';
-import RemindersBox from '../../components/RemindersBox';
-import BadgeSystemBox from '../../components/BadgeSystemBox';
-import PrintHistoryBox from '../../components/PrintHistoryBox';
+import SidebarFeed from '../../components/shared/SidebarFeed';
+import ConnectionSuggestions from './components/ConnectionSuggestions';
+import RemindersBox from './components/RemindersBox';
+import BadgeSystemBox from '../../components/shared/BadgeSystemBox';
+import PrintHistoryBox from './components/PrintHistoryBox';
 import { auth } from '../../firebase';
 import { useEffect, useState } from 'react';
 import { Smartphone, Plus } from 'lucide-react';

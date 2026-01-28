@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import confetti from 'canvas-confetti';
 import { UserPlus, Sparkles, Clock, ArrowRight, Ban, Trash2 } from 'lucide-react';
-import ConnectionCard from '../../components/ConnectionCard';
-import ConnectionCardSkeleton from '../../components/ConnectionCardSkeleton';
+import ConnectionCard from '../../components/shared/ConnectionCard';
+import ConnectionCardSkeleton from '../../components/shared/ConnectionCardSkeleton';
 import { ConnectionService } from '../../modules/connection/connection.service';
 import { Author } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';

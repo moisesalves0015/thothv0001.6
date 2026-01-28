@@ -15,6 +15,7 @@ interface CreateBadgeData {
   creatorId: string;
   totalPaid: number;
   paymentInfo: string;
+  ownerId?: string;
 }
 
 export class BadgeService {
@@ -57,10 +58,10 @@ export class BadgeService {
    * Persistência de novo emblema
    */
   static async createBadge(data: CreateBadgeData) {
-    const finalImage = await this.processImage(data.imageUrl, data.width, data.height);
+    // We expect valid Base64 or URL from the frontend. We do NOT re-crop here.
     return addDoc(collection(db, 'badges'), {
       ...data,
-      imageUrl: finalImage,
+      ownerId: data.creatorId, // Initially, creator is owner
       createdAt: serverTimestamp()
     });
   }

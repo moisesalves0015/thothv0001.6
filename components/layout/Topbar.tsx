@@ -17,9 +17,9 @@ import {
   Bell
 } from 'lucide-react';
 import { signOut } from 'firebase/auth';
-import { auth } from '../firebase/index';
-import { useAuth } from '../contexts/AuthContext';
-import { ChatService } from '../modules/chat/chat.service';
+import { auth } from '../../firebase/index';
+import { useAuth } from '../../contexts/AuthContext';
+import { ChatService } from '../../modules/chat/chat.service';
 
 const avatarUrls = [
   "https://api.dicebear.com/7.x/avataaars/svg?seed=Moisés",
