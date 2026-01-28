@@ -5,31 +5,36 @@ import { useAuth } from './AuthContext';
 interface ThemeContextType {
   isDarkMode: boolean;
   toggleTheme: () => void;
+  backgroundImage: string | null;
+  setAppBackground: (url: string | null) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType>({
   isDarkMode: false,
   toggleTheme: () => { },
+  backgroundImage: null,
+  setAppBackground: () => { },
 });
 
 /**
  * ThemeProvider
- * Gerencia o tema da aplicação (Claro/Escuro).
- * Persiste a preferência do usuário no localStorage com uma chave única por usuário.
+ * Gerencia o tema da aplicação (Claro/Escuro) e imagem de fundo customizada.
+ * Persiste as preferências do usuário no localStorage com uma chave única por usuário.
  */
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [backgroundImage, setBackgroundImage] = useState<string | null>(null);
 
-  // Efeito 1: Sincroniza o estado inicial quando o usuário loga ou desloga
-  // Recupera a preferência salva se o usuário estiver logado
+  // Efeito 1: Sincroniza o estado inicial (Tema + Background) quando o usuário loga
   useEffect(() => {
     const root = window.document.documentElement;
 
     if (user) {
+      // Carregar TEMA
       const themeKey = `thoth-theme-${user.uid}`;
-      const saved = localStorage.getItem(themeKey);
-      const shouldBeDark = saved === 'dark';
+      const savedTheme = localStorage.getItem(themeKey);
+      const shouldBeDark = savedTheme === 'dark';
 
       setIsDarkMode(shouldBeDark);
       if (shouldBeDark) {
@@ -37,14 +42,29 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       } else {
         root.classList.remove('dark');
       }
+
+      // Carregar BACKGROUND
+      const bgKey = `thoth-bg-${user.uid}`;
+      const savedBg = localStorage.getItem(bgKey);
+
+      if (savedBg) {
+        setBackgroundImage(savedBg);
+        root.style.setProperty('--bg-image', `url("${savedBg}")`);
+      } else {
+        setBackgroundImage(null);
+        root.style.removeProperty('--bg-image');
+      }
+
     } else {
-      // Logout: Limpa tudo e força modo claro como padrão
+      // Logout: Limpa tudo e restaura padrões
       setIsDarkMode(false);
       root.classList.remove('dark');
+      setBackgroundImage(null);
+      root.style.removeProperty('--bg-image');
     }
   }, [user]);
 
-  // Efeito 2: Salva a preferência quando o toggle é acionado
+  // Função para alternar tema
   const toggleTheme = () => {
     if (!user) return;
 
@@ -62,12 +82,31 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
+  // Função para setar background
+  const setAppBackground = (url: string | null) => {
+    if (!user) return;
+
+    const root = window.document.documentElement;
+    const bgKey = `thoth-bg-${user.uid}`;
+
+    if (url) {
+      setBackgroundImage(url);
+      localStorage.setItem(bgKey, url);
+      root.style.setProperty('--bg-image', `url("${url}")`);
+    } else {
+      setBackgroundImage(null);
+      localStorage.removeItem(bgKey);
+      root.style.removeProperty('--bg-image');
+    }
+  };
+
   return (
-    <ThemeContext.Provider value={{ isDarkMode, toggleTheme }}>
+    <ThemeContext.Provider value={{ isDarkMode, toggleTheme, backgroundImage, setAppBackground }}>
       {children}
     </ThemeContext.Provider>
   );
 };
+
 
 // Hook para acessar o tema
 export const useTheme = () => useContext(ThemeContext);

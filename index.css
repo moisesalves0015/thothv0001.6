@@ -9,6 +9,30 @@
     --sidebar-width: 280px;
     --sidebar-collapsed-width: 90px;
     --transition-speed: 0.3s;
+
+    /* Liquid Glass Variables */
+    --c-glass: #bbbbbc;
+    --c-light: #fff;
+    --c-dark: #000;
+    --c-content: #224;
+    --c-action: #0052f5;
+    --c-bg: #e8e8e9;
+    --glass-reflex-dark: 1;
+    --glass-reflex-light: 1;
+    --saturation: 150%;
+}
+
+.dark {
+    --c-glass: #bbbbbc;
+    --c-light: #fff;
+    --c-dark: #000;
+    /* Adjusted for dark mode consistency */
+    --c-content: #e1e1e1;
+    --c-action: #03d5ff;
+    --c-bg: #1b1b1d;
+    --glass-reflex-dark: 2;
+    --glass-reflex-light: 0.3;
+    --saturation: 150%;
 }
 
 body {
@@ -29,7 +53,8 @@ body::before {
     left: 0;
     width: 100%;
     height: 100%;
-    background-image: url("https://i.pinimg.com/736x/99/b2/0c/99b20c6f0e8c81d5db7998cc91123825.jpg");
+    /* Default background used if variable is not set */
+    background-image: var(--bg-image, url("/assets/background.jpg?v=3"));
     background-size: cover;
     background-position: center center;
     background-repeat: no-repeat;
@@ -42,10 +67,9 @@ body::before {
 /* Mobile optimization - use scroll instead of fixed */
 @media (max-width: 768px) {
     body::before {
-        position: absolute;
-        background-attachment: scroll;
+        /* position: fixed is inherited from main rule, which prevents huge zoom on long pages */
+        background-position: left center;
         background-size: cover;
-        min-height: 100vh;
     }
 }
 
@@ -60,27 +84,28 @@ body::before {
 @media (-webkit-min-device-pixel-ratio: 2),
 (min-resolution: 192dpi) {
     body::before {
-        background-image: url("https://i.pinimg.com/736x/99/b2/0c/99b20c6f0e8c81d5db7998cc91123825.jpg");
+        background-image: var(--bg-image, url("/assets/background.jpg?v=3"));
         /* You can replace with a higher resolution image if available */
     }
 }
 
 
-/* SIDEBAR - DESIGN SINCRONIZADO COM FEED (GLASS-PANEL) */
+/* SIDEBAR - ORIGINAL DESIGN */
 .sidebar {
     width: var(--sidebar-width);
     height: 100vh;
     position: fixed;
     left: 0;
     top: 0;
+
     background: rgba(255, 255, 255, 0.5);
     backdrop-filter: blur(10.6px);
     -webkit-backdrop-filter: blur(10.6px);
     border-right: 1px solid rgba(255, 255, 255, 0.81);
+
     border-top-right-radius: 1rem;
-    /* IGUAL AO ROUNDED-2XL DO FEED */
     border-bottom-right-radius: 1rem;
-    /* IGUAL AO ROUNDED-2XL DO FEED */
+
     display: flex;
     flex-direction: column;
     z-index: 10000;
@@ -217,6 +242,7 @@ body::before {
     /* slate-200 */
 }
 
+/* Dark Mode Sidebar Restored */
 .dark .sidebar {
     background: rgba(15, 23, 42, 0.6) !important;
     border-color: rgba(255, 255, 255, 0.05) !important;
@@ -228,6 +254,66 @@ body::before {
 }
 
 /* PADRÃO DE CABEÇALHO DE PÁGINA */
+.glass-panel {
+    background: rgba(255, 255, 255, 0.65) !important;
+    backdrop-filter: blur(24px) !important;
+    -webkit-backdrop-filter: blur(24px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.4) !important;
+    border-radius: 20px !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+/* LIQUID GLASS - SIMPLIFIED TO MATCH SIDEBAR */
+/* LIQUID GLASS - SIMPLIFIED TO MATCH SIDEBAR (LIGHT & DARK) */
+.liquid-glass {
+    /* Light Mode (matches .sidebar default) */
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(10.6px);
+    -webkit-backdrop-filter: blur(10.6px);
+
+    /* Border and Shadow from Sidebar */
+    border: 1px solid rgba(255, 255, 255, 0.81) !important;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05) !important;
+
+    transition: background-color 400ms cubic-bezier(1, 0, 0.4, 1), box-shadow 400ms cubic-bezier(1, 0, 0.4, 1);
+}
+
+/* Dark Mode Adaptation (matches .dark .sidebar) */
+.dark .liquid-glass {
+    background: rgba(15, 23, 42, 0.6) !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Botões com efeito Liquid */
+.liquid-btn {
+    border: none !important;
+    background-color: transparent;
+    border-radius: 99em;
+    /* Pill shape for buttons as per switcher */
+    transition: all 200ms cubic-bezier(0.5, 0, 0, 1);
+}
+
+.liquid-btn:hover {
+    background-color: color-mix(in srgb, var(--c-action) 10%, transparent);
+}
+
+.liquid-btn.active {
+    /* Creating the "After" effect from the snippet but as a main style for the active button */
+    background-color: color-mix(in srgb, var(--c-glass) 36%, transparent);
+    box-shadow:
+        inset 0 0 0 1px color-mix(in srgb, var(--c-light) calc(var(--glass-reflex-light) * 10%), transparent),
+        inset 2px 1px 0px -1px color-mix(in srgb, var(--c-light) calc(var(--glass-reflex-light) * 90%), transparent),
+        inset -1.5px -1px 0px -1px color-mix(in srgb, var(--c-light) calc(var(--glass-reflex-light) * 80%), transparent),
+        inset -2px -6px 1px -5px color-mix(in srgb, var(--c-light) calc(var(--glass-reflex-light) * 60%), transparent),
+        inset -1px 2px 3px -1px color-mix(in srgb, var(--c-dark) calc(var(--glass-reflex-dark) * 20%), transparent),
+        inset 0px -4px 1px -2px color-mix(in srgb, var(--c-dark) calc(var(--glass-reflex-dark) * 10%), transparent),
+        0px 3px 6px 0px color-mix(in srgb, var(--c-dark) calc(var(--glass-reflex-dark) * 8%), transparent) !important;
+
+    transform: none;
+    /* Reset transform to let the visual do the work */
+}
+
+
 .thoth-page-header {
     display: flex;
     flex-direction: column;

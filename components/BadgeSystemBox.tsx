@@ -16,7 +16,7 @@ const BadgeSystemBox: React.FC = () => {
 
   const LOGIC_COLS = 20;
   const LOGIC_ROWS = 6;
-  
+
   const [slots, setSlots] = useState<BadgeSlot[]>([]);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -24,7 +24,7 @@ const BadgeSystemBox: React.FC = () => {
 
   useEffect(() => {
     const q = query(collection(db, 'badges'), orderBy('createdAt', 'desc'));
-    const unsubscribe = onSnapshot(q, { includeMetadataChanges: false }, 
+    const unsubscribe = onSnapshot(q, { includeMetadataChanges: false },
       (snapshot) => {
         const badgesData = snapshot.docs.map(doc => {
           const data = doc.data();
@@ -32,7 +32,7 @@ const BadgeSystemBox: React.FC = () => {
             badge: {
               id: doc.id,
               name: data.name || "Sem Nome",
-              imageUrl: data.imageUrl || "", 
+              imageUrl: data.imageUrl || "",
               width: data.width || 1,
               height: data.height || 1,
               creatorId: data.creatorId,
@@ -42,7 +42,7 @@ const BadgeSystemBox: React.FC = () => {
             y: Number(data.y) || 0
           };
         }) as BadgeSlot[];
-        
+
         setSlots(badgesData);
         slotsRef.current = badgesData;
         setLoading(false);
@@ -115,14 +115,14 @@ const BadgeSystemBox: React.FC = () => {
       const rect = gridRef.current?.getBoundingClientRect();
       const cx = (e as TouchEvent).changedTouches ? (e as TouchEvent).changedTouches[0]?.clientX : (e as MouseEvent).clientX;
       const cy = (e as TouchEvent).changedTouches ? (e as TouchEvent).changedTouches[0]?.clientY : (e as MouseEvent).clientY;
-      
+
       setDraggingId(null);
 
       if (rect && cx !== undefined && cy !== undefined) {
         const vx = Math.round((cx - rect.left - dragOffset.x) / tileSize);
         const vy = Math.round((cy - rect.top - dragOffset.y) / tileSize);
         const { lx, ly } = toLogical(vx, vy);
-        
+
         const dragged = slotsRef.current.find(s => s.badge.id === currentId);
         if (dragged && isPositionValid(currentId, lx, ly, dragged.badge.width, dragged.badge.height, slotsRef.current)) {
           try {
@@ -158,13 +158,13 @@ const BadgeSystemBox: React.FC = () => {
   }, [mousePos, dragOffset, draggingSlot, draggingId, slots, tileSize, isMobile]);
 
   return (
-    <div className="w-full lg:w-[660px] h-[500px] lg:h-[350px] glass-panel rounded-3xl flex flex-col p-6 shadow-xl relative overflow-hidden select-none">
+    <div className="w-full lg:w-[660px] h-[500px] lg:h-[350px] liquid-glass rounded-[24px] flex flex-col p-6 shadow-2xl relative overflow-hidden select-none">
       <div className="flex items-center justify-between mb-4 flex-shrink-0">
         <div className="flex flex-col">
-          <h3 className="text-lg font-black text-slate-900 leading-none">Mural de Ativos</h3>
-          <span className="text-[10px] uppercase tracking-[0.2em] font-extrabold text-[#006c55] mt-1 opacity-80">Drag & Connect</span>
+          <h3 className="text-lg font-black text-slate-900 dark:text-white leading-none">Mural de Ativos</h3>
+          <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Conquistas & Emblemas</span>
         </div>
-        <button 
+        <button
           onClick={() => navigate('/badges/create')}
           className="flex items-center gap-2 px-4 py-2 bg-[#006c55] text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-[#006c55]/20 hover:scale-105 transition-all active:scale-95"
         >
@@ -186,12 +186,12 @@ const BadgeSystemBox: React.FC = () => {
           </div>
         )}
 
-        <div 
+        <div
           ref={gridRef}
           className="absolute inset-0 grid"
-          style={{ 
+          style={{
             gridTemplateColumns: `repeat(${isMobile ? 10 : 20}, 1fr)`,
-            gridTemplateRows: `repeat(${isMobile ? 12 : 6}, 1fr)` 
+            gridTemplateRows: `repeat(${isMobile ? 12 : 6}, 1fr)`
           }}
         >
           {Array.from({ length: (isMobile ? 10 : 20) * (isMobile ? 12 : 6) }).map((_, i) => (
@@ -226,7 +226,7 @@ const BadgeSystemBox: React.FC = () => {
 
           {draggingId && dragInfo && draggingSlot && (
             <>
-              <div 
+              <div
                 className={`absolute pointer-events-none rounded-none border-2 border-dashed z-40 ${dragInfo.isValid ? 'bg-emerald-500/20 border-emerald-500/60' : 'bg-red-500/20 border-red-500/60'}`}
                 style={{
                   width: `${draggingSlot.badge.width * tileSize}px`,
@@ -234,7 +234,7 @@ const BadgeSystemBox: React.FC = () => {
                   transform: `translate(${dragInfo.vx * tileSize}px, ${dragInfo.vy * tileSize}px)`
                 }}
               />
-              <div 
+              <div
                 className="absolute z-50 pointer-events-none"
                 style={{
                   width: `${draggingSlot.badge.width * tileSize}px`,

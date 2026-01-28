@@ -103,7 +103,7 @@ const UtilityHeader: React.FC = () => {
       <div className="flex items-center flex-shrink-0">
         <button
           onClick={() => window.history.back()}
-          className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-white/50 dark:border-white/5 text-slate-700 dark:text-slate-300 hover:bg-[#006c55] hover:text-white dark:hover:bg-[#006c55] dark:hover:text-white transition-all shadow-sm active:scale-90"
+          className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full liquid-glass text-slate-700 dark:text-slate-300 hover:bg-[#006c55] hover:text-white dark:hover:bg-[#006c55] dark:hover:text-white transition-all active:scale-90"
         >
           <ChevronLeft size={20} />
         </button>
@@ -122,7 +122,7 @@ const UtilityHeader: React.FC = () => {
             placeholder="Buscar..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-full pl-5 pr-12 rounded-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-white/50 dark:border-white/5 focus:outline-none focus:ring-2 focus:ring-[#006c55]/20 focus:border-[#006c55] transition-all text-[16px] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 shadow-sm"
+            className="w-full h-full pl-5 pr-12 rounded-full liquid-glass focus:outline-none focus:ring-2 focus:ring-[#006c55]/20 focus:border-[#006c55] transition-all text-[16px] text-slate-900 dark:text-white placeholder-slate-700 dark:placeholder-slate-300"
           />
           <button type="submit" className="absolute right-0 w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-tr from-[#006c55] to-[#00876a] text-white flex items-center justify-center hover:scale-105 transition-transform shadow-lg border-none">
             <Search size={18} />
@@ -133,7 +133,7 @@ const UtilityHeader: React.FC = () => {
       <div className="flex items-center gap-1.5 md:gap-3 flex-shrink-0">
         <button
           onClick={() => navigate('/mensagens')}
-          className="relative w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-white/50 dark:border-white/5 text-slate-700 dark:text-slate-300 hover:bg-[#006c55] hover:text-white transition-all shadow-sm active:scale-90 group"
+          className="relative w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full liquid-glass text-slate-700 dark:text-slate-300 hover:bg-[#006c55] hover:text-white transition-all active:scale-90 group"
         >
           <MessageCircle size={18} />
           {messagesCount > 0 && (
@@ -148,7 +148,7 @@ const UtilityHeader: React.FC = () => {
 
         <button
           onClick={() => navigate('/notificacoes')}
-          className="relative w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-white/50 dark:border-white/5 text-slate-700 dark:text-slate-300 hover:bg-[#006c55] hover:text-white transition-all shadow-sm active:scale-90 group"
+          className="relative w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full liquid-glass text-slate-700 dark:text-slate-300 hover:bg-[#006c55] hover:text-white transition-all active:scale-90 group"
         >
           <Bell size={18} />
           {notificationsCount > 0 && (

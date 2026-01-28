@@ -335,7 +335,7 @@ const RemindersBox: React.FC = () => {
   ];
 
   return (
-    <div className="w-full lg:w-[315px] h-[380px] flex flex-col glass-panel rounded-2xl overflow-hidden shadow-2xl relative border border-white/40">
+    <div className="w-full lg:w-[315px] h-[380px] flex flex-col liquid-glass rounded-[24px] overflow-hidden shadow-2xl relative border border-white/40">
       {/* Header */}
       <div className="flex flex-col px-6 pt-6 pb-2 flex-shrink-0 z-10">
         <div className="flex items-center justify-between mb-1">

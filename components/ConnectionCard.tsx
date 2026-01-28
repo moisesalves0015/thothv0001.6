@@ -130,23 +130,23 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
       </div>
 
       {/* Glass Panel Overlay */}
-      <div className="absolute bottom-2 left-2 right-2 p-2 rounded-xl bg-white/85 backdrop-blur-xl border border-white/40 flex flex-col gap-1 shadow-[0_8px_32px_rgba(0,0,0,0.1)] transition-all duration-300">
+      <div className="absolute bottom-2 left-2 right-2 p-2 rounded-xl bg-white/10 backdrop-blur-xl border border-white/20 flex flex-col gap-1 shadow-[0_8px_32px_rgba(0,0,0,0.1)] transition-all duration-300">
 
         {/* User Info */}
         <div className="flex flex-col">
           <div className="flex items-start justify-between mb-0.5">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1 mb-0.5">
-                <h4 className="text-[13px] font-black text-slate-900 leading-tight truncate">
+                <h4 className="text-[13px] font-black text-white leading-tight truncate shadow-sm">
                   {author.name}
                 </h4>
                 {author.verified && (
-                  <div className="bg-[#006c55] rounded-full p-0.5 flex items-center justify-center flex-shrink-0">
+                  <div className="bg-[#006c55] rounded-full p-0.5 flex items-center justify-center flex-shrink-0 border border-white/20">
                     <Check size={8} className="text-white" strokeWidth={3} />
                   </div>
                 )}
               </div>
-              <div className="flex items-center gap-1 text-[10px] font-bold text-slate-500 leading-tight truncate">
+              <div className="flex items-center gap-1 text-[10px] font-bold text-white/80 leading-tight truncate">
                 {author.university && (
                   <span className="truncate">{author.university}</span>
                 )}
@@ -156,7 +156,7 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center justify-end pt-1 border-t border-slate-100/80">
+        <div className="flex items-center justify-end pt-1 border-t border-white/20">
           <div className="flex items-center gap-1.5">
             {/* Estado: Nenhuma conexão */}
             {status === 'none' && (

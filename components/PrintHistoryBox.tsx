@@ -181,7 +181,7 @@ const PrintHistoryBox: React.FC = () => {
   const filteredRequests = requests.filter(r => viewTab === 'active' ? !r.archived : r.archived);
 
   return (
-    <div className="w-full lg:w-[315px] h-[350px] glass-panel rounded-2xl p-5 flex flex-col shadow-lg relative overflow-hidden">
+    <div className="w-full lg:w-[315px] h-[350px] liquid-glass rounded-[24px] p-5 flex flex-col shadow-lg relative overflow-hidden">
       {/* Header */}
       <div className="flex flex-col mb-4">
         <div className="flex items-center justify-between">

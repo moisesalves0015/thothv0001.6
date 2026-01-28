@@ -138,7 +138,7 @@ const ConnectionSuggestions: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="relative w-full h-[350px] flex flex-col glass-panel rounded-2xl overflow-hidden shadow-2xl">
+      <div className="relative w-full h-[350px] flex flex-col liquid-glass rounded-[24px] overflow-hidden shadow-2xl">
         <div className="flex flex-col px-6 pt-6 mb-4">
           <div className="flex items-center justify-between">
             <div className="h-7 w-48 bg-slate-200 rounded animate-pulse"></div>
@@ -159,7 +159,7 @@ const ConnectionSuggestions: React.FC = () => {
   }
 
   return (
-    <div className="relative w-full h-[380px] flex flex-col glass-panel rounded-2xl overflow-hidden shadow-2xl group">
+    <div className="relative w-full h-[380px] flex flex-col liquid-glass rounded-[24px] overflow-hidden shadow-2xl group">
       {/* Decorative Accent */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-[#006c55] to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 

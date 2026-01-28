@@ -43,6 +43,10 @@ const SidebarFeed: React.FC<SidebarConfig> = ({ title = "Feed do Conhecimento", 
           feedPosts = await PostService.getFeedPosts(auth.currentUser.uid);
         }
         setPosts(feedPosts);
+        // Reset scroll to start whenever feed is updated
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTo({ left: 0, behavior: 'smooth' });
+        }
       }
     } catch (error) {
       console.error("Error fetching feed:", error);
@@ -118,7 +122,7 @@ const SidebarFeed: React.FC<SidebarConfig> = ({ title = "Feed do Conhecimento", 
   };
 
   return (
-    <div className="relative h-full min-h-[550px] flex flex-col glass-panel rounded-2xl overflow-hidden shadow-2xl">
+    <div className="relative h-full min-h-[550px] flex flex-col liquid-glass rounded-[24px] overflow-hidden shadow-2xl">
       {/* Header Section */}
       <div className="flex flex-col px-6 pt-6 flex-shrink-0 z-10">
         <div className="flex items-center justify-between">

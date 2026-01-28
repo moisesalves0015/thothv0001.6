@@ -28,6 +28,12 @@ service firebase.storage {
       allow write: if isAuthenticated() && request.auth.uid == userId;
     }
 
+    // Regra para arquivos gerais do usuário (backgrounds, etc)
+    match /users/{userId}/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && request.auth.uid == userId;
+    }
+
     // Regra para arquivos de impressão
     match /print-files/{fileName} {
       allow read: if isAuthenticated();
