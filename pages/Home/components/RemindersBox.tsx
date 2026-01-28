@@ -335,12 +335,12 @@ const RemindersBox: React.FC = () => {
   ];
 
   return (
-    <div className="w-full lg:w-[315px] h-[380px] flex flex-col liquid-glass rounded-[24px] overflow-hidden shadow-2xl relative border border-white/40">
+    <div className="w-full lg:w-[315px] h-[380px] flex flex-col liquid-glass rounded-[24px] overflow-hidden shadow-2xl relative border border-white/40 dark:border-white/10">
       {/* Header */}
       <div className="flex flex-col px-6 pt-6 pb-2 flex-shrink-0 z-10">
         <div className="flex items-center justify-between mb-1">
           <div className="flex flex-col">
-            <h2 className="text-lg font-black text-slate-900 tracking-tight leading-none">Lembretes</h2>
+            <h2 className="text-lg font-black text-slate-900 dark:text-white tracking-tight leading-none">Lembretes</h2>
             <span className="text-[10px] uppercase tracking-[0.2em] font-extrabold text-[#006c55] mt-1 opacity-80">
               organização acadêmica
             </span>
@@ -353,7 +353,7 @@ const RemindersBox: React.FC = () => {
                 onClick={() => setIsFilterOpen(!isFilterOpen)}
                 className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all ${isFilterOpen ?
                   'bg-[#006c55] text-white' :
-                  'bg-white/60 text-slate-600 hover:bg-white border border-white/90'
+                  'bg-white/60 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 border border-white/90 dark:border-white/10'
                   } shadow-sm active:scale-95`}
                 title="Filtrar"
               >
@@ -367,9 +367,9 @@ const RemindersBox: React.FC = () => {
 
               {/* Dropdown Menu */}
               {isFilterOpen && (
-                <div className="absolute right-0 top-full mt-2 w-48 bg-white/95 backdrop-blur-xl border border-white/40 rounded-2xl shadow-2xl z-50 py-2 animate-in fade-in slide-in-from-top-2 duration-200">
-                  <div className="px-4 py-2 border-b border-slate-100">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Tipo de Lembrete</span>
+                <div className="absolute right-0 top-full mt-2 w-48 bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-2xl shadow-2xl z-50 py-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-700">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Tipo de Lembrete</span>
                   </div>
                   {typeFilters.map((filter) => {
                     const Icon = filter.icon;
@@ -448,15 +448,15 @@ const RemindersBox: React.FC = () => {
                 key={reminder.id}
                 onClick={() => setSelectedReminder(reminder)}
                 className={`group relative flex flex-col p-3 rounded-2xl border transition-all duration-300 cursor-pointer animate-in slide-in-from-bottom-2 ${reminder.completed
-                  ? 'bg-slate-50/50 border-slate-100 opacity-60'
+                  ? 'bg-slate-50/50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-700 opacity-60'
                   : reminder.isStarred
-                    ? 'bg-gradient-to-br from-white to-white/95 border-amber-200 shadow-lg shadow-amber-500/5'
-                    : 'bg-gradient-to-br from-white/95 to-white/80 border-white hover:border-[#006c55]/20 hover:shadow-lg'
+                    ? 'bg-gradient-to-br from-white to-white/95 dark:from-slate-800 dark:to-slate-900 border-amber-200 dark:border-amber-500/30 shadow-lg shadow-amber-500/5'
+                    : 'bg-gradient-to-br from-white/95 to-white/80 dark:from-slate-800/90 dark:to-slate-900/80 border-white dark:border-slate-700 hover:border-[#006c55]/20 hover:shadow-lg'
                   }`}
               >
                 {/* Title and Completion Checkbox */}
                 <div className="flex items-center justify-between mb-1.5">
-                  <h4 className={`text-[13px] font-black leading-tight line-clamp-1 ${reminder.completed ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
+                  <h4 className={`text-[13px] font-black leading-tight line-clamp-1 ${reminder.completed ? 'text-slate-400 dark:text-slate-600 line-through' : 'text-slate-900 dark:text-white'}`}>
                     {reminder.title}
                   </h4>
                   <button
@@ -472,7 +472,7 @@ const RemindersBox: React.FC = () => {
 
                 {/* Text and Alert */}
                 <div className="flex items-center justify-between gap-2 mb-2">
-                  <p className="text-[11px] font-medium text-slate-500 line-clamp-1 leading-relaxed">
+                  <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 line-clamp-1 leading-relaxed">
                     {reminder.text}
                   </p>
                   {(() => {
@@ -488,7 +488,7 @@ const RemindersBox: React.FC = () => {
                 </div>
 
                 {/* Footer: Badge, Date/Time and Star */}
-                <div className="flex items-center justify-between pt-2 border-t border-slate-100/40">
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100/40 dark:border-slate-700/40">
                   <div className="flex items-center gap-2">
                     {/* Type Badge */}
                     <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md ${typeConfig.bg} ${typeConfig.border}`}>
@@ -529,10 +529,10 @@ const RemindersBox: React.FC = () => {
 
       {/* Modal: Novo Lembrete */}
       {isAdding && (
-        <div className="absolute inset-0 z-[60] bg-gradient-to-br from-white to-white/95 p-6 flex flex-col animate-in slide-in-from-right duration-300">
+        <div className="absolute inset-0 z-[60] bg-gradient-to-br from-white to-white/95 dark:from-slate-900 dark:to-slate-800 p-6 flex flex-col animate-in slide-in-from-right duration-300">
           <div className="flex justify-between items-center mb-6">
             <div className="flex flex-col">
-              <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">
+              <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">
                 {editingReminderId ? 'Editar Lembrete' : 'Novo Lembrete'}
               </h3>
               <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-[#006c55] mt-1 opacity-80">
@@ -579,7 +579,7 @@ const RemindersBox: React.FC = () => {
                 placeholder="Ex: Entrega de Projeto"
                 value={newTitle}
                 onChange={e => handleTitleChange(e.target.value)}
-                className="w-full h-12 bg-white border border-slate-100 rounded-xl px-4 font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#006c55]/20 focus:border-[#006c55] transition-all"
+                className="w-full h-12 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl px-4 font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#006c55]/20 focus:border-[#006c55] transition-all"
               />
             </div>
 
@@ -589,7 +589,7 @@ const RemindersBox: React.FC = () => {
                 placeholder="Detalhes do lembrete..."
                 value={newText}
                 onChange={e => handleTextChange(e.target.value)}
-                className="w-full h-28 bg-white border border-slate-100 rounded-xl p-4 font-medium text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#006c55]/20 focus:border-[#006c55] transition-all resize-none"
+                className="w-full h-28 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl p-4 font-medium text-slate-600 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#006c55]/20 focus:border-[#006c55] transition-all resize-none"
               />
             </div>
 
@@ -628,7 +628,7 @@ const RemindersBox: React.FC = () => {
 
       {/* Modal: Detalhes do Lembrete */}
       {selectedReminder && (
-        <div className="absolute inset-0 z-[70] bg-gradient-to-br from-white to-white/95 p-6 flex flex-col animate-in slide-in-from-bottom duration-300">
+        <div className="absolute inset-0 z-[70] bg-gradient-to-br from-white to-white/95 dark:from-slate-900 dark:to-slate-800 p-6 flex flex-col animate-in slide-in-from-bottom duration-300">
           <div className="flex justify-between items-center mb-6">
             <div className="flex gap-2">
               <button
@@ -670,7 +670,7 @@ const RemindersBox: React.FC = () => {
               })()}
             </div>
 
-            <h3 className="text-2xl font-black text-slate-900 mb-4 leading-tight">{selectedReminder.title}</h3>
+            <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-4 leading-tight">{selectedReminder.title}</h3>
 
             <div className="flex flex-wrap gap-3 mb-6">
               <div className="flex items-center gap-2 bg-gradient-to-r from-slate-50 to-white px-4 py-2 rounded-xl border border-slate-100 text-[12px] font-bold text-slate-700">
@@ -683,7 +683,7 @@ const RemindersBox: React.FC = () => {
               </div>
             </div>
 
-            <p className="text-slate-600 font-medium leading-relaxed bg-gradient-to-br from-slate-50/50 to-white p-5 rounded-2xl border border-slate-100 mb-8">
+            <p className="text-slate-600 dark:text-slate-300 font-medium leading-relaxed bg-gradient-to-br from-slate-50/50 to-white dark:from-slate-800/50 dark:to-slate-800 p-5 rounded-2xl border border-slate-100 dark:border-slate-700 mb-8">
               {selectedReminder.text}
             </p>
 

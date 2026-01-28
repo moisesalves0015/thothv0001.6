@@ -45,6 +45,12 @@ const MainLayout: React.FC = () => {
     window.location.reload();
   });
 
+  // Apply authenticated background class
+  useEffect(() => {
+    document.body.classList.add('auth-bg');
+    return () => document.body.classList.remove('auth-bg');
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-transparent">
       <Topbar />

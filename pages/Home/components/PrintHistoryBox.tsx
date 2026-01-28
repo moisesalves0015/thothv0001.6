@@ -181,11 +181,11 @@ const PrintHistoryBox: React.FC = () => {
   const filteredRequests = requests.filter(r => viewTab === 'active' ? !r.archived : r.archived);
 
   return (
-    <div className="w-full lg:w-[315px] h-[350px] liquid-glass rounded-[24px] p-5 flex flex-col shadow-lg relative overflow-hidden">
+    <div className="w-full lg:w-[315px] h-[350px] liquid-glass rounded-[24px] p-5 flex flex-col shadow-lg relative overflow-hidden border border-white/40 dark:border-white/10">
       {/* Header */}
       <div className="flex flex-col mb-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-black text-slate-900 tracking-tight leading-none">Impressões</h3>
+          <h3 className="text-lg font-black text-slate-900 dark:text-white tracking-tight leading-none">Impressões</h3>
           <button
             onClick={() => setIsNewModalOpen(true)}
             className="p-1.5 bg-[#006c55] text-white rounded-lg hover:bg-[#005a46] transition-all active:scale-95 shadow-md shadow-[#006c55]/20"
@@ -227,11 +227,11 @@ const PrintHistoryBox: React.FC = () => {
             return (
               <div
                 key={req.id}
-                className={`p-3 rounded-xl bg-white/40 border border-white/60 hover:bg-white/60 transition-all group relative ${isMenuActive ? 'z-[50]' : 'z-auto'} ${req.archived ? 'opacity-70 grayscale-[0.5]' : ''}`}
+                className={`p-3 rounded-xl bg-white/40 dark:bg-slate-800/40 border border-white/60 dark:border-white/10 hover:bg-white/60 dark:hover:bg-slate-800/60 transition-all group relative ${isMenuActive ? 'z-[50]' : 'z-auto'} ${req.archived ? 'opacity-70 grayscale-[0.5]' : ''}`}
               >
                 <div className="flex items-start gap-3">
                   <div
-                    className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 cursor-pointer group-hover:bg-[#006c55]/10 group-hover:text-[#006c55]"
+                    className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-400 dark:text-slate-300 cursor-pointer group-hover:bg-[#006c55]/10 group-hover:text-[#006c55]"
                     onClick={() => setSelectedRequest(req)}
                   >
                     <FileText size={18} />
@@ -239,8 +239,8 @@ const PrintHistoryBox: React.FC = () => {
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-0.5">
-                      <h4 className="text-[11px] font-black text-slate-800 truncate pr-2 cursor-pointer" onClick={() => setSelectedRequest(req)}>{req.fileName}</h4>
-                      <span className="text-[11px] font-black text-slate-900">R$ {req.totalPrice.toFixed(2)}</span>
+                      <h4 className="text-[11px] font-black text-slate-800 dark:text-slate-200 truncate pr-2 cursor-pointer" onClick={() => setSelectedRequest(req)}>{req.fileName}</h4>
+                      <span className="text-[11px] font-black text-slate-900 dark:text-white">R$ {req.totalPrice.toFixed(2)}</span>
                     </div>
 
                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter truncate mb-2">
@@ -283,8 +283,8 @@ const PrintHistoryBox: React.FC = () => {
                 {isMenuActive && (
                   <>
                     <div className="fixed inset-0 z-[40]" onClick={() => setActiveMenu(null)} />
-                    <div className="absolute right-2 top-10 w-40 bg-white rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.15)] border border-slate-100 z-[51] py-1.5 animate-in fade-in zoom-in-95 duration-200">
-                      <button className="w-full flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold text-slate-600 hover:bg-slate-50 transition-colors">
+                    <div className="absolute right-2 top-10 w-40 bg-white dark:bg-slate-800 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.15)] border border-slate-100 dark:border-slate-700 z-[51] py-1.5 animate-in fade-in zoom-in-95 duration-200">
+                      <button className="w-full flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
                         <Download size={12} /> Comprovante
                       </button>
                       <button
@@ -333,9 +333,9 @@ const PrintHistoryBox: React.FC = () => {
 
       {/* Modais de Impressão */}
       {isNewModalOpen && (
-        <div className="absolute inset-0 z-[60] bg-white/90 backdrop-blur-md p-6 flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-300">
+        <div className="absolute inset-0 z-[60] bg-white/90 dark:bg-slate-900/90 backdrop-blur-md p-6 flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-300">
           <div className="flex items-center justify-between mb-4">
-            <h4 className="text-sm font-black text-slate-900 flex items-center gap-2">
+            <h4 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
               <Printer size={16} className="text-[#006c55]" />
               Configurações
             </h4>
@@ -358,7 +358,7 @@ const PrintHistoryBox: React.FC = () => {
                 />
                 <label
                   htmlFor="print-upload"
-                  className="w-full h-14 bg-white border border-dashed border-slate-300 rounded-xl flex items-center justify-center gap-3 cursor-pointer hover:border-[#006c55] hover:bg-emerald-50/30 transition-all group"
+                  className="w-full h-14 bg-white dark:bg-slate-800 border border-dashed border-slate-300 dark:border-slate-600 rounded-xl flex items-center justify-center gap-3 cursor-pointer hover:border-[#006c55] hover:bg-emerald-50/30 dark:hover:bg-emerald-900/30 transition-all group"
                 >
                   {newFile ? (
                     <div className="flex items-center gap-2">
@@ -498,7 +498,7 @@ const PrintHistoryBox: React.FC = () => {
           <div className="mt-4 pt-4 border-t border-slate-100">
             <div className="flex items-center justify-between mb-3 px-1">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Estimado</span>
-              <span className="text-sm font-black text-slate-900">R$ {currentPricing.total.toFixed(2)}</span>
+              <span className="text-sm font-black text-slate-900 dark:text-white">R$ {currentPricing.total.toFixed(2)}</span>
             </div>
             <button
               onClick={handleAddRequest}
@@ -512,7 +512,7 @@ const PrintHistoryBox: React.FC = () => {
       )}
 
       {selectedRequest && (
-        <div className="absolute inset-0 z-[65] bg-white/95 backdrop-blur-md p-6 flex flex-col animate-in fade-in zoom-in-95 duration-300 overflow-y-auto no-scrollbar">
+        <div className="absolute inset-0 z-[65] bg-white/95 dark:bg-slate-900/95 backdrop-blur-md p-6 flex flex-col animate-in fade-in zoom-in-95 duration-300 overflow-y-auto no-scrollbar">
           <div className="flex items-center justify-between mb-6">
             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#006c55]">Checkout de Retirada</span>
             <button onClick={() => setSelectedRequest(null)} className="text-slate-400 hover:text-slate-900"><X size={20} /></button>
