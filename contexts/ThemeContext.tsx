@@ -1,6 +1,8 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useAuth } from './AuthContext';
+import { db } from '../firebase';
+import { doc, updateDoc, onSnapshot } from 'firebase/firestore';
 
 interface ThemeContextType {
   isDarkMode: boolean;

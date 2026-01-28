@@ -1,12 +1,15 @@
 
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Loader2, AlertCircle, Check } from 'lucide-react';
 import { AuthService } from '../../modules/auth/auth.service';
+import { auth } from '../../firebase';
+import { setPersistence, browserLocalPersistence, browserSessionPersistence } from 'firebase/auth';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [keepLoggedIn, setKeepLoggedIn] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -17,6 +20,7 @@ const Login: React.FC = () => {
     setError('');
 
     try {
+      await setPersistence(auth, keepLoggedIn ? browserLocalPersistence : browserSessionPersistence);
       await AuthService.login(email, password);
       navigate('/home');
     } catch (err) {
@@ -83,6 +87,13 @@ const Login: React.FC = () => {
                 className="w-full h-14 pl-12 pr-4 bg-white/50 border border-white/60 rounded-2xl text-[16px] focus:outline-none focus:border-[#006c55] transition-all"
               />
             </div>
+          </div>
+
+          <div className="flex items-center gap-2 ml-1 cursor-pointer" onClick={() => setKeepLoggedIn(!keepLoggedIn)}>
+            <div className={`w-5 h-5 rounded-lg border flex items-center justify-center transition-all ${keepLoggedIn ? 'bg-[#006c55] border-[#006c55]' : 'bg-white/50 border-white/60'}`}>
+              {keepLoggedIn && <Check size={12} className="text-white" strokeWidth={3} />}
+            </div>
+            <span className="text-xs font-bold text-slate-500 select-none">Manter conectado</span>
           </div>
 
           <button
