@@ -26,12 +26,22 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [backgroundImage, setBackgroundImage] = useState<string | null>(null);
 
+  // Helper to apply background to root
+  const applyBackground = (url: string | null) => {
+    const root = window.document.documentElement;
+    if (url) {
+      root.style.setProperty('--bg-image', `url("${url}")`);
+    } else {
+      root.style.removeProperty('--bg-image');
+    }
+  };
+
   // Efeito 1: Sincroniza o estado inicial (Tema + Background) quando o usuário loga
   useEffect(() => {
     const root = window.document.documentElement;
 
     if (user) {
-      // Carregar TEMA
+      // Carregar TEMA (LocalStorage é suficiente para tema por enquanto, ou podemos migrar também)
       const themeKey = `thoth-theme-${user.uid}`;
       const savedTheme = localStorage.getItem(themeKey);
       const shouldBeDark = savedTheme === 'dark';
@@ -43,24 +53,26 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         root.classList.remove('dark');
       }
 
-      // Carregar BACKGROUND
-      const bgKey = `thoth-bg-${user.uid}`;
-      const savedBg = localStorage.getItem(bgKey);
+      // Escutar mudanças no BACKGROUND do Firestore
+      const userRef = doc(db, 'users', user.uid);
+      const unsubscribe = onSnapshot(userRef, (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          // Verifica se existe preferência salva no perfil
+          const bgUrl = data.preferences?.background || null;
+          setBackgroundImage(bgUrl);
+          applyBackground(bgUrl);
+        }
+      });
 
-      if (savedBg) {
-        setBackgroundImage(savedBg);
-        root.style.setProperty('--bg-image', `url("${savedBg}")`);
-      } else {
-        setBackgroundImage(null);
-        root.style.removeProperty('--bg-image');
-      }
+      return () => unsubscribe();
 
     } else {
       // Logout: Limpa tudo e restaura padrões
       setIsDarkMode(false);
       root.classList.remove('dark');
       setBackgroundImage(null);
-      root.style.removeProperty('--bg-image');
+      applyBackground(null);
     }
   }, [user]);
 
@@ -83,20 +95,22 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   // Função para setar background
-  const setAppBackground = (url: string | null) => {
+  const setAppBackground = async (url: string | null) => {
     if (!user) return;
 
-    const root = window.document.documentElement;
-    const bgKey = `thoth-bg-${user.uid}`;
+    // Atualização Otimista
+    setBackgroundImage(url);
+    applyBackground(url);
 
-    if (url) {
-      setBackgroundImage(url);
-      localStorage.setItem(bgKey, url);
-      root.style.setProperty('--bg-image', `url("${url}")`);
-    } else {
-      setBackgroundImage(null);
-      localStorage.removeItem(bgKey);
-      root.style.removeProperty('--bg-image');
+    try {
+      // Salva no Firestore para persistência entre dispositivos
+      const userRef = doc(db, 'users', user.uid);
+      await updateDoc(userRef, {
+        'preferences.background': url
+      });
+    } catch (error) {
+      console.error("Erro ao salvar fundo personalizado:", error);
+      // Opcional: Reverter em caso de erro
     }
   };
 
