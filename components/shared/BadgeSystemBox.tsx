@@ -22,7 +22,7 @@ const BadgeSystemBox: React.FC = () => {
   } = useBadgeSystem();
 
   return (
-    <div className={`w-full lg:w-[660px] ${isMobile ? 'h-[600px]' : 'h-[350px]'} liquid-glass rounded-[24px] flex flex-col p-6 shadow-2xl relative overflow-hidden select-none transition-all duration-500`}>
+    <div className={`w-full lg:w-[660px] ${isMobile ? 'h-[750px]' : 'h-[400px]'} liquid-glass rounded-[24px] flex flex-col p-6 shadow-2xl relative overflow-hidden select-none transition-all duration-500`}>
       <div className="flex items-center justify-between mb-4 flex-shrink-0">
         <div className="flex flex-col">
           <h3 className="text-lg font-black text-slate-900 dark:text-white leading-none">Mural de Ativos</h3>
