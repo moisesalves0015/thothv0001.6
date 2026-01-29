@@ -74,12 +74,12 @@ const ConnectionSuggestions: React.FC = () => {
   }
 
   return (
-    <div className="relative w-full h-[380px] flex flex-col liquid-glass rounded-[24px] p-5 overflow-hidden shadow-2xl group">
+    <div className="relative w-full h-[380px] flex flex-col liquid-glass rounded-[24px] px-0 pt-5 pb-0 overflow-hidden shadow-2xl group">
       {/* Decorative Accent */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-[#006c55] to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
       {/* Header */}
-      <div className="flex flex-col flex-shrink-0 z-10 pb-2">
+      <div className="flex flex-col flex-shrink-0 z-10 pb-2 px-5">
         <div className="flex items-center justify-between mb-2">
           <div className="flex flex-col">
             <h2 className="text-lg font-black text-slate-900 dark:text-white tracking-tight leading-none">Conexões Sugeridas</h2>
@@ -176,7 +176,7 @@ const ConnectionSuggestions: React.FC = () => {
         </div>
 
         {/* Search and Active Filter */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 px-5">
           {/* Search Bar */}
 
 
@@ -204,7 +204,7 @@ const ConnectionSuggestions: React.FC = () => {
       {/* Connection Cards */}
       <div
         ref={scrollRef}
-        className="flex items-center gap-3 overflow-x-auto overflow-y-hidden py-4 px-6 snap-x snap-mandatory no-scrollbar scroll-smooth flex-1 touch-pan-x bg-transparent"
+        className="flex items-center gap-3 overflow-x-auto overflow-y-hidden py-4 px-0 snap-x snap-mandatory no-scrollbar scroll-smooth flex-1 touch-pan-x bg-transparent"
         onScroll={() => setIsFilterOpen(false)}
       >
         {filteredSuggestions.length === 0 ? (
@@ -235,7 +235,7 @@ const ConnectionSuggestions: React.FC = () => {
         ) : (
           <>
             {filteredSuggestions.map((author) => (
-              <div key={author.id} className="snap-center h-full flex items-center justify-center">
+              <div key={author.id} className="snap-center h-full flex items-center justify-center first:ml-5">
                 <ConnectionCard
                   author={author}
                   currentUid={auth.currentUser?.uid}

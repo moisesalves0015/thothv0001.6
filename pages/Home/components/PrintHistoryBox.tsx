@@ -331,7 +331,7 @@ const PrintHistoryBox: React.FC = () => {
         <div className="flex items-center justify-between mb-2">
           <div className="flex flex-col">
             <h3 className="text-lg font-black text-slate-900 dark:text-white tracking-tight leading-none">Impressões</h3>
-            <span className="text-[10px] uppercase tracking-[0.2em] font-black text-[#006c55] mt-1">
+            <span className="text-[11px] uppercase tracking-[0.2em] font-black text-[#006c55] mt-1">
               gestão de arquivos
             </span>
           </div>
@@ -354,14 +354,14 @@ const PrintHistoryBox: React.FC = () => {
             className={`flex items-center gap-1.5 pb-1 transition-all ${viewTab === 'active' ? 'text-[#006c55] border-b-2 border-[#006c55]' : 'text-slate-400'}`}
           >
             <Inbox size={14} />
-            <span className="text-[10px] font-black tracking-widest">({requests.filter(r => !r.archived).length})</span>
+            <span className="text-[11px] font-black tracking-widest">({requests.filter(r => !r.archived).length})</span>
           </button>
           <button
             onClick={() => setViewTab('archived')}
             className={`flex items-center gap-1.5 pb-1 transition-all ${viewTab === 'archived' ? 'text-[#006c55] border-b-2 border-[#006c55]' : 'text-slate-400'}`}
           >
             <Archive size={14} />
-            <span className="text-[10px] font-black tracking-widest">({requests.filter(r => r.archived).length})</span>
+            <span className="text-[11px] font-black tracking-widest">({requests.filter(r => r.archived).length})</span>
           </button>
         </div>
       </div>
@@ -393,12 +393,12 @@ const PrintHistoryBox: React.FC = () => {
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-0.5 gap-2">
-                      <h4 className="text-[11px] font-black text-slate-800 dark:text-slate-200 truncate cursor-pointer" onClick={() => setSelectedRequest(req)}>{req.fileName}</h4>
-                      <span className="text-[11px] font-black text-slate-900 dark:text-white whitespace-nowrap">R$ {req.totalPrice.toFixed(2)}</span>
+                      <h4 className="text-[13px] font-black text-slate-800 dark:text-slate-200 truncate cursor-pointer" onClick={() => setSelectedRequest(req)}>{req.fileName}</h4>
+                      <span className="text-[13px] font-black text-slate-900 dark:text-white whitespace-nowrap">R$ {req.totalPrice.toFixed(2)}</span>
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <p className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tighter truncate">
+                      <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tighter truncate">
                         {req.printerName} • {req.pages}
                       </p>
 
@@ -418,7 +418,7 @@ const PrintHistoryBox: React.FC = () => {
                 {/* Footer do Card - Status movido para cá */}
                 <div className="mt-3 pt-2 border-t border-white/40 dark:border-white/10 flex items-center justify-between gap-2 overflow-hidden">
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded border text-[8px] font-black uppercase tracking-tight ${config.class} whitespace-nowrap`}>
+                    <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded border text-[11px] font-black uppercase tracking-tight ${config.class} whitespace-nowrap`}>
                       {config.icon}
                       {config.text}
                       {req.status === 'pending' && (
@@ -427,11 +427,11 @@ const PrintHistoryBox: React.FC = () => {
                     </div>
 
                     {req.priority === 'urgent' && (
-                      <span className="text-[8px] font-black bg-purple-500 text-white px-1.5 py-0.5 rounded uppercase tracking-tighter shadow-sm whitespace-nowrap">Urgente</span>
+                      <span className="text-[11px] font-black bg-purple-500 text-white px-1.5 py-0.5 rounded uppercase tracking-tighter shadow-sm whitespace-nowrap">Urgente</span>
                     )}
                   </div>
 
-                  <span className={`text-[8px] font-black uppercase tracking-tighter whitespace-nowrap ${req.paymentMethod === 'paid' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'}`}>
+                  <span className={`text-[11px] font-black uppercase tracking-tighter whitespace-nowrap ${req.paymentMethod === 'paid' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'}`}>
                     {req.paymentMethod === 'paid' ? '• PAGO' : '• NO BALCÃO'}
                   </span>
                 </div>
@@ -446,7 +446,7 @@ const PrintHistoryBox: React.FC = () => {
                           handleDownloadReceipt(req);
                           setActiveMenu(null);
                         }}
-                        className="w-full flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                        className="w-full flex items-center gap-2 px-3 py-1.5 text-[12px] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                       >
                         <Download size={12} /> Comprovante
                       </button>
@@ -459,14 +459,14 @@ const PrintHistoryBox: React.FC = () => {
                           setIsNewModalOpen(true);
                           setActiveMenu(null);
                         }}
-                        className="w-full flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                        className="w-full flex items-center gap-2 px-3 py-1.5 text-[12px] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                       >
                         <RotateCcw size={12} /> Repetir Pedido
                       </button>
                       <div className="h-px bg-slate-50 dark:bg-slate-700 my-1 mx-2" />
                       <button
                         onClick={() => toggleArchive(req.id, !!req.archived)}
-                        className="w-full flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                        className="w-full flex items-center gap-2 px-3 py-1.5 text-[12px] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                       >
                         <Archive size={12} /> {req.archived ? 'Restaurar' : 'Arquivar'}
                       </button>
@@ -480,7 +480,7 @@ const PrintHistoryBox: React.FC = () => {
                               console.error("Erro ao cancelar pedido:", error);
                             }
                           }}
-                          className="w-full flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
+                          className="w-full flex items-center gap-2 px-3 py-1.5 text-[12px] font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
                         >
                           <X size={12} /> Cancelar Fila
                         </button>
@@ -748,7 +748,7 @@ const PrintHistoryBox: React.FC = () => {
               { label: 'Data/Hora', value: new Date(selectedRequest.timestamp).toLocaleString() },
               { label: 'Valor', value: `R$ ${selectedRequest.totalPrice.toFixed(2)}`, success: true }
             ].map((item, i) => (
-              <div key={i} className="flex justify-between text-[10px] border-b border-slate-50 dark:border-slate-800/60 pb-2">
+              <div key={i} className="flex justify-between text-[12px] border-b border-slate-50 dark:border-slate-800/60 pb-2">
                 <span className="font-bold text-slate-400 dark:text-slate-500">{item.label}</span>
                 <span className={`font-black truncate max-w-[150px] ${item.success ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-800 dark:text-slate-200'}`}>{item.value}</span>
               </div>

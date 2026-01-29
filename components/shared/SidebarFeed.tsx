@@ -97,9 +97,9 @@ const SidebarFeed: React.FC<SidebarConfig> = ({ title = "Feed do Conhecimento", 
   };
 
   return (
-    <div className="relative h-full min-h-[550px] flex flex-col liquid-glass rounded-[24px] p-5 overflow-hidden shadow-2xl">
+    <div className="relative h-full min-h-[550px] flex flex-col liquid-glass rounded-[24px] px-0 pt-5 pb-0 overflow-hidden shadow-2xl">
       {/* Header Section */}
-      <div className="flex flex-col flex-shrink-0 z-10 pb-2">
+      <div className="flex flex-col flex-shrink-0 z-10 pb-2 px-5">
         <div className="flex items-center justify-between mb-2">
           <div className="flex flex-col">
             <h2 className="text-lg font-black text-slate-900 dark:text-white tracking-tight leading-none">{title}</h2>
@@ -207,7 +207,7 @@ const SidebarFeed: React.FC<SidebarConfig> = ({ title = "Feed do Conhecimento", 
 
         {/* Badge do Filtro Ativo */}
         {activeFilter !== 'all' && (
-          <div className="flex items-center gap-2 mt-4">
+          <div className="flex items-center gap-2 mt-4 px-5">
             <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg ${filters.find(f => f.id === activeFilter)?.bg} border ${filters.find(f => f.id === activeFilter)?.border}`}>
               {React.createElement(filters.find(f => f.id === activeFilter)!.icon, {
                 size: 12,
@@ -233,7 +233,7 @@ const SidebarFeed: React.FC<SidebarConfig> = ({ title = "Feed do Conhecimento", 
       {/* Grid de Cards */}
       <div
         ref={scrollContainerRef}
-        className="flex items-stretch gap-[30px] overflow-x-auto px-6 py-6 snap-x snap-mandatory no-scrollbar flex-1 bg-transparent scroll-smooth min-h-0"
+        className="flex items-stretch gap-[30px] overflow-x-auto px-0 py-6 snap-x snap-mandatory no-scrollbar flex-1 bg-transparent scroll-smooth min-h-0"
       >
         {loading ? (
           <div className="w-full flex justify-center items-center">
@@ -242,7 +242,7 @@ const SidebarFeed: React.FC<SidebarConfig> = ({ title = "Feed do Conhecimento", 
         ) : filteredPosts.length > 0 ? (
           <>
             {filteredPosts.slice(0, maxPosts).map((post) => (
-              <div key={post.id} className="snap-start">
+              <div key={post.id} className="snap-start first:ml-5">
                 <PostCard
                   post={post}
                   onBookmarkToggle={(postId, bookmarked) => {
