@@ -24,11 +24,15 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
     const navigate = useNavigate();
     const { user, userProfile } = useAuth();
+    console.log('Sidebar Debug:', { user, userProfile, role: userProfile?.role });
     const [hasPrinterAccess, setHasPrinterAccess] = React.useState(false);
 
     React.useEffect(() => {
         const checkAccess = async () => {
-            if (userProfile?.role === 'Admin') {
+            const role = userProfile?.role ? String(userProfile.role).toLowerCase() : '';
+            console.log('Role Check:', role);
+
+            if (role === 'admin' || role === 'administrator' || userProfile?.isAdmin === true) {
                 setHasPrinterAccess(true);
                 return;
             }
@@ -89,7 +93,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
             </nav>
 
             {/* Rodapé do Sidebar */}
-            {(userProfile?.role === 'Admin' || hasPrinterAccess) && (
+            {(userProfile?.role?.toLowerCase() === 'admin' || hasPrinterAccess) && (
                 <div className="sidebar-profile">
                     <button
                         onClick={() => navigate('/printers/login')}

@@ -335,13 +335,13 @@ const RemindersBox: React.FC = () => {
   ];
 
   return (
-    <div className="w-full lg:w-[315px] h-[380px] flex flex-col liquid-glass rounded-[24px] overflow-hidden shadow-2xl relative border border-white/40 dark:border-white/10">
+    <div className="w-full lg:w-[315px] h-[475px] lg:h-[380px] flex flex-col liquid-glass rounded-[24px] overflow-hidden shadow-2xl relative border border-white/40 dark:border-white/10">
       {/* Header */}
       <div className="flex flex-col px-6 pt-6 pb-2 flex-shrink-0 z-10">
-        <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center justify-between mb-2">
           <div className="flex flex-col">
             <h2 className="text-lg font-black text-slate-900 dark:text-white tracking-tight leading-none">Lembretes</h2>
-            <span className="text-[10px] uppercase tracking-[0.2em] font-extrabold text-[#006c55] mt-1 opacity-80">
+            <span className="text-[10px] uppercase tracking-[0.2em] font-black text-[#006c55] mt-1">
               organização acadêmica
             </span>
           </div>
@@ -351,18 +351,13 @@ const RemindersBox: React.FC = () => {
             <div className="relative" ref={filterRef}>
               <button
                 onClick={() => setIsFilterOpen(!isFilterOpen)}
-                className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all ${isFilterOpen ?
-                  'bg-[#006c55] text-white' :
-                  'bg-white/60 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 border border-white/90 dark:border-white/10'
-                  } shadow-sm active:scale-95`}
+                className={`w-9 h-9 flex items-center justify-center rounded-full transition-all ${isFilterOpen ?
+                  'bg-[#006c55] text-white shadow-lg shadow-[#006c55]/20' :
+                  'bg-white/60 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 hover:text-[#006c55] dark:hover:text-emerald-400 hover:bg-white dark:hover:bg-slate-700 border border-white/90 dark:border-white/10 shadow-sm'
+                  } active:scale-95`}
                 title="Filtrar"
               >
                 <FilterIcon size={18} />
-                {activeFilter !== 'all' && (
-                  <span className="w-4 h-4 bg-white/20 text-white text-[8px] font-black rounded-full flex items-center justify-center">
-                    {reminders.filter(r => r.type === activeFilter).length}
-                  </span>
-                )}
               </button>
 
               {/* Dropdown Menu */}
@@ -387,7 +382,7 @@ const RemindersBox: React.FC = () => {
                         }}
                         className={`w-full flex items-center justify-between px-4 py-2 text-left transition-colors ${isActive ?
                           `${filter.bg} ${filter.color} font-bold` :
-                          'text-slate-600 hover:bg-slate-50'
+                          'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
                           }`}
                       >
                         <div className="flex items-center gap-2">
@@ -397,7 +392,7 @@ const RemindersBox: React.FC = () => {
                         {count > 0 && (
                           <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${isActive ?
                             'bg-white text-slate-900' :
-                            'bg-slate-100 text-slate-500'
+                            'bg-slate-100 dark:bg-slate-700 text-slate-500'
                             }`}>
                             {count}
                           </span>
@@ -411,7 +406,8 @@ const RemindersBox: React.FC = () => {
 
             <button
               onClick={() => setIsAdding(true)}
-              className="w-9 h-9 bg-[#006c55] hover:bg-[#005a46] text-white rounded-xl flex items-center justify-center transition-all shadow-lg shadow-[#006c55]/20 active:scale-95"
+              className="w-9 h-9 rounded-full bg-white/60 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 hover:text-[#006c55] dark:hover:text-emerald-400 hover:bg-white dark:hover:bg-slate-700 transition-all border border-white/90 dark:border-white/10 shadow-sm active:scale-95 flex items-center justify-center"
+              title="Novo Lembrete"
             >
               <Plus size={18} strokeWidth={3} />
             </button>
@@ -885,7 +881,7 @@ const RemindersBox: React.FC = () => {
         </div>
       )}
 
-      <style>{`
+      <style jsx="true">{`
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         input[type="date"], input[type="time"] { 

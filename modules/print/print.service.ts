@@ -91,6 +91,10 @@ export class PrintService {
     return updateDoc(doc(db, this.collectionName, id), { status });
   }
 
+  static async updateRequest(id: string, data: Partial<PrintRequest>) {
+    return updateDoc(doc(db, this.collectionName, id), data);
+  }
+
   static async toggleArchive(id: string, archived: boolean) {
     return updateDoc(doc(db, this.collectionName, id), { archived });
   }

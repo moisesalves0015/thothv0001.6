@@ -97,13 +97,13 @@ const SidebarFeed: React.FC<SidebarConfig> = ({ title = "Feed do Conhecimento", 
   };
 
   return (
-    <div className="relative h-full min-h-[550px] flex flex-col liquid-glass rounded-[24px] overflow-hidden shadow-2xl">
+    <div className="relative h-full min-h-[550px] flex flex-col liquid-glass rounded-[24px] p-5 overflow-hidden shadow-2xl">
       {/* Header Section */}
-      <div className="flex flex-col px-6 pt-6 flex-shrink-0 z-10">
-        <div className="flex items-center justify-between">
+      <div className="flex flex-col flex-shrink-0 z-10 pb-2">
+        <div className="flex items-center justify-between mb-2">
           <div className="flex flex-col">
             <h2 className="text-lg font-black text-slate-900 dark:text-white tracking-tight leading-none">{title}</h2>
-            <span className="text-[10px] uppercase tracking-[0.2em] font-extrabold text-[#006c55] dark:text-emerald-400 mt-1 opacity-80">
+            <span className="text-[10px] uppercase tracking-[0.2em] font-black text-[#006c55] mt-1">
               atualizações da rede
             </span>
           </div>
@@ -113,30 +113,30 @@ const SidebarFeed: React.FC<SidebarConfig> = ({ title = "Feed do Conhecimento", 
             <button
               onClick={handleRefresh}
               disabled={refreshing}
-              className="p-2 rounded-lg bg-white/60 text-slate-600 hover:text-[#006c55] hover:bg-white transition-all border border-white/90 shadow-sm active:scale-90"
+              className="w-9 h-9 rounded-full bg-white/60 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 hover:text-[#006c55] dark:hover:text-emerald-400 hover:bg-white dark:hover:bg-slate-700 transition-all border border-white/90 dark:border-white/10 shadow-sm active:scale-95 flex items-center justify-center"
               title="Atualizar feed"
             >
-              <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
+              <RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />
             </button>
 
-            {/* Botão de Filtro (Icon Only) */}
+            {/* Botão de Filtro */}
             <div className="relative" ref={filterRef}>
               <button
                 onClick={() => setIsFilterOpen(!isFilterOpen)}
-                className={`p-2 rounded-lg transition-all ${isFilterOpen ?
-                  'bg-[#006c55] text-white' :
-                  'bg-white/60 text-slate-600 hover:text-[#006c55] hover:bg-white border border-white/90'
-                  } shadow-sm active:scale-90`}
+                className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${isFilterOpen ?
+                  'bg-[#006c55] text-white shadow-lg shadow-[#006c55]/20' :
+                  'bg-white/60 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 hover:text-[#006c55] dark:hover:text-emerald-400 hover:bg-white dark:hover:bg-slate-700 border border-white/90 dark:border-white/10 shadow-sm'
+                  } active:scale-95`}
                 title="Filtrar feed"
               >
-                <Filter size={14} />
+                <Filter size={18} />
               </button>
 
               {/* Dropdown de Filtros */}
               {isFilterOpen && (
-                <div className="absolute right-0 top-full mt-2 w-56 bg-white/95 backdrop-blur-xl border border-white/40 rounded-2xl shadow-2xl z-50 py-2 animate-in fade-in slide-in-from-top-2 duration-200">
-                  <div className="px-4 py-2 border-b border-slate-100">
-                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">Tipo de Conteúdo</span>
+                <div className="absolute right-0 top-full mt-2 w-56 bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-2xl shadow-2xl z-50 py-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-700">
+                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Tipo de Conteúdo</span>
                   </div>
                   {filters.map((filter) => {
                     const Icon = filter.icon;
@@ -152,11 +152,11 @@ const SidebarFeed: React.FC<SidebarConfig> = ({ title = "Feed do Conhecimento", 
                         }}
                         className={`w-full flex items-center justify-between px-4 py-2.5 text-left transition-colors ${isActive ?
                           `${filter.bg} ${filter.color} font-bold` :
-                          'text-slate-600 hover:bg-slate-50'
+                          'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
                           }`}
                       >
                         <div className="flex items-center gap-3">
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isActive ? filter.bg : 'bg-slate-100'}`}>
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isActive ? filter.bg : 'bg-slate-100 dark:bg-slate-700'}`}>
                             <Icon size={14} className={isActive ? filter.color : 'text-slate-400'} />
                           </div>
                           <span className="text-[12px] font-medium">{filter.label}</span>
@@ -164,7 +164,7 @@ const SidebarFeed: React.FC<SidebarConfig> = ({ title = "Feed do Conhecimento", 
                         {count > 0 && (
                           <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${isActive ?
                             'bg-white text-slate-900' :
-                            'bg-slate-100 text-slate-500'
+                            'bg-slate-100 dark:bg-slate-700 text-slate-500'
                             }`}>
                             {count}
                           </span>
@@ -179,27 +179,27 @@ const SidebarFeed: React.FC<SidebarConfig> = ({ title = "Feed do Conhecimento", 
             {/* Botão Nova Publicação */}
             <button
               onClick={() => setPostModalOpen(true)}
-              className="flex items-center gap-2 bg-[#006c55] hover:bg-[#005a46] text-white px-5 py-2.5 rounded-xl text-[11px] font-bold transition-all shadow-lg shadow-[#006c55]/20 active:scale-95"
+              className="w-9 h-9 rounded-full bg-white/60 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 hover:text-[#006c55] dark:hover:text-emerald-400 hover:bg-white dark:hover:bg-slate-700 transition-all border border-white/90 dark:border-white/10 shadow-sm active:scale-95 flex items-center justify-center"
+              title="Nova Publicação"
             >
-              <Plus size={14} />
-              <span className="hidden sm:inline">Nova Publicação</span>
+              <Plus size={18} strokeWidth={3} />
             </button>
 
             {/* Controles de Scroll */}
             <div className="hidden md:flex gap-2">
               <button
                 onClick={() => handleScroll('left')}
-                className="p-2.5 rounded-lg bg-white/60 text-[#006c55] hover:bg-white transition-all border border-white/90 shadow-sm active:scale-90"
+                className="w-9 h-9 rounded-full bg-white/60 dark:bg-slate-800/60 text-[#006c55] dark:text-emerald-400 hover:bg-white dark:hover:bg-slate-700 flex items-center justify-center transition-all border border-white/90 dark:border-white/10 shadow-sm active:scale-95"
                 aria-label="Rolar para esquerda"
               >
-                <ChevronLeft size={16} />
+                <ChevronLeft size={18} />
               </button>
               <button
                 onClick={() => handleScroll('right')}
-                className="p-2.5 rounded-lg bg-white/60 text-[#006c55] hover:bg-white transition-all border border-white/90 shadow-sm active:scale-90"
+                className="w-9 h-9 rounded-full bg-white/60 dark:bg-slate-800/60 text-[#006c55] dark:text-emerald-400 hover:bg-white dark:hover:bg-slate-700 flex items-center justify-center transition-all border border-white/90 dark:border-white/10 shadow-sm active:scale-95"
                 aria-label="Rolar para direita"
               >
-                <ChevronRight size={16} />
+                <ChevronRight size={18} />
               </button>
             </div>
           </div>

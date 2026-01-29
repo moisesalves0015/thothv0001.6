@@ -34,28 +34,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let unsubscribeProfile: (() => void) | null = null;
 
     // Escuta mudanças no estado de autenticação (login/logout do Firebase)
-    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
+    // Escuta mudanças no estado de autenticação (login/logout do Firebase)
+    const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
 
-      // Se tivermos um listener anterior de perfil, cancelamos para evitar vazamento de memória ou conflitos
+      // Se tivermos um listener anterior de perfil, cancelamos
       if (unsubscribeProfile) {
         unsubscribeProfile();
         unsubscribeProfile = null;
       }
 
       if (currentUser) {
-        // Se o usuário estiver logado, escuta mudanças no documento de perfil dele no Firestore em tempo real
-        unsubscribeProfile = onSnapshot(doc(db, 'users', currentUser.uid), (docSnap) => {
-          if (docSnap.exists()) {
-            setUserProfile(docSnap.data());
-          } else {
-            setUserProfile(null);
-          }
+        // Define persistência explícita para garantir
+        // (Opcional, mas ajuda se algo estiver resetando)
+
+        // Se o usuário estiver logado, escuta mudanças no documento de perfil
+        try {
+          unsubscribeProfile = onSnapshot(doc(db, 'users', currentUser.uid), (docSnap) => {
+            if (docSnap.exists()) {
+              setUserProfile(docSnap.data());
+            } else {
+              // Se não tiver perfil, tenta buscar ou define null mas mantém user logado
+              console.warn("Perfil de usuário não encontrado no Firestore.");
+              setUserProfile(null);
+            }
+            setLoading(false);
+          }, (error) => {
+            console.error("Erro ao escutar perfil do usuário:", error);
+            // Mesmo com erro no perfil, o usuário está autenticado
+            setLoading(false);
+          });
+        } catch (err) {
+          console.error("Erro setup profile listener:", err);
           setLoading(false);
-        }, (error) => {
-          console.error("Erro ao escutar perfil do usuário:", error);
-          setLoading(false);
-        });
+        }
       } else {
         // Usuário deslogado
         setUserProfile(null);

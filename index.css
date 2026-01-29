@@ -10,6 +10,9 @@
     --sidebar-collapsed-width: 90px;
     --transition-speed: 0.3s;
 
+    /* Background Default Logic */
+    --default-bg-image: url("/assets/background.jpg?v=3");
+
     /* Liquid Glass Variables */
     --c-glass: #bbbbbc;
     --c-light: #fff;
@@ -33,6 +36,9 @@
     --glass-reflex-dark: 2;
     --glass-reflex-light: 0.3;
     --saturation: 150%;
+
+    /* Disable default image in dark mode */
+    --default-bg-image: none;
 }
 
 body {
@@ -55,7 +61,7 @@ body.auth-bg::before {
     width: 100%;
     height: 100%;
     /* Default background used if variable is not set */
-    background-image: var(--bg-image, url("/assets/background.jpg?v=3"));
+    background-image: var(--bg-image, var(--default-bg-image));
     background-size: cover;
     background-position: center center;
     background-repeat: no-repeat;
@@ -85,7 +91,7 @@ body.auth-bg::before {
 @media (-webkit-min-device-pixel-ratio: 2),
 (min-resolution: 192dpi) {
     body.auth-bg::before {
-        background-image: var(--bg-image, url("/assets/background.jpg?v=3"));
+        background-image: var(--bg-image, var(--default-bg-image));
         /* You can replace with a higher resolution image if available */
     }
 }

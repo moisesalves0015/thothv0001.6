@@ -74,19 +74,16 @@ const ConnectionSuggestions: React.FC = () => {
   }
 
   return (
-    <div className="relative w-full h-[380px] flex flex-col liquid-glass rounded-[24px] overflow-hidden shadow-2xl group">
+    <div className="relative w-full h-[380px] flex flex-col liquid-glass rounded-[24px] p-5 overflow-hidden shadow-2xl group">
       {/* Decorative Accent */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-[#006c55] to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
       {/* Header */}
-      <div className="flex flex-col px-6 pt-6 flex-shrink-0">
-        <div className="flex items-center justify-between">
+      <div className="flex flex-col flex-shrink-0 z-10 pb-2">
+        <div className="flex items-center justify-between mb-2">
           <div className="flex flex-col">
-            <div className="flex items-center gap-3">
-
-              <h2 className="text-lg font-black text-slate-900 dark:text-white tracking-tight leading-none">Conexões Sugeridas</h2>
-            </div>
-            <span className="text-[10px] uppercase tracking-[0.2em] font-extrabold text-[#006c55] dark:text-emerald-400 mt-1 opacity-80">
+            <h2 className="text-lg font-black text-slate-900 dark:text-white tracking-tight leading-none">Conexões Sugeridas</h2>
+            <span className="text-[10px] uppercase tracking-[0.2em] font-black text-[#006c55] mt-1">
               expanda sua rede acadêmica
             </span>
           </div>
@@ -96,29 +93,29 @@ const ConnectionSuggestions: React.FC = () => {
             <button
               onClick={refresh}
               disabled={refreshing}
-              className="p-2 rounded-lg bg-white/60 text-slate-600 hover:text-[#006c55] hover:bg-white transition-all border border-white/90 shadow-sm active:scale-90"
+              className="w-9 h-9 rounded-full bg-white/60 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 hover:text-[#006c55] dark:hover:text-emerald-400 hover:bg-white dark:hover:bg-slate-700 transition-all border border-white/90 dark:border-white/10 shadow-sm active:scale-95 flex items-center justify-center"
               title="Atualizar sugestões"
             >
-              <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
+              <RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />
             </button>
 
             {/* Filter Button */}
             <div className="relative">
               <button
                 onClick={() => setIsFilterOpen(!isFilterOpen)}
-                className={`p-2 rounded-lg transition-all ${isFilterOpen ?
-                  'bg-[#006c55] text-white' :
-                  'bg-white/60 text-slate-600 hover:text-[#006c55] hover:bg-white border border-white/90'
-                  } shadow-sm active:scale-90`}
+                className={`w-9 h-9 flex items-center justify-center rounded-full transition-all ${isFilterOpen ?
+                  'bg-[#006c55] text-white shadow-lg shadow-[#006c55]/20' :
+                  'bg-white/60 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 hover:text-[#006c55] dark:hover:text-emerald-400 hover:bg-white dark:hover:bg-slate-700 border border-white/90 dark:border-white/10 shadow-sm'
+                  } active:scale-95`}
                 title="Filtrar conexões"
               >
-                <Filter size={14} />
+                <Filter size={18} />
               </button>
 
               {isFilterOpen && (
-                <div className="absolute right-0 top-full mt-2 w-48 bg-white/95 backdrop-blur-xl border border-white/40 rounded-2xl shadow-2xl z-50 py-2 animate-in fade-in slide-in-from-top-2 duration-200">
-                  <div className="px-4 py-2 border-b border-slate-100">
-                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">Filtrar por</span>
+                <div className="absolute right-0 top-full mt-2 w-48 bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-2xl shadow-2xl z-50 py-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-700">
+                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Filtrar por</span>
                   </div>
                   {[
                     { id: 'all', label: 'Todas', icon: Sparkles, count: allSuggestionsCount },
@@ -135,8 +132,8 @@ const ConnectionSuggestions: React.FC = () => {
                           setIsFilterOpen(false);
                         }}
                         className={`w-full flex items-center justify-between px-4 py-2.5 text-left transition-colors ${isActive ?
-                          'bg-[#006c55]/5 text-[#006c55] font-bold' :
-                          'text-slate-600 hover:bg-slate-50'
+                          'bg-[#006c55]/10 text-[#006c55] font-bold' :
+                          'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
                           }`}
                       >
                         <div className="flex items-center gap-3">
@@ -162,17 +159,17 @@ const ConnectionSuggestions: React.FC = () => {
             <div className="hidden md:flex gap-2">
               <button
                 onClick={() => handleScroll('left')}
-                className="p-2 rounded-lg bg-white/60 text-[#006c55] hover:bg-white transition-all border border-white/90 shadow-sm active:scale-90"
+                className="w-9 h-9 rounded-full bg-white/60 dark:bg-slate-800/60 text-[#006c55] dark:text-emerald-400 hover:bg-white dark:hover:bg-slate-700 flex items-center justify-center transition-all border border-white/90 dark:border-white/10 shadow-sm active:scale-95"
                 aria-label="Rolar para esquerda"
               >
-                <ChevronLeft size={16} />
+                <ChevronLeft size={18} />
               </button>
               <button
                 onClick={() => handleScroll('right')}
-                className="p-2 rounded-lg bg-white/60 text-[#006c55] hover:bg-white transition-all border border-white/90 shadow-sm active:scale-90"
+                className="w-9 h-9 rounded-full bg-white/60 dark:bg-slate-800/60 text-[#006c55] dark:text-emerald-400 hover:bg-white dark:hover:bg-slate-700 flex items-center justify-center transition-all border border-white/90 dark:border-white/10 shadow-sm active:scale-95"
                 aria-label="Rolar para direita"
               >
-                <ChevronRight size={16} />
+                <ChevronRight size={18} />
               </button>
             </div>
           </div>
@@ -254,7 +251,7 @@ const ConnectionSuggestions: React.FC = () => {
 
       {/* Footer - Removido conforme solicitação */}
 
-      <style>{`
+      <style jsx="true">{`
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .snap-center { scroll-snap-align: center; }

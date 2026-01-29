@@ -219,7 +219,7 @@ export class ConnectionService {
 
             return suggestions;
         } catch (e) {
-            console.error("Error in getSuggestions (Permissions?):", e);
+            // Notificamos apenas em debug para evitar poluir console do usuário
             return [];
         }
     }

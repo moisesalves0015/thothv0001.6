@@ -1,6 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import {
   BookOpen,
   Users,
@@ -29,6 +30,14 @@ import {
 
 const Landing: React.FC = () => {
   const [scrollY, setScrollY] = useState(0);
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user && !loading) {
+      navigate('/home');
+    }
+  }, [user, loading, navigate]);
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);

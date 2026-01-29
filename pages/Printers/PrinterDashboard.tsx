@@ -167,7 +167,7 @@ const PrinterDashboard: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col font-sans relative overflow-x-hidden">
       {/* Background Orgânico Thoth */}
-      <div className="fixed inset-0 z-[-1] bg-[#fff5f7] bg-center bg-cover bg-no-repeat bg-fixed opacity-100" style={{ backgroundImage: 'url("https://i.pinimg.com/736x/99/b2/0c/99b20c6f0e8c81d5db7998cc91123825.jpg")' }}></div>
+      {/* Background handled by global index.css and ThemeContext */}
 
       {/* Header Premium Glass */}
       <header className="h-16 bg-white/60 backdrop-blur-xl border-b border-white/40 flex items-center justify-between px-8 sticky top-0 z-[60] shadow-sm">
@@ -274,7 +274,7 @@ const PrinterDashboard: React.FC = () => {
             {['pending', 'printing', 'ready'].map((status) => (
               <div
                 key={status}
-                className={`bg-white/30 backdrop-blur-md rounded-2xl p-5 flex flex-col gap-5 border border-white/50 shadow-sm transition-all ${status === 'printing' ? 'bg-[#006c55]/5 border-2 border-dashed border-[#006c55]/20' : ''}`}
+                className={`bg-white/30 dark:bg-slate-900/20 backdrop-blur-md rounded-2xl p-5 flex flex-col gap-5 border border-white/50 dark:border-white/5 shadow-sm transition-all ${status === 'printing' ? 'bg-[#006c55]/5 border-2 border-dashed border-[#006c55]/20' : ''}`}
                 onDragOver={allowDrop}
                 onDrop={(e) => handleDrop(e, status as any)}
               >
@@ -294,16 +294,17 @@ const PrinterDashboard: React.FC = () => {
                       key={req.id}
                       draggable
                       onDragStart={(e) => handleDragStart(e, req.id)}
-                      className={`bg-white/80 backdrop-blur-sm p-5 rounded-2xl shadow-sm border border-white/90 cursor-grab active:grabbing transition-all hover:border-[#006c55]/40 group ${status === 'printing' ? 'border-l-4 border-l-[#006c55]' : ''}`}
+                      className={`relative flex flex-col p-5 rounded-2xl border transition-all duration-300 cursor-grab active:grabbing group hover:shadow-lg animate-in slide-in-from-bottom-2 ${status === 'printing' ? 'border-l-4 border-l-[#006c55]' : ''
+                        } bg-gradient-to-br from-white/95 to-white/80 dark:from-slate-800/90 dark:to-slate-900/80 border-white dark:border-slate-700 hover:border-[#006c55]/20`}
                     >
                       <div className="flex items-start justify-between mb-3">
-                        <div className="w-10 h-10 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-300 group-hover:text-[#006c55] transition-colors">
+                        <div className="w-10 h-10 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-300 dark:text-slate-500 group-hover:text-[#006c55] transition-colors">
                           <FileText size={20} />
                         </div>
-                        <span className="text-[11px] font-black text-slate-900">R$ {req.totalPrice.toFixed(2)}</span>
+                        <span className="text-[11px] font-black text-slate-900 dark:text-white">R$ {req.totalPrice.toFixed(2)}</span>
                       </div>
-                      <h4 className="text-[13px] font-black text-slate-900 truncate mb-0.5">{req.fileName}</h4>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase">{req.customerName}</p>
+                      <h4 className="text-[13px] font-black text-slate-900 dark:text-white truncate mb-0.5">{req.fileName}</h4>
+                      <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">{req.customerName}</p>
 
                       {req.fileUrl && (
                         <a

@@ -343,7 +343,7 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
         </>
       )}
 
-      <style jsx>{`
+      <style jsx="true">{`
         @keyframes fadeIn {
           from { opacity: 0; transform: scale(0.95); }
           to { opacity: 1; transform: scale(1); }

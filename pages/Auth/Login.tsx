@@ -1,18 +1,26 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, Loader2, AlertCircle, Check } from 'lucide-react';
 import { AuthService } from '../../modules/auth/auth.service';
+import { useAuth } from '../../contexts/AuthContext';
 import { auth } from '../../firebase';
 import { setPersistence, browserLocalPersistence, browserSessionPersistence } from 'firebase/auth';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [keepLoggedIn, setKeepLoggedIn] = useState(false);
+  const [keepLoggedIn, setKeepLoggedIn] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth(); // Get global auth state
+
+  useEffect(() => {
+    if (user && !authLoading) {
+      navigate('/home');
+    }
+  }, [user, authLoading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,11 +97,17 @@ const Login: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 ml-1 cursor-pointer" onClick={() => setKeepLoggedIn(!keepLoggedIn)}>
-            <div className={`w-5 h-5 rounded-lg border flex items-center justify-center transition-all ${keepLoggedIn ? 'bg-[#006c55] border-[#006c55]' : 'bg-white/50 border-white/60'}`}>
-              {keepLoggedIn && <Check size={12} className="text-white" strokeWidth={3} />}
+          <div
+            className={`flex items-center gap-3 p-4 rounded-2xl border cursor-pointer transition-all duration-300 ${keepLoggedIn ? 'bg-[#006c55]/5 border-[#006c55] shadow-sm' : 'bg-white/30 border-white/60 hover:bg-white/50'}`}
+            onClick={() => setKeepLoggedIn(!keepLoggedIn)}
+          >
+            <div className={`w-6 h-6 rounded-[8px] border-2 flex items-center justify-center transition-all duration-300 ${keepLoggedIn ? 'bg-[#006c55] border-[#006c55] scale-105' : 'bg-white border-slate-300'}`}>
+              {keepLoggedIn && <Check size={14} className="text-white" strokeWidth={4} />}
             </div>
-            <span className="text-xs font-bold text-slate-500 select-none">Manter conectado</span>
+            <div className="flex flex-col">
+              <span className={`text-sm font-bold transition-colors ${keepLoggedIn ? 'text-[#006c55]' : 'text-slate-600'}`}>Manter conectado</span>
+              <span className="text-[10px] text-slate-400 font-medium leading-tight">Não será necessário logar novamente</span>
+            </div>
           </div>
 
           <button
