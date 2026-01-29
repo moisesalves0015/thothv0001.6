@@ -38,6 +38,33 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
+  // Efeito 0: Carrega tema IMEDIATAMENTE ao montar (antes do user carregar)
+  // Isso previne o "flash branco" durante o carregamento da autenticação
+  useEffect(() => {
+    const root = window.document.documentElement;
+
+    // Tenta carregar o último tema salvo (qualquer usuário)
+    // Procura por chaves que começam com 'thoth-theme-'
+    let savedTheme: string | null = null;
+
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('thoth-theme-')) {
+        savedTheme = localStorage.getItem(key);
+        break; // Usa o primeiro encontrado
+      }
+    }
+
+    // Aplica o tema imediatamente
+    if (savedTheme === 'dark') {
+      setIsDarkMode(true);
+      root.classList.add('dark');
+    } else {
+      setIsDarkMode(false);
+      root.classList.remove('dark');
+    }
+  }, []); // Executa apenas uma vez ao montar
+
   // Efeito 1: Sincroniza o estado inicial (Tema + Background) quando o usuário loga
   useEffect(() => {
     const root = window.document.documentElement;

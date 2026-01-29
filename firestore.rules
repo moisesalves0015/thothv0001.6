@@ -110,7 +110,8 @@ service cloud.firestore {
       // Leitura permitida para o dono do pedido ou o dono da gráfica (via email no token)
       allow read: if isAuthenticated() && (
         resource.data.customerId == request.auth.uid || 
-        request.auth.token.email.lower() == resource.data.stationOwnerEmail.lower()
+        request.auth.token.email.lower() == resource.data.stationOwnerEmail.lower() ||
+        isAdmin()
       );
       
       allow create: if isAuthenticated() && request.resource.data.customerId == request.auth.uid;
@@ -118,7 +119,8 @@ service cloud.firestore {
       // Atualização (ex: mudar status) permitida para quem tem acesso de leitura
       allow update: if isAuthenticated() && (
         resource.data.customerId == request.auth.uid || 
-        request.auth.token.email.lower() == resource.data.stationOwnerEmail.lower()
+        request.auth.token.email.lower() == resource.data.stationOwnerEmail.lower() ||
+        isAdmin()
       );
       
       allow delete: if isAuthenticated() && (resource.data.customerId == request.auth.uid || isAdmin());

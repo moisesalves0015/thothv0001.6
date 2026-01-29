@@ -381,7 +381,7 @@ const PrintHistoryBox: React.FC = () => {
               <div
                 key={req.id}
                 onClick={() => setSelectedRequest(req)}
-                className={`p-3 rounded-xl bg-gradient-to-br from-white/60 to-white/30 dark:from-slate-800/60 dark:to-slate-900/40 border border-white/60 dark:border-white/10 hover:shadow-md transition-all group relative cursor-pointer ${isMenuActive ? 'z-[50]' : 'z-auto'} ${req.archived ? 'opacity-70 grayscale-[0.5]' : ''}`}
+                className={`p-3 rounded-xl bg-gradient-to-br from-white/95 to-white/80 dark:from-slate-800/90 dark:to-slate-900/80 border border-white dark:border-slate-700 hover:shadow-md transition-all group relative cursor-pointer ${isMenuActive ? 'z-[50]' : 'z-auto'} ${req.archived ? 'opacity-70 grayscale-[0.5]' : ''}`}
               >
                 <div className="flex items-start gap-3">
                   <div
@@ -398,7 +398,7 @@ const PrintHistoryBox: React.FC = () => {
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tighter truncate">
+                      <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tighter truncate max-w-[100px]">
                         {req.printerName} • {req.pages}
                       </p>
 
@@ -495,267 +495,271 @@ const PrintHistoryBox: React.FC = () => {
       </div>
 
       {/* Modais de Impressão */}
-      {isNewModalOpen && (
-        <div className="absolute inset-0 z-[60] bg-white/95 dark:bg-slate-900/95 backdrop-blur-md p-6 flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-300">
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
-              <Printer size={16} className="text-[#006c55]" />
-              {newModalStep === 'config' ? 'Configurações' : 'Pagamento'}
-            </h4>
-            <button
-              onClick={() => {
-                if (newModalStep === 'payment') setNewModalStep('config');
-                else setIsNewModalOpen(false);
-              }}
-              className="text-slate-400 hover:text-slate-900 dark:hover:text-white"
-            >
-              {newModalStep === 'payment' ? <RotateCcw size={18} /> : <X size={20} />}
-            </button>
-          </div>
+      {
+        isNewModalOpen && (
+          <div className="absolute inset-0 z-[60] bg-white/95 dark:bg-slate-900/95 backdrop-blur-md p-6 flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+                <Printer size={16} className="text-[#006c55]" />
+                {newModalStep === 'config' ? 'Configurações' : 'Pagamento'}
+              </h4>
+              <button
+                onClick={() => {
+                  if (newModalStep === 'payment') setNewModalStep('config');
+                  else setIsNewModalOpen(false);
+                }}
+                className="text-slate-400 hover:text-slate-900 dark:hover:text-white"
+              >
+                {newModalStep === 'payment' ? <RotateCcw size={18} /> : <X size={20} />}
+              </button>
+            </div>
 
-          <div className="flex-1 overflow-y-auto no-scrollbar space-y-4">
-            {newModalStep === 'config' ? (
-              <>
-                {/* Seletor de Arquivo */}
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Documento</label>
-                  <div className="relative group">
-                    <input
-                      type="file"
-                      onChange={(e) => setNewFile(e.target.files?.[0] || null)}
-                      className="hidden"
-                      id="print-upload"
-                      accept=".pdf,.doc,.docx"
-                    />
-                    <label
-                      htmlFor="print-upload"
-                      className="w-full h-14 bg-white dark:bg-slate-800 border border-dashed border-slate-300 dark:border-slate-600 rounded-xl flex items-center justify-center gap-3 cursor-pointer hover:border-[#006c55] hover:bg-emerald-50/30 dark:hover:bg-emerald-900/30 transition-all group"
-                    >
-                      {newFile ? (
-                        <div className="flex items-center gap-2">
-                          <FileText size={16} className="text-[#006c55]" />
-                          <span className="text-xs font-bold text-slate-700 truncate max-w-[150px]">{newFile.name}</span>
-                        </div>
-                      ) : (
-                        <>
-                          <Upload size={16} className="text-slate-400 group-hover:text-[#006c55]" />
-                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-[#006c55]">Selecionar PDF</span>
-                        </>
-                      )}
-                    </label>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
+            <div className="flex-1 overflow-y-auto no-scrollbar space-y-4">
+              {newModalStep === 'config' ? (
+                <>
+                  {/* Seletor de Arquivo */}
                   <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Gráfica Parceira</label>
-                    <select
-                      className="w-full h-10 px-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold dark:text-slate-200 outline-none"
-                      value={selectedStationId}
-                      onChange={(e) => setSelectedStationId(e.target.value)}
-                    >
-                      <option value="">Selecione...</option>
-                      {stations.map(s => (
-                        <option key={s.id} value={s.stationId}>
-                          {s.name} {!s.isOpen && '(Fechada)'}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Páginas</label>
-                    <input
-                      type="text"
-                      placeholder="Ex: 1-5, 7"
-                      className="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold dark:text-slate-200 outline-none"
-                      value={newPages}
-                      onChange={(e) => setNewPages(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Pagamento</label>
-                    <select
-                      className="w-full h-10 px-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold dark:text-slate-200 outline-none"
-                      value={newPaymentMethod}
-                      onChange={(e) => setNewPaymentMethod(e.target.value as any)}
-                    >
-                      <option value="paid">Pagar Agora</option>
-                      <option value="on_pickup">Pagar na Retirada</option>
-                    </select>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Prioridade</label>
-                    <select
-                      className="w-full h-10 px-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold dark:text-slate-200 outline-none"
-                      value={newPriority}
-                      onChange={(e) => setNewPriority(e.target.value as any)}
-                    >
-                      <option value="normal">Normal</option>
-                      <option value="urgent">Urgente (+R$ 2.00)</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-white/5">
-                  <div className="flex flex-col">
-                    <span className="text-[10px] font-black text-slate-900 dark:text-white uppercase">Acabamento</span>
-                    <span className="text-[9px] text-slate-400 dark:text-slate-500">{newIsColor ? 'Colorido' : 'P&B'} • {newIsDuplex ? 'Frente/Verso' : 'Simples'}</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setNewIsColor(!newIsColor)}
-                      className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${newIsColor ? 'bg-blue-600 text-white' : 'bg-white dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700'}`}
-                    >
-                      <Settings2 size={14} />
-                    </button>
-                    <button
-                      onClick={() => setNewIsDuplex(!newIsDuplex)}
-                      className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${newIsDuplex ? 'bg-[#006c55] text-white' : 'bg-white dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700'}`}
-                    >
-                      <RotateCcw size={14} className="rotate-90" />
-                    </button>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className="space-y-4 animate-in slide-in-from-right-4 duration-300">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Método de Pagamento</label>
-                  <div className="grid grid-cols-2 gap-2 h-12">
-                    <button
-                      onClick={() => setPaymentSubMethod('pix')}
-                      className={`flex-1 rounded-xl text-[10px] font-black uppercase transition-all flex items-center justify-center gap-2 ${paymentSubMethod === 'pix' ? 'bg-[#006c55] text-white shadow-lg shadow-[#006c55]/20' : 'bg-white dark:bg-slate-800 text-slate-400 border border-slate-200 dark:border-slate-700'}`}
-                    >
-                      <QrCode size={16} /> Pix
-                    </button>
-                    <button
-                      onClick={() => setPaymentSubMethod('card')}
-                      className={`flex-1 rounded-xl text-[10px] font-black uppercase transition-all flex items-center justify-center gap-2 ${paymentSubMethod === 'card' ? 'bg-[#006c55] text-white shadow-lg shadow-[#006c55]/20' : 'bg-white dark:bg-slate-800 text-slate-400 border border-slate-200 dark:border-slate-700'}`}
-                    >
-                      <FileText size={16} /> Cartão
-                    </button>
-                  </div>
-                </div>
-
-                {paymentSubMethod === 'pix' && (
-                  <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-100 dark:border-white/5 flex flex-col items-center">
-                    <div className="w-40 h-40 bg-white p-2 rounded-xl mb-3">
-                      <QrCode size={144} className="text-slate-900" />
-                    </div>
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2">Escaneie ou copie o código</p>
-                    <div className="w-full bg-slate-100 dark:bg-slate-800 p-2 rounded-lg text-center truncate text-[9px] font-mono text-slate-500">
-                      00020126580014br.gov.bcb.pix013689f0a2d4-1234-5678-90ab-cdef12345678
+                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Documento</label>
+                    <div className="relative group">
+                      <input
+                        type="file"
+                        onChange={(e) => setNewFile(e.target.files?.[0] || null)}
+                        className="hidden"
+                        id="print-upload"
+                        accept=".pdf,.doc,.docx"
+                      />
+                      <label
+                        htmlFor="print-upload"
+                        className="w-full h-14 bg-white dark:bg-slate-800 border border-dashed border-slate-300 dark:border-slate-600 rounded-xl flex items-center justify-center gap-3 cursor-pointer hover:border-[#006c55] hover:bg-emerald-50/30 dark:hover:bg-emerald-900/30 transition-all group"
+                      >
+                        {newFile ? (
+                          <div className="flex items-center gap-2">
+                            <FileText size={16} className="text-[#006c55]" />
+                            <span className="text-xs font-bold text-slate-700 truncate max-w-[150px]">{newFile.name}</span>
+                          </div>
+                        ) : (
+                          <>
+                            <Upload size={16} className="text-slate-400 group-hover:text-[#006c55]" />
+                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-[#006c55]">Selecionar PDF</span>
+                          </>
+                        )}
+                      </label>
                     </div>
                   </div>
-                )}
 
-                {paymentSubMethod === 'card' && (
-                  <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-100 dark:border-white/5">
-                    <p className="text-[10px] font-bold text-slate-500 text-center uppercase tracking-widest">Integração com Stripe (Futuro)</p>
-                    <div className="mt-4 space-y-2 opacity-50 pointer-events-none">
-                      <div className="h-10 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700" />
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="h-10 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700" />
-                        <div className="h-10 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700" />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Gráfica Parceira</label>
+                      <select
+                        className="w-full h-10 px-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold dark:text-slate-200 outline-none"
+                        value={selectedStationId}
+                        onChange={(e) => setSelectedStationId(e.target.value)}
+                      >
+                        <option value="">Selecione...</option>
+                        {stations.map(s => (
+                          <option key={s.id} value={s.stationId}>
+                            {s.name} {!s.isOpen && '(Fechada)'}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Páginas</label>
+                      <input
+                        type="text"
+                        placeholder="Ex: 1-5, 7"
+                        className="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold dark:text-slate-200 outline-none"
+                        value={newPages}
+                        onChange={(e) => setNewPages(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Pagamento</label>
+                      <select
+                        className="w-full h-10 px-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold dark:text-slate-200 outline-none"
+                        value={newPaymentMethod}
+                        onChange={(e) => setNewPaymentMethod(e.target.value as any)}
+                      >
+                        <option value="paid">Pagar Agora</option>
+                        <option value="on_pickup">Pagar na Retirada</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Prioridade</label>
+                      <select
+                        className="w-full h-10 px-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold dark:text-slate-200 outline-none"
+                        value={newPriority}
+                        onChange={(e) => setNewPriority(e.target.value as any)}
+                      >
+                        <option value="normal">Normal</option>
+                        <option value="urgent">Urgente (+R$ 2.00)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-white/5">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-black text-slate-900 dark:text-white uppercase">Acabamento</span>
+                      <span className="text-[9px] text-slate-400 dark:text-slate-500">{newIsColor ? 'Colorido' : 'P&B'} • {newIsDuplex ? 'Frente/Verso' : 'Simples'}</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setNewIsColor(!newIsColor)}
+                        className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${newIsColor ? 'bg-blue-600 text-white' : 'bg-white dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700'}`}
+                      >
+                        <Settings2 size={14} />
+                      </button>
+                      <button
+                        onClick={() => setNewIsDuplex(!newIsDuplex)}
+                        className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${newIsDuplex ? 'bg-[#006c55] text-white' : 'bg-white dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700'}`}
+                      >
+                        <RotateCcw size={14} className="rotate-90" />
+                      </button>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="space-y-4 animate-in slide-in-from-right-4 duration-300">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Método de Pagamento</label>
+                    <div className="grid grid-cols-2 gap-2 h-12">
+                      <button
+                        onClick={() => setPaymentSubMethod('pix')}
+                        className={`flex-1 rounded-xl text-[10px] font-black uppercase transition-all flex items-center justify-center gap-2 ${paymentSubMethod === 'pix' ? 'bg-[#006c55] text-white shadow-lg shadow-[#006c55]/20' : 'bg-white dark:bg-slate-800 text-slate-400 border border-slate-200 dark:border-slate-700'}`}
+                      >
+                        <QrCode size={16} /> Pix
+                      </button>
+                      <button
+                        onClick={() => setPaymentSubMethod('card')}
+                        className={`flex-1 rounded-xl text-[10px] font-black uppercase transition-all flex items-center justify-center gap-2 ${paymentSubMethod === 'card' ? 'bg-[#006c55] text-white shadow-lg shadow-[#006c55]/20' : 'bg-white dark:bg-slate-800 text-slate-400 border border-slate-200 dark:border-slate-700'}`}
+                      >
+                        <FileText size={16} /> Cartão
+                      </button>
+                    </div>
+                  </div>
+
+                  {paymentSubMethod === 'pix' && (
+                    <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-100 dark:border-white/5 flex flex-col items-center">
+                      <div className="w-40 h-40 bg-white p-2 rounded-xl mb-3">
+                        <QrCode size={144} className="text-slate-900" />
+                      </div>
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2">Escaneie ou copie o código</p>
+                      <div className="w-full bg-slate-100 dark:bg-slate-800 p-2 rounded-lg text-center truncate text-[9px] font-mono text-slate-500">
+                        00020126580014br.gov.bcb.pix013689f0a2d4-1234-5678-90ab-cdef12345678
                       </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            )}
+                  )}
 
-            <div className="p-3 bg-[#006c55]/5 dark:bg-[#006c55]/10 border border-[#006c55]/10 dark:border-[#006c55]/20 rounded-xl">
-              <div className="flex items-center gap-2 mb-2">
-                <Calculator size={12} className="text-[#006c55] dark:text-emerald-400" />
-                <span className="text-[10px] font-black uppercase text-[#006c55] dark:text-emerald-400">Detalhamento de Custos</span>
-              </div>
-              <div className="space-y-1.5">
-                <div className="flex justify-between text-[10px] font-bold text-slate-500 dark:text-slate-400">
-                  <span>Subtotal ({isDetectingPages ? 'Calculando...' : `${currentPricing.pageCount} pág.`})</span>
-                  <span>{isDetectingPages ? '--' : `R$ ${currentPricing.subtotal.toFixed(2)}`}</span>
+                  {paymentSubMethod === 'card' && (
+                    <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-100 dark:border-white/5">
+                      <p className="text-[10px] font-bold text-slate-500 text-center uppercase tracking-widest">Integração com Stripe (Futuro)</p>
+                      <div className="mt-4 space-y-2 opacity-50 pointer-events-none">
+                        <div className="h-10 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700" />
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="h-10 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700" />
+                          <div className="h-10 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700" />
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                {currentPricing.discount > 0 && (
-                  <div className="flex justify-between text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
-                    <span>Desconto Frente/Verso (5%)</span>
-                    <span>- R$ {currentPricing.discount.toFixed(2)}</span>
+              )}
+
+              <div className="p-3 bg-[#006c55]/5 dark:bg-[#006c55]/10 border border-[#006c55]/10 dark:border-[#006c55]/20 rounded-xl">
+                <div className="flex items-center gap-2 mb-2">
+                  <Calculator size={12} className="text-[#006c55] dark:text-emerald-400" />
+                  <span className="text-[10px] font-black uppercase text-[#006c55] dark:text-emerald-400">Detalhamento de Custos</span>
+                </div>
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-[10px] font-bold text-slate-500 dark:text-slate-400">
+                    <span>Subtotal ({isDetectingPages ? 'Calculando...' : `${currentPricing.pageCount} pág.`})</span>
+                    <span>{isDetectingPages ? '--' : `R$ ${currentPricing.subtotal.toFixed(2)}`}</span>
                   </div>
-                )}
-                {currentPricing.surcharge > 0 && (
-                  <div className="flex justify-between text-[10px] font-bold text-amber-600 dark:text-amber-400">
-                    <span>Taxa Prioridade Urgente</span>
-                    <span>+ R$ {currentPricing.surcharge.toFixed(2)}</span>
-                  </div>
-                )}
-                {isAdmin && (
-                  <div className="pt-1 mt-1 border-t border-[#006c55]/20 flex justify-between text-[10px] font-black text-[#006c55] dark:text-emerald-400">
-                    <span>Isenção Administrativa</span>
-                    <span>100% OFF</span>
-                  </div>
-                )}
+                  {currentPricing.discount > 0 && (
+                    <div className="flex justify-between text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                      <span>Desconto Frente/Verso (5%)</span>
+                      <span>- R$ {currentPricing.discount.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {currentPricing.surcharge > 0 && (
+                    <div className="flex justify-between text-[10px] font-bold text-amber-600 dark:text-amber-400">
+                      <span>Taxa Prioridade Urgente</span>
+                      <span>+ R$ {currentPricing.surcharge.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {isAdmin && (
+                    <div className="pt-1 mt-1 border-t border-[#006c55]/20 flex justify-between text-[10px] font-black text-[#006c55] dark:text-emerald-400">
+                      <span>Isenção Administrativa</span>
+                      <span>100% OFF</span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="mt-4 pt-4 border-t border-slate-100 dark:border-white/10 flex items-center justify-between gap-4">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-tighter">Total Estimado</span>
-              <span className="text-sm font-black text-slate-900 dark:text-white">R$ {currentPricing.total.toFixed(2)}</span>
-            </div>
-
-            {newModalStep === 'config' && newPaymentMethod === 'paid' && !isAdmin ? (
-              <button
-                onClick={() => setNewModalStep('payment')}
-                disabled={!newFile || !selectedStation}
-                className="flex-1 h-12 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] hover:bg-black dark:hover:bg-white transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
-              >
-                Pagar Agora
-              </button>
-            ) : (
-              <button
-                onClick={handleAddRequest}
-                disabled={!newFile || !selectedStation || isUploading}
-                className="flex-1 h-12 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] hover:bg-black dark:hover:bg-white transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
-              >
-                {isUploading ? <Loader2 size={16} className="animate-spin" /> : 'Confirmar Pedido'}
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
-      {selectedRequest && (
-        <div className="absolute inset-0 z-[65] bg-white/95 dark:bg-slate-900/95 backdrop-blur-md p-6 flex flex-col animate-in fade-in zoom-in-95 duration-300">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#006c55]">Checkout de Retirada</span>
-            <button onClick={() => setSelectedRequest(null)} className="text-slate-400 hover:text-slate-900 dark:hover:text-white"><X size={20} /></button>
-          </div>
-
-          <div className="flex flex-col items-center text-center">
-            <div className="mb-4 mt-2">
-              <div className="text-[36px] font-black text-[#006c55] dark:text-emerald-400 tracking-[0.2em] bg-white dark:bg-slate-800 px-6 py-4 rounded-[24px] border-2 border-slate-100 dark:border-slate-700 shadow-xl flex items-center justify-center min-w-[160px]">
-                {selectedRequest.id.slice(-4).toUpperCase()}
+            <div className="mt-4 pt-4 border-t border-slate-100 dark:border-white/10 flex items-center justify-between gap-4">
+              <div className="flex flex-col">
+                <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-tighter">Total Estimado</span>
+                <span className="text-sm font-black text-slate-900 dark:text-white">R$ {currentPricing.total.toFixed(2)}</span>
               </div>
-              <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em] mt-3">Código de Retirada</p>
+
+              {newModalStep === 'config' && newPaymentMethod === 'paid' && !isAdmin ? (
+                <button
+                  onClick={() => setNewModalStep('payment')}
+                  disabled={!newFile || !selectedStation}
+                  className="flex-1 h-12 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] hover:bg-black dark:hover:bg-white transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
+                >
+                  Pagar Agora
+                </button>
+              ) : (
+                <button
+                  onClick={handleAddRequest}
+                  disabled={!newFile || !selectedStation || isUploading}
+                  className="flex-1 h-12 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] hover:bg-black dark:hover:bg-white transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
+                >
+                  {isUploading ? <Loader2 size={16} className="animate-spin" /> : 'Confirmar Pedido'}
+                </button>
+              )}
             </div>
           </div>
+        )
+      }
 
-          <div className="space-y-2 flex-1 pt-2">
-            {[
-              { label: 'Arquivo', value: selectedRequest.fileName },
-              { label: 'Data/Hora', value: new Date(selectedRequest.timestamp).toLocaleString() },
-              { label: 'Valor', value: `R$ ${selectedRequest.totalPrice.toFixed(2)}`, success: true }
-            ].map((item, i) => (
-              <div key={i} className="flex justify-between text-[12px] border-b border-slate-50 dark:border-slate-800/60 pb-2">
-                <span className="font-bold text-slate-400 dark:text-slate-500">{item.label}</span>
-                <span className={`font-black truncate max-w-[150px] ${item.success ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-800 dark:text-slate-200'}`}>{item.value}</span>
+      {
+        selectedRequest && (
+          <div className="absolute inset-0 z-[65] bg-white/95 dark:bg-slate-900/95 backdrop-blur-md p-6 flex flex-col animate-in fade-in zoom-in-95 duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#006c55]">Checkout de Retirada</span>
+              <button onClick={() => setSelectedRequest(null)} className="text-slate-400 hover:text-slate-900 dark:hover:text-white"><X size={20} /></button>
+            </div>
+
+            <div className="flex flex-col items-center text-center">
+              <div className="mb-4 mt-2">
+                <div className="text-[36px] font-black text-[#006c55] dark:text-emerald-400 tracking-[0.2em] bg-white dark:bg-slate-800 px-6 py-4 rounded-[24px] border-2 border-slate-100 dark:border-slate-700 shadow-xl flex items-center justify-center min-w-[160px]">
+                  {selectedRequest.pickupCode || '----'}
+                </div>
+                <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em] mt-3">Código de Retirada</p>
               </div>
-            ))}
+            </div>
+
+            <div className="space-y-2 flex-1 pt-2">
+              {[
+                { label: 'Arquivo', value: selectedRequest.fileName },
+                { label: 'Data/Hora', value: new Date(selectedRequest.timestamp).toLocaleString() },
+                { label: 'Valor', value: `R$ ${selectedRequest.totalPrice.toFixed(2)}`, success: true }
+              ].map((item, i) => (
+                <div key={i} className="flex justify-between text-[12px] border-b border-slate-50 dark:border-slate-800/60 pb-2">
+                  <span className="font-bold text-slate-400 dark:text-slate-500">{item.label}</span>
+                  <span className={`font-black truncate max-w-[150px] ${item.success ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-800 dark:text-slate-200'}`}>{item.value}</span>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
 
 
@@ -763,7 +767,7 @@ const PrintHistoryBox: React.FC = () => {
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
-    </div>
+    </div >
   );
 };
 

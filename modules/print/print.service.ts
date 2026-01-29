@@ -40,14 +40,20 @@ export class PrintService {
   /**
    * Assina os pedidos de uma gráfica específica (para o Dashboard)
    */
-  static subscribeToShopOrders(stationId: string, ownerEmail: string, callback: (requests: PrintRequest[]) => void): Unsubscribe {
-    const q = query(
-      collection(db, this.collectionName),
+  static subscribeToShopOrders(stationId: string, ownerEmail: string, isAdmin: boolean, callback: (requests: PrintRequest[]) => void): Unsubscribe {
+    const constraints: any[] = [
       where('stationId', '==', stationId),
-      where('stationOwnerEmail', '==', ownerEmail.trim().toLowerCase()),
-      orderBy('timestamp', 'desc'),
+      // orderBy('timestamp', 'desc'), // Removido temporariamente para depuração de índice
       limit(100)
-    );
+    ];
+
+    // Se NÃO for admin, aplica o filtro de email do proprietário
+    if (!isAdmin) {
+      constraints.push(where('stationOwnerEmail', '==', ownerEmail.trim().toLowerCase()));
+    }
+
+    const q = query(collection(db, this.collectionName), ...constraints);
+
     return onSnapshot(q, (snapshot) => {
       const requests = snapshot.docs.map(doc => ({
         id: doc.id,

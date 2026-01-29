@@ -47,7 +47,7 @@ const Calendario: React.FC = () => {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [filterType, setFilterType] = useState<'all' | 'class' | 'event' | 'meeting' | 'reminder'>('all');
-    const [agendaView, setAgendaView] = useState<'timeline' | 'weekly' | 'monthly'>('timeline');
+    const [agendaView, setAgendaView] = useState<'timeline' | 'weekly'>('timeline');
 
     const currentYear = today.getFullYear();
     const currentMonth = today.getMonth();
@@ -224,14 +224,6 @@ const Calendario: React.FC = () => {
             });
         }
 
-        if (agendaView === 'monthly') {
-            return sorted.filter(event => {
-                return event.date.getMonth() === selectedDate.getMonth() &&
-                    event.date.getFullYear() === selectedDate.getFullYear() &&
-                    (filterType === 'all' || event.type === filterType);
-            });
-        }
-
         return [];
     }, [events, selectedDate, filterType, agendaView]);
 
@@ -279,12 +271,39 @@ const Calendario: React.FC = () => {
 
                 {/* Left Column: Calendar UI (Standard Box Style) */}
                 <div className="lg:col-span-4 space-y-6">
-                    <div className="glass-panel rounded-[30px] p-0 overflow-hidden shadow-2xl dark:shadow-none relative">
+                    {/* Filter Segment (Consistent Styling) - Moved to Top */}
+                    <div className="glass-panel rounded-[30px] p-6 shadow-xl mb-6">
+                        <h4 className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-[0.2em] mb-4 flex items-center justify-between">
+                            Filtros de Visão
+                            {filterType !== 'all' && <button onClick={() => setFilterType('all')} className="text-[#006c55] dark:text-emerald-400 hover:scale-105 transition-all">Limpar</button>}
+                        </h4>
+                        <div className="flex flex-wrap gap-2">
+                            {[
+                                { type: 'all' as const, label: 'Tudo', icon: <Plus size={12} /> },
+                                { type: 'class' as const, label: 'Aulas', icon: <BookOpen size={12} /> },
+                                { type: 'event' as const, label: 'Eventos', icon: <Sparkles size={12} /> },
+                                { type: 'meeting' as const, label: 'Meetings', icon: <Users size={12} /> },
+                                { type: 'reminder' as const, label: 'Tasks', icon: <Bell size={12} /> }
+                            ].map(f => (
+                                <button
+                                    key={f.type}
+                                    onClick={() => setFilterType(f.type)}
+                                    className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 
+                                        ${filterType === f.type
+                                            ? 'bg-[#006c55] text-white shadow-lg'
+                                            : 'bg-slate-50 dark:bg-white/5 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10'}`}
+                                >
+                                    {f.icon}{f.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="glass-panel rounded-[30px] overflow-hidden shadow-xl mb-0">
                         {/* Box Header Style Consistent with App */}
                         <div className="bg-slate-50/50 dark:bg-white/5 p-6 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
                             <h3 className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-[0.2em] flex items-center gap-2">
-                                <CalendarDays size={14} className="text-[#006c55] dark:text-emerald-400" />
-                                {months[currentDate.getMonth()]} {currentDate.getFullYear()}
+                                <Plus size={14} className="text-[#006c55] dark:text-emerald-400" /> Navegar
                             </h3>
                             <div className="flex gap-1">
                                 <button onClick={() => navigateMonth('prev')} className="p-1.5 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-all text-slate-400 hover:text-[#006c55]"><ChevronLeft size={16} /></button>
@@ -321,51 +340,23 @@ const Calendario: React.FC = () => {
                         </div>
 
                         {/* Summary Info Inside Box */}
-                        <div className="bg-slate-50/30 dark:bg-slate-800/20 p-6 border-t border-slate-100 dark:border-white/5">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-white/5 flex items-center justify-center text-[#006c55] dark:text-emerald-400">
+                        <div className="bg-slate-50/30 dark:bg-slate-800/20 p-6 border-t border-slate-100 dark:border-white/5 overflow-hidden">
+                            <div className="flex items-center justify-between gap-4">
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-white/5 flex items-center justify-center text-[#006c55] dark:text-emerald-400 flex-shrink-0">
                                         <Clock size={16} />
                                     </div>
-                                    <div>
-                                        <p className="text-[13px] font-black text-slate-800 dark:text-slate-100 capitalize">{formatSelectedDate(selectedDate)}</p>
-                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none mt-1">Status do Dia</p>
+                                    <div className="min-w-0">
+                                        <p className="text-[13px] font-black text-slate-800 dark:text-slate-100 capitalize truncate whitespace-nowrap">{formatSelectedDate(selectedDate)}</p>
+                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none mt-1 whitespace-nowrap">Status do Dia</p>
                                     </div>
                                 </div>
-                                <div className="text-right">
-                                    <span className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest ${viewEvents.length > 0 ? 'bg-[#d9f1a2] dark:bg-emerald-500/20 text-[#006c55] dark:text-emerald-400' : 'bg-slate-100 dark:bg-white/5 text-slate-400'}`}>
+                                <div className="flex-shrink-0">
+                                    <span className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest whitespace-nowrap ${viewEvents.length > 0 ? 'bg-[#d9f1a2] dark:bg-emerald-500/20 text-[#006c55] dark:text-emerald-400' : 'bg-slate-100 dark:bg-white/5 text-slate-400'}`}>
                                         {viewEvents.length} Eventos
                                     </span>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-
-                    {/* Filter Segment (Consistent Styling) */}
-                    <div className="glass-panel rounded-[30px] p-6 shadow-xl">
-                        <h4 className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-[0.2em] mb-4 flex items-center justify-between">
-                            Filtros de Visão
-                            {filterType !== 'all' && <button onClick={() => setFilterType('all')} className="text-[#006c55] dark:text-emerald-400 hover:scale-105 transition-all">Limpar</button>}
-                        </h4>
-                        <div className="flex flex-wrap gap-2">
-                            {[
-                                { type: 'all' as const, label: 'Tudo', icon: <Plus size={12} /> },
-                                { type: 'class' as const, label: 'Aulas', icon: <BookOpen size={12} /> },
-                                { type: 'event' as const, label: 'Eventos', icon: <Sparkles size={12} /> },
-                                { type: 'meeting' as const, label: 'Meetings', icon: <Users size={12} /> },
-                                { type: 'reminder' as const, label: 'Tasks', icon: <Bell size={12} /> }
-                            ].map(f => (
-                                <button
-                                    key={f.type}
-                                    onClick={() => setFilterType(f.type)}
-                                    className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 
-                                        ${filterType === f.type
-                                            ? 'bg-[#006c55] text-white shadow-lg'
-                                            : 'bg-slate-50 dark:bg-white/5 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10'}`}
-                                >
-                                    {f.icon}{f.label}
-                                </button>
-                            ))}
                         </div>
                     </div>
                 </div>
@@ -380,169 +371,127 @@ const Calendario: React.FC = () => {
                             <div className="flex p-1 bg-slate-100 dark:bg-white/5 rounded-xl gap-1">
                                 <button
                                     onClick={() => setAgendaView('timeline')}
-                                    className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${agendaView === 'timeline' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600'}`}>
+                                    className={`px-6 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${agendaView === 'timeline' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600'}`}>
                                     Timeline
                                 </button>
                                 <button
                                     onClick={() => setAgendaView('weekly')}
-                                    className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${agendaView === 'weekly' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600'}`}>
+                                    className={`px-6 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${agendaView === 'weekly' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600'}`}>
                                     Semanal
-                                </button>
-                                <button
-                                    onClick={() => setAgendaView('monthly')}
-                                    className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${agendaView === 'monthly' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600'}`}>
-                                    Mensal
                                 </button>
                             </div>
                         </div>
 
-                        <div className="p-8">
-                            {agendaView === 'timeline' && (
-                                <div className="space-y-6">
-                                    {viewEvents.length > 0 ? (
-                                        viewEvents.map((item) => (
-                                            <div key={item.id} className="group flex gap-6 animate-in slide-in-from-left-4 duration-300">
-                                                <div className="flex flex-col items-center">
-                                                    <div className={`w-4 h-4 rounded-full border-4 border-white dark:border-slate-800 shadow-sm ${item.color}`}></div>
-                                                    <div className="w-0.5 flex-1 bg-slate-100 dark:bg-white/10 mt-1"></div>
-                                                </div>
-                                                <div className="flex-1 pb-6">
-                                                    <div className="liquid-glass rounded-2xl p-5 border border-white dark:border-white/5 shadow-sm group-hover:shadow-lg group-hover:-translate-y-1 transition-all duration-300">
-                                                        <div className="flex justify-between items-start mb-2">
-                                                            <div className="flex items-center gap-2">
-                                                                <div className={`p-2 rounded-lg ${item.color} bg-opacity-10 dark:bg-opacity-20 text-slate-900 dark:text-white flex items-center justify-center`}>
-                                                                    {getTypeIcon(item.type)}
-                                                                </div>
-                                                                <h3 className="text-base font-black text-slate-900 dark:text-white tracking-tight">{item.title}</h3>
-                                                            </div>
-                                                            <span className="text-[10px] font-black text-[#006c55] dark:text-emerald-400 uppercase tracking-widest bg-[#006c55]/10 dark:bg-emerald-500/10 px-3 py-1 rounded-full">
-                                                                {item.time}
-                                                            </span>
-                                                        </div>
-                                                        <div className="flex items-center gap-4 text-slate-500 dark:text-slate-400 mb-3 px-1">
-                                                            <div className="flex items-center gap-1.5 text-[11px] font-bold">
-                                                                <MapPin size={12} className="text-slate-300" />
-                                                                {item.location}
-                                                            </div>
-                                                        </div>
-                                                        {item.description && (
-                                                            <p className="text-[13px] text-slate-400 dark:text-slate-500 italic mt-2 border-l-2 border-[#006c55]/20 pl-4">{item.description}</p>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <div className="flex flex-col items-center justify-center py-20 text-center">
-                                            <div className="w-16 h-16 bg-slate-50 dark:bg-white/5 rounded-full flex items-center justify-center text-slate-200 dark:text-slate-800 mb-4">
-                                                <CalendarIcon size={32} />
-                                            </div>
-                                            <p className="text-xs font-bold text-slate-400 uppercase">Sem eventos hoje</p>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
-                            {agendaView === 'weekly' && (
-                                <div className="overflow-x-auto pb-4 custom-scrollbar">
-                                    <div className="grid grid-cols-7 gap-4 min-w-[1200px] min-h-[400px]">
-                                        {daysOfWeek.map((dayName, idx) => {
-                                            const startOfWeek = new Date(selectedDate);
-                                            startOfWeek.setDate(selectedDate.getDate() - selectedDate.getDay());
-                                            const dayDate = new Date(startOfWeek);
-                                            dayDate.setDate(dayDate.getDate() + idx);
-
-                                            const dayEvents = viewEvents.filter(e => e.date.toDateString() === dayDate.toDateString());
-                                            const isToday = dayDate.toDateString() === today.toDateString();
-
-                                            return (
-                                                <div key={idx} className={`flex flex-col rounded-2xl p-4 border transition-all ${isToday ? 'bg-[#006c55]/5 border-[#006c55]/20' : 'border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/5'}`}>
-                                                    <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/50 dark:border-white/5">
-                                                        <span className={`text-[10px] font-black uppercase tracking-widest ${isToday ? 'text-[#006c55] dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'}`}>{dayName}</span>
-                                                        <span className={`text-xs font-bold ${isToday ? 'text-slate-900 dark:text-white' : 'text-slate-400'}`}>{dayDate.getDate()}</span>
-                                                    </div>
-                                                    <div className="space-y-3 overflow-y-auto max-h-[400px] no-scrollbar">
-                                                        {dayEvents.length > 0 ? dayEvents.map(event => (
-                                                            <div key={event.id} className="p-3 rounded-xl bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-white/5 group hover:scale-[1.02] transition-transform">
-                                                                <div className="flex items-center gap-2 mb-2">
-                                                                    <div className={`w-2 h-2 rounded-full ${event.color}`}></div>
-                                                                    <span className="text-[11px] font-black text-slate-800 dark:text-slate-200 truncate">{event.title}</span>
-                                                                </div>
-                                                                <div className="flex items-center justify-between">
-                                                                    <p className="text-[9px] text-slate-400 font-bold uppercase tracking-tighter">{event.time}</p>
-                                                                    <div className="p-1 rounded bg-slate-50 dark:bg-white/5">
-                                                                        {getTypeIcon(event.type, 10)}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        )) : (
-                                                            <div className="h-10 flex items-center justify-center opacity-20">
-                                                                <div className="w-1 h-1 rounded-full bg-slate-400"></div>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            )}
-
-                            {agendaView === 'monthly' && (
-                                <div className="grid grid-cols-7 gap-1 border border-slate-100 dark:border-white/5 rounded-2xl overflow-hidden shadow-inner bg-slate-50/30 dark:bg-black/20">
-                                    {daysOfWeek.map(d => (
-                                        <div key={d} className="bg-white/60 dark:bg-white/5 p-2 text-center border-b border-slate-100 dark:border-white/5">
-                                            <span className="text-[9px] font-black text-slate-300 dark:text-slate-600 uppercase tracking-widest">{d}</span>
-                                        </div>
-                                    ))}
-                                    {calendarDays.map((day, i) => {
-                                        const dayEvents = events.filter(e =>
-                                            e.date.getDate() === day.date.getDate() &&
-                                            e.date.getMonth() === day.date.getMonth() &&
-                                            e.date.getFullYear() === day.date.getFullYear()
+                        <div className="p-8 px-2">
+                            <div className="space-y-6">
+                                {viewEvents.length > 0 ? (
+                                    viewEvents.map((item, index) => {
+                                        const showDateHeader = agendaView === 'weekly' && (
+                                            index === 0 ||
+                                            viewEvents[index - 1].date.toDateString() !== item.date.toDateString()
                                         );
 
                                         return (
-                                            <div
-                                                key={i}
-                                                onClick={() => {
-                                                    setSelectedDate(day.date);
-                                                    setAgendaView('timeline');
-                                                }}
-                                                className={`min-h-[90px] p-2 border-r border-b border-slate-100 dark:border-white/5 transition-all cursor-pointer
-                                                ${!day.isCurrentMonth ? 'opacity-20 bg-slate-100/30 dark:bg-black/10' : 'bg-white/30 dark:bg-white/5 group hover:bg-white/60 dark:hover:bg-white/10'}
-                                                ${day.isToday ? 'ring-1 ring-inset ring-[#006c55]/20 bg-[#006c55]/5' : ''}
-                                            `}>
-                                                <div className="flex justify-between items-start mb-1">
-                                                    <span className={`text-[11px] font-bold ${day.isToday ? 'text-[#006c55] dark:text-emerald-400 font-black' : 'text-slate-400 dark:text-slate-500'}`}>{day.day}</span>
-                                                </div>
-                                                <div className="space-y-1">
-                                                    {dayEvents.slice(0, 3).map(e => (
-                                                        <div key={e.id} className={`w-full h-1.5 rounded-full ${e.color} opacity-80`} title={e.title}></div>
-                                                    ))}
-                                                    {dayEvents.length > 3 && (
-                                                        <p className="text-[7px] font-black text-slate-300 dark:text-slate-600 uppercase tracking-tighter">+{dayEvents.length - 3} mais</p>
-                                                    )}
+                                            <div key={item.id} className="relative">
+                                                {showDateHeader && (
+                                                    <div className="flex items-center gap-4 mb-8 mt-10 first:mt-0">
+                                                        <div className="flex items-center gap-2 bg-[#006c55]/5 dark:bg-emerald-500/10 px-5 py-2 rounded-2xl border border-[#006c55]/10 backdrop-blur-md">
+                                                            <CalendarDays size={14} className="text-[#006c55] dark:text-emerald-400" />
+                                                            <span className="text-[11px] font-black uppercase text-[#006c55] dark:text-emerald-400 tracking-[0.15em]">
+                                                                {item.date.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'short' })}
+                                                            </span>
+                                                        </div>
+                                                        <div className="h-px flex-1 bg-gradient-to-r from-slate-100 to-transparent dark:from-white/5 dark:to-transparent"></div>
+                                                    </div>
+                                                )}
+
+                                                <div className="group flex gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                                    {/* Horário à Esquerda - Elegante e sem padding lateral extra */}
+                                                    <div className="w-16 pt-1 text-right flex-shrink-0">
+                                                        <span className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-tight tabular-nums leading-none block">
+                                                            {item.time.split(' - ')[0]}
+                                                        </span>
+                                                        <div className="h-0.5 w-4 bg-[#006c55]/20 dark:bg-emerald-500/20 ml-auto my-1.5 rounded-full"></div>
+                                                        <span className="text-[10px] font-bold text-slate-300 dark:text-slate-600 uppercase block">
+                                                            {item.time.split(' - ')[1] || ''}
+                                                        </span>
+                                                    </div>
+
+                                                    {/* Linha da Timeline */}
+                                                    <div className="relative flex flex-col items-center">
+                                                        <div className={`w-3.5 h-3.5 rounded-full border-[3px] border-white dark:border-slate-800 shadow-lg group-hover:scale-125 transition-all duration-500 z-10 ${item.color}`}></div>
+                                                        <div className="w-0.5 flex-1 bg-gradient-to-b from-slate-100 via-slate-50 to-transparent dark:from-white/10 dark:via-white/5 dark:to-transparent mt-2"></div>
+                                                    </div>
+
+                                                    {/* Card de Evento - Ultra simplificado e sem paddings laterais no container */}
+                                                    <div className="flex-1 pb-10 min-w-0">
+                                                        <div className="liquid-glass rounded-2xl p-4 border border-white dark:border-white/10 shadow-sm transition-all duration-500 relative overflow-hidden">
+                                                            <div className="flex flex-col gap-2 relative z-10">
+                                                                {/* Linha 1: Título */}
+                                                                <h3 className="text-[15px] font-black text-slate-900 dark:text-white tracking-tight leading-tight truncate">
+                                                                    {item.title}
+                                                                </h3>
+
+                                                                {/* Linha 2: Localização */}
+                                                                <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 dark:text-slate-500">
+                                                                    <MapPin size={11} className="text-[#006c55] dark:text-emerald-400 opacity-60" />
+                                                                    <span className="truncate">{item.location}</span>
+                                                                </div>
+
+                                                                {/* Linha 3: Descrição (se houver) */}
+                                                                {item.description && (
+                                                                    <p className="text-[12px] text-slate-400 dark:text-slate-500 italic leading-relaxed border-l-2 border-[#006c55]/10 pl-3">
+                                                                        {item.description}
+                                                                    </p>
+                                                                )}
+
+                                                                {/* Linha 4: Status */}
+                                                                <div className="pt-2">
+                                                                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${item.status === 'done' ? 'bg-[#006c55]/10 text-[#006c55] dark:bg-emerald-500/10 dark:text-emerald-400' : 'bg-slate-50 dark:bg-white/5 text-slate-400 dark:text-slate-500'}`}>
+                                                                        {item.status === 'done' ? (
+                                                                            <><CheckCircle2 size={10} /> Concluído</>
+                                                                        ) : (
+                                                                            <><Clock size={10} /> Pendente</>
+                                                                        )}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         );
-                                    })}
-                                </div>
-                            )}
+                                    })
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center py-32 text-center animate-in fade-in zoom-in-95 duration-1000">
+                                        <div className="relative mb-6">
+                                            <div className="absolute inset-0 rounded-full blur-2xl bg-[#006c55]/10 dark:bg-emerald-500/5 scale-150"></div>
+                                            <div className="w-20 h-20 bg-white dark:bg-slate-800 rounded-[2rem] shadow-xl border border-slate-100 dark:border-white/5 flex items-center justify-center text-slate-200 dark:text-slate-700 relative z-10">
+                                                <CalendarIcon size={36} strokeWidth={1} />
+                                            </div>
+                                        </div>
+                                        <h4 className="text-[11px] font-black text-[#006c55] dark:text-emerald-400 uppercase tracking-[0.4em] mb-3">Status: Silêncio Neural</h4>
+                                        <p className="text-[13px] font-bold text-slate-400 dark:text-slate-500 max-w-[240px] leading-relaxed mx-auto">
+                                            {agendaView === 'timeline' ? 'Nenhum sinal de atividade em sua rede para hoje.' : 'Sua semana está processada e livre de pendências.'}
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+
                         </div>
 
                         {/* Footer Summary - Standard Box Styling */}
                         <div className="bg-slate-50/50 dark:bg-white/5 p-6 border-t border-slate-100 dark:border-white/5">
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-2 text-center">
+                            <div className="flex items-center justify-between gap-4 px-2 overflow-x-auto no-scrollbar">
                                 {[
                                     { l: 'Total', v: events.length },
                                     { l: 'Hoje', v: events.filter(e => e.date.toDateString() === today.toDateString()).length },
                                     { l: 'Mes', v: events.filter(e => e.date.getMonth() === currentDate.getMonth()).length },
                                     { l: 'Tasks', v: events.filter(e => e.status === 'pending').length }
                                 ].map((s, i) => (
-                                    <div key={i}>
-                                        <p className="text-2xl font-black text-slate-900 dark:text-white leading-none">{s.v}</p>
-                                        <p className="text-[8px] font-black text-slate-300 dark:text-slate-600 uppercase tracking-widest mt-1">{s.l}</p>
+                                    <div key={i} className="flex items-center gap-2 whitespace-nowrap">
+                                        <p className="text-xl font-black text-slate-900 dark:text-white leading-none">{s.v}</p>
+                                        <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{s.l}</p>
                                     </div>
                                 ))}
                             </div>

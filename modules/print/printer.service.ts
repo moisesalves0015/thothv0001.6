@@ -14,6 +14,20 @@ import {
 } from 'firebase/firestore';
 import { db } from '../../firebase';
 
+export interface ServiceItem {
+    id: string;
+    name: string;
+    description: string;
+    basePrice: number;
+    pricePerPage: number;
+    colorPrice: number;
+    type: 'document' | 'photo' | 'poster' | 'banner' | 'other';
+    minPages: number;
+    maxPages: number;
+    turnaroundTime: number; // hours
+    isActive: boolean;
+}
+
 export interface PrinterStation {
     id: string;
     name: string;
@@ -27,6 +41,7 @@ export interface PrinterStation {
     status: 'active' | 'inactive';
     isOpen: boolean; // Status de aberta/fechada
     prices: { pb: number; color: number }; // Preços por página
+    services?: ServiceItem[];
     workingHours: string; // Ex: "08:00 - 18:00"
     discounts: { active: boolean; percentage: number };
     lastSeen?: any;

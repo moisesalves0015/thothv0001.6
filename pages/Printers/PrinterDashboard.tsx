@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Printer,
@@ -15,25 +14,152 @@ import {
   LogOut,
   X,
   Plus,
+  Play,
   Users,
   Send,
   Download,
+  AlertTriangle,
   DollarSign,
   TrendingUp,
   Settings2,
   Lock,
   Calendar,
   Zap,
-  AlertCircle
+  AlertCircle,
+  BarChart3,
+  Package,
+  Tag,
+  Edit2,
+  Trash2,
+  Bell,
+  MessageSquare,
+  UserPlus,
+  CreditCard,
+  Layers,
+  Filter,
+  CheckCircle,
+  Info,
+  Upload,
+  Eye,
+  EyeOff,
+  Copy,
+  ExternalLink,
+  PieChart,
+  TrendingDown,
+  Target,
+  RefreshCw,
+  Shield,
+  Key,
+  Smartphone,
+  Scan,
+  Receipt,
+  FileCheck,
+  FileSearch,
+  FileBarChart,
+  FileText as FilePdf,
+  FileImage,
+  FolderOpen,
+  Inbox,
+  Headphones,
+  Mic,
+  Volume2,
+  Tv,
+  Camera,
+  Film,
+  Instagram,
+  Facebook,
+  Twitter,
+  Linkedin,
+  BookOpen,
+  Bookmark,
+  Clipboard,
+  ListChecks,
+  CheckSquare,
+  Power,
+  Cloud,
+  Database,
+  Server,
+  Cpu,
+  HardDrive,
+  Paintbrush,
+  Type,
+  LayoutGrid,
+  Menu,
+  ArrowLeft,
+  ArrowRight,
+  ArrowUp,
+  ArrowDown,
+  Move,
+  Crop,
+  Grid3x3,
+  Columns,
+  Table,
+  Music,
+  Phone,
+  Video,
+  Droplets,
+  Heart,
+  Star,
+  ShoppingBag,
+  ShoppingCart,
+  Package2,
+  Truck,
+  Home,
+  Building,
+  MapPin,
+  Navigation,
+  Globe,
+  Wifi,
+  Battery,
+  Bluetooth,
+  Radio,
+  Tv2,
+  Watch,
+  Gamepad,
+  Keyboard,
+  Mouse,
+  Headset,
+  Speaker,
+  Monitor,
+  Laptop,
+  Smartphone as SmartphoneIcon,
+  Tablet,
+  Printer as PrinterIcon
 } from 'lucide-react';
 import { PrintService } from '../../modules/print/print.service';
 import { PrinterService, PrinterStation } from '../../modules/print/printer.service';
 import { PrintRequest, Message } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 
+interface ServiceItem {
+  id: string;
+  name: string;
+  description: string;
+  basePrice: number;
+  pricePerPage: number;
+  colorPrice: number;
+  type: 'document' | 'photo' | 'poster' | 'banner' | 'other';
+  minPages: number;
+  maxPages: number;
+  turnaroundTime: number; // hours
+  isActive: boolean;
+}
+
+interface ClientChat {
+  id: string;
+  clientId: string;
+  clientName: string;
+  clientEmail: string;
+  lastMessage: string;
+  lastMessageTime: number;
+  unreadCount: number;
+  orderId?: string;
+  status: 'online' | 'offline' | 'away';
+}
+
 const PrinterDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { user: authUser } = useAuth();
+  const { user: authUser, userProfile, loading } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRequest, setSelectedRequest] = useState<PrintRequest | null>(null);
   const [isVerifyModalOpen, setIsVerifyModalOpen] = useState(false);
@@ -43,23 +169,62 @@ const PrinterDashboard: React.FC = () => {
   const [chatInput, setChatInput] = useState('');
 
   // Shop specific states
-  const [currentStation, setCurrentStation] = useState<PrinterStation | null>(null);
   const [showSettings, setShowSettings] = useState(false);
-  const [stationId, setStationId] = useState<string>(''); // Pegaremos do localStorage após login
+  const [showServiceManager, setShowServiceManager] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [stationId, setStationId] = useState<string>('');
+  const [currentStation, setCurrentStation] = useState<PrinterStation | null>(null);
+  const [services, setServices] = useState<ServiceItem[]>([]);
+  const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
 
-  // Estados Simulados para o Chat
+  const [editingService, setEditingService] = useState<ServiceItem | null>(null);
+  const [newService, setNewService] = useState<Partial<ServiceItem>>({
+    name: '',
+    description: '',
+    basePrice: 0,
+    pricePerPage: 0,
+    colorPrice: 0,
+    type: 'document',
+    minPages: 1,
+    maxPages: 100,
+    turnaroundTime: 2,
+    isActive: true
+  });
+
+  const [clientChats, setClientChats] = useState<ClientChat[]>([
+    {
+      id: '1',
+      clientId: 'user1',
+      clientName: 'João Silva',
+      clientEmail: 'joao@email.com',
+      lastMessage: 'Posso aumentar a gramatura do papel?',
+      lastMessageTime: Date.now() - 1000 * 60 * 30,
+      unreadCount: 2,
+      orderId: 'req1',
+      status: 'online'
+    },
+    {
+      id: '2',
+      clientId: 'user2',
+      clientName: 'Maria Santos',
+      clientEmail: 'maria@email.com',
+      lastMessage: 'Obrigada pelo trabalho!',
+      lastMessageTime: Date.now() - 1000 * 60 * 120,
+      unreadCount: 0,
+      status: 'offline'
+    }
+  ]);
+
+  const [activeChat, setActiveChat] = useState<string | null>(null);
+  const [chatMessages, setChatMessages] = useState<Message[]>([]);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
   const [supportMessages, setSupportMessages] = useState<Message[]>([
     { id: 's1', role: 'system', content: 'Terminal conectado via SSL. Estação: GR-THOTH-01', timestamp: Date.now() - 1000 * 60 * 60 },
     { id: 's2', role: 'user', content: 'Olá, detectamos uma instabilidade na fila do Bloco A.', timestamp: Date.now() - 1000 * 60 * 30 },
     { id: 's3', role: 'assistant', content: 'Estamos cientes. O servidor secundário já assumiu o processamento.', timestamp: Date.now() - 1000 * 60 * 20 }
   ]);
 
-  const [clientMessages, setClientMessages] = useState<Message[]>([
-    { id: 'c1', role: 'user', content: 'Moisés: Posso trocar o papel do TCC por um de gramatura 90g?', timestamp: Date.now() - 1000 * 60 * 10 },
-    { id: 'c2', role: 'assistant', content: 'Thoth: Claro! Haverá um acréscimo de R$ 0,10 por página.', timestamp: Date.now() - 1000 * 60 * 5 }
-  ]);
-
-  // Listener em tempo real usando o PrintService
   useEffect(() => {
     const savedStationId = localStorage.getItem('thoth_station_id');
     if (!savedStationId) {
@@ -68,23 +233,22 @@ const PrinterDashboard: React.FC = () => {
     }
     setStationId(savedStationId);
 
-    // Busca dados da estação
     const fetchStationAndOrders = async () => {
       let unsubOrders: (() => void) | null = null;
 
       const unsubStation = PrinterService.subscribeToStations((stations) => {
         const station = stations.find(s => s.stationId === savedStationId);
         if (station) {
-          console.log("[Dashboard] Station found:", station.name, "| Owner:", station.ownerEmail);
-          console.log("[Dashboard] Auth User:", authUser?.email);
           setCurrentStation(station);
-          // Só assina pedidos após ter o email do dono para o filtro de segurança
           if (!unsubOrders) {
-            console.log("[Dashboard] Subscribing to orders for:", station.stationId);
-            unsubOrders = PrintService.subscribeToShopOrders(station.stationId, station.ownerEmail, setRequests);
+            const isAdmin = userProfile?.role?.toLowerCase() === 'admin';
+            unsubOrders = PrintService.subscribeToShopOrders(
+              station.stationId,
+              station.ownerEmail,
+              isAdmin,
+              setRequests
+            );
           }
-        } else {
-          console.warn("[Dashboard] Station not found for ID:", savedStationId);
         }
       });
 
@@ -99,13 +263,17 @@ const PrinterDashboard: React.FC = () => {
     return () => {
       cleanupPromise.then(cleanup => cleanup());
     };
-  }, [navigate]);
+  }, [navigate, userProfile, loading]);
 
   const moveRequest = async (id: string, newStatus: PrintRequest['status']) => {
+    // Optimistic Update
+    setRequests(prev => prev.map(r => r.id === id ? { ...r, status: newStatus } : r));
+
     try {
       await PrintService.updateStatus(id, newStatus);
     } catch (e) {
       console.error("Erro ao mover pedido:", e);
+      // Optional: Revert state here if needed
     }
   };
 
@@ -119,31 +287,118 @@ const PrinterDashboard: React.FC = () => {
 
   const handleSendMessage = () => {
     if (!chatInput.trim()) return;
-    const msg: Message = { id: Date.now().toString(), role: 'assistant', content: chatInput, timestamp: Date.now() };
-    if (activeChatTab === 'support') setSupportMessages(prev => [...prev, msg]);
-    else setClientMessages(prev => [...prev, msg]);
+
+    if (activeChat) {
+      const msg: Message = {
+        id: Date.now().toString(),
+        role: 'assistant',
+        content: chatInput,
+        timestamp: Date.now()
+      };
+      setChatMessages(prev => [...prev, msg]);
+    } else if (activeChatTab === 'support') {
+      const msg: Message = {
+        id: Date.now().toString(),
+        role: 'assistant',
+        content: chatInput,
+        timestamp: Date.now()
+      };
+      setSupportMessages(prev => [...prev, msg]);
+    }
+
     setChatInput('');
   };
 
   const filteredRequests = useMemo(() => {
-    return requests.filter(r =>
-      !r.archived && (
-        r.fileName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (r.customerName?.toLowerCase() || '').includes(searchQuery.toLowerCase()))
-    );
+    return requests
+      .filter(r =>
+        !r.archived && (
+          r.fileName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (r.customerName?.toLowerCase() || '').includes(searchQuery.toLowerCase()))
+      )
+      .sort((a, b) => {
+        // Priority: Urgent first
+        if (a.priority === 'urgent' && b.priority !== 'urgent') return -1;
+        if (a.priority !== 'urgent' && b.priority === 'urgent') return 1;
+
+        // Timestamp: Oldest first (FIFO)
+        return a.timestamp - b.timestamp;
+      });
   }, [requests, searchQuery]);
 
-  // Cálculos Dinâmicos para os Stats
   const stats = useMemo(() => {
-    const daily = requests.filter(r => r.status === 'ready' && new Date(r.timestamp).toDateString() === new Date().toDateString());
-    const total = requests.filter(r => r.status === 'ready');
+    const today = new Date();
+    const thisMonth = today.getMonth();
+    const thisYear = today.getFullYear();
+
+    const daily = requests.filter(r => {
+      const date = new Date(r.timestamp);
+      return r.status === 'ready' &&
+        date.getDate() === today.getDate() &&
+        date.getMonth() === thisMonth &&
+        date.getFullYear() === thisYear;
+    });
+
+    const monthly = requests.filter(r => {
+      const date = new Date(r.timestamp);
+      return r.status === 'ready' &&
+        date.getMonth() === thisMonth &&
+        date.getFullYear() === thisYear;
+    });
+
+    const totalRevenue = requests
+      .filter(r => r.status === 'ready')
+      .reduce((acc, curr) => acc + curr.totalPrice, 0);
+
     return {
       dailyRevenue: daily.reduce((acc, curr) => acc + curr.totalPrice, 0),
-      monthlyRevenue: total.reduce((acc, curr) => acc + curr.totalPrice, 0),
+      monthlyRevenue: monthly.reduce((acc, curr) => acc + curr.totalPrice, 0),
+      totalRevenue,
       pendingJobs: requests.filter(r => r.status === 'pending').length,
-      completedToday: daily.length
+      printingJobs: requests.filter(r => r.status === 'printing').length,
+      completedToday: daily.length,
+      completedTotal: requests.filter(r => r.status === 'ready').length
     };
   }, [requests]);
+
+  const analytics = useMemo(() => {
+    const now = new Date();
+    const last7Days = Array.from({ length: 7 }, (_, i) => {
+      const date = new Date();
+      date.setDate(now.getDate() - (6 - i));
+      return date.toISOString().split('T')[0];
+    });
+
+    const dailyData = last7Days.map(date => {
+      const dayRevenue = requests
+        .filter(r => {
+          const reqDate = new Date(r.timestamp).toISOString().split('T')[0];
+          return reqDate === date && r.status === 'ready';
+        })
+        .reduce((acc, curr) => acc + curr.totalPrice, 0);
+
+      return { date, revenue: dayRevenue };
+    });
+
+    const serviceTypes = services.map(service => {
+      const serviceRequests = requests.filter(r =>
+        (r as any).serviceType === service.id && r.status === 'ready'
+      );
+      return {
+        name: service.name,
+        count: serviceRequests.length,
+        revenue: serviceRequests.reduce((acc, curr) => acc + curr.totalPrice, 0)
+      };
+    });
+
+    return {
+      dailyData,
+      serviceTypes,
+      avgOrderValue: stats.completedTotal > 0 ? stats.totalRevenue / stats.completedTotal : 0,
+      completionRate: requests.length > 0 ?
+        (stats.completedTotal / requests.length) * 100 : 0
+    };
+  }, [requests, services, stats]);
 
   const toggleShopStatus = async () => {
     if (!currentStation) return;
@@ -164,463 +419,835 @@ const PrinterDashboard: React.FC = () => {
     }
   };
 
+  const addService = async () => {
+    if (!newService.name || newService.basePrice === undefined || !currentStation) return;
+
+    const service: ServiceItem = {
+      id: Date.now().toString(),
+      name: newService.name,
+      description: newService.description || '',
+      basePrice: newService.basePrice,
+      pricePerPage: newService.pricePerPage || 0,
+      colorPrice: newService.colorPrice || 0,
+      type: newService.type || 'document',
+      minPages: newService.minPages || 1,
+      maxPages: newService.maxPages || 100,
+      turnaroundTime: newService.turnaroundTime || 2,
+      isActive: true
+    };
+
+    const updatedServices = [...services, service];
+    setServices(updatedServices);
+    await PrinterService.updateStation(currentStation.id, { services: updatedServices as any });
+
+    setNewService({
+      name: '',
+      description: '',
+      basePrice: 0,
+      pricePerPage: 0,
+      colorPrice: 0,
+      type: 'document',
+      minPages: 1,
+      maxPages: 100,
+      turnaroundTime: 2,
+      isActive: true
+    });
+  };
+
+  const updateService = async (id: string, updates: Partial<ServiceItem>) => {
+    if (!currentStation) return;
+    const updatedServices = services.map(service =>
+      service.id === id ? { ...service, ...updates } : service
+    );
+    setServices(updatedServices);
+    await PrinterService.updateStation(currentStation.id, { services: updatedServices as any });
+  };
+
+  const deleteService = async (id: string) => {
+    if (!currentStation) return;
+    const updatedServices = services.filter(service => service.id !== id);
+    setServices(updatedServices);
+    await PrinterService.updateStation(currentStation.id, { services: updatedServices as any });
+  };
+
+  const openChat = (chatId: string) => {
+    setActiveChat(chatId);
+    // Simular carregamento de mensagens
+    setChatMessages([
+      {
+        id: '1',
+        role: 'user',
+        content: 'Olá, gostaria de saber sobre o status do meu pedido',
+        timestamp: Date.now() - 1000 * 60 * 60
+      },
+      {
+        id: '2',
+        role: 'assistant',
+        content: 'Claro! Seu pedido está sendo impresso agora.',
+        timestamp: Date.now() - 1000 * 60 * 30
+      }
+    ]);
+  };
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatMessages]);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
   return (
-    <div className="min-h-screen flex flex-col font-sans relative overflow-x-hidden">
-      {/* Background Orgânico Thoth */}
-      {/* Background handled by global index.css and ThemeContext */}
+    <div className="h-screen flex flex-col font-sans relative overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-950">
+      {/* Header */}
+      <header className="flex-none h-16 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800 z-50">
+        <div className="px-6 py-4 h-full">
+          <div className="flex items-center justify-between h-full">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => navigate('/')}
+                className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                <ChevronLeft size={24} />
+              </button>
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-emerald-500/10 rounded-2xl">
+                  <PrinterIcon className="text-emerald-600 dark:text-emerald-400" size={24} />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-black text-slate-900 dark:text-white">
+                    {currentStation?.name || 'Gráfica'}
+                  </h1>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                    Dashboard de Gerenciamento
+                  </p>
+                </div>
+              </div>
+            </div>
 
-      {/* Header Premium Glass */}
-      <header className="h-16 bg-white/60 backdrop-blur-xl border-b border-white/40 flex items-center justify-between px-8 sticky top-0 z-[60] shadow-sm">
-        <div className="flex items-center gap-4">
-          <button onClick={() => navigate('/')} className="w-10 h-10 flex items-center justify-center rounded-2xl bg-white/80 border border-white/60 hover:bg-[#006c55] hover:text-white transition-all shadow-sm active:scale-90">
-            <ChevronLeft size={20} />
-          </button>
-          <div className="flex flex-col">
-            <h1 className="text-xl font-black text-slate-900 tracking-tighter leading-none">Terminal <span className="text-[#006c55]">Thoth</span></h1>
-            <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-[9px] font-black text-[#006c55] uppercase tracking-[0.2em] opacity-70">{currentStation?.name || 'Operação Gráfica'}</span>
-              <div className="w-1 h-1 bg-slate-300 rounded-full"></div>
-              <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">{stationId}</span>
+            <div className="flex items-center gap-4">
+              {/* Search Bar - Moved to Header */}
+              <div className="hidden md:block w-64 lg:w-80 relative group mr-2">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors" size={18} />
+                <input
+                  type="text"
+                  placeholder="Pesquisar..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full h-11 pl-12 pr-4 bg-slate-100 dark:bg-slate-800 border-none rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all font-medium text-sm"
+                />
+              </div>
+
+              <div className="hidden md:flex items-center gap-6">
+                <button
+                  onClick={() => setShowAnalytics(!showAnalytics)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                >
+                  <BarChart3 size={20} />
+                  <span className="text-sm font-semibold">Analytics</span>
+                </button>
+
+                <button
+                  onClick={() => setShowServiceManager(!showServiceManager)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
+                >
+                  <Plus size={20} />
+                  <span className="text-sm font-semibold">Serviços</span>
+                </button>
+              </div>
+
+              <div className="flex items-center gap-3">
+                {/* User Info - New Addition */}
+                <div className="hidden lg:flex flex-col items-end mr-4">
+                  <span className="text-sm font-bold text-slate-900 dark:text-white">
+                    {authUser?.email}
+                  </span>
+                  <span className="text-[10px] uppercase font-black tracking-widest text-[#006c55] dark:text-emerald-400 bg-[#006c55]/10 dark:bg-emerald-500/10 px-2 py-0.5 rounded">
+                    {userProfile?.role?.toLowerCase() === 'admin' ? 'Administrador' : 'Gerente'}
+                  </span>
+                </div>
+
+                <div className="relative">
+                  <Bell size={22} className="text-slate-600 dark:text-slate-400" />
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                    3
+                  </span>
+                </div>
+
+                <button
+                  onClick={() => setShowSettings(!showSettings)}
+                  className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                >
+                  <Settings2 size={22} />
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-
-        <div className="hidden lg:flex items-center gap-4 bg-slate-50 px-4 py-2 rounded-2xl border border-slate-100">
-          <div className="flex flex-col">
-            <span className="text-[7px] font-black uppercase text-slate-400 tracking-widest">Conectado como</span>
-            <span className={`text-[9px] font-bold ${authUser?.email?.toLowerCase() === currentStation?.ownerEmail?.toLowerCase() ? 'text-slate-700' : 'text-red-500'}`}>
-              {authUser?.email || 'Desconhecido'}
-            </span>
-          </div>
-          <div className={`w-2 h-2 rounded-full ${requests.length > 0 ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`}></div>
-        </div>
-
-        {authUser && currentStation && authUser.email?.toLowerCase() !== currentStation.ownerEmail.toLowerCase() && (
-          <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] bg-red-500 text-white px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-4 animate-in slide-in-from-top-4 duration-500 max-w-lg">
-            <AlertCircle size={20} className="shrink-0" />
-            <div className="flex flex-col">
-              <span className="text-[10px] font-black uppercase tracking-widest">Erro de Permissão</span>
-              <span className="text-[11px] font-medium opacity-90 leading-tight">
-                Você acessou via Painel do Parceiro, mas sua conta Thoth é <b>{authUser.email}</b>.
-                Os pedidos desta gráfica pertencem a <b>{currentStation.ownerEmail}</b>.
-              </span>
-            </div>
-          </div>
-        )}
-
-        <div className="flex-1 max-w-lg mx-8 hidden md:block">
-          <div className="relative group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#006c55] transition-colors" size={16} />
-            <input
-              type="text"
-              placeholder="Pesquisar ordens ou clientes..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-10 pl-11 pr-4 bg-white/40 border border-white/60 rounded-2xl text-[14px] focus:outline-none focus:ring-4 focus:ring-[#006c55]/10 focus:border-[#006c55] focus:bg-white transition-all"
-            />
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setShowSettings(!showSettings)}
-            className={`w-10 h-10 flex items-center justify-center rounded-2xl transition-all shadow-sm active:scale-90 ${showSettings ? 'bg-[#006c55] text-white' : 'bg-white/80 border border-white/60 text-slate-600 hover:bg-slate-50'}`}
-          >
-            <Settings2 size={20} />
-          </button>
-          <button
-            onClick={() => {
-              localStorage.removeItem('thoth_station_id');
-              navigate('/printers/login');
-            }}
-            className="flex items-center gap-2 pl-2 pr-4 h-10 rounded-2xl bg-red-500/10 text-red-600 border border-red-500/20 hover:bg-red-500 hover:text-white transition-all group"
-          >
-            <LogOut size={16} />
-            <span className="text-[10px] font-black uppercase tracking-widest">Sair</span>
-          </button>
         </div>
       </header>
 
-      {/* Main Grid Layout */}
-      <main className="flex-1 p-6 grid grid-cols-1 xl:grid-cols-12 gap-6 max-w-[1500px] mx-auto w-full">
+      {/* Main Content - Adjusted for Footer */}
+      <main className="flex-1 p-6 h-[calc(100vh-104px)] overflow-hidden">
+        {/* Main Grid Layout */}
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 h-full">
+          {/* Left Column (Stats + Kanban) */}
+          <div className="xl:col-span-8 flex flex-col gap-6 h-full overflow-hidden">
 
-        {/* Coluna Esquerda: Stats & Kanban (9) */}
-        <div className="xl:col-span-9 space-y-6 animate-in fade-in duration-700">
 
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
-              { label: 'Receita Diária', val: `R$ ${stats.dailyRevenue.toFixed(2)}`, icon: <TrendingUp size={20} />, color: 'emerald' },
-              { label: 'Balanço Mensal', val: `R$ ${stats.monthlyRevenue.toFixed(0)}`, icon: <DollarSign size={20} />, color: 'blue' },
-              { label: 'Fila de Espera', val: `${stats.pendingJobs} Jobs`, icon: <Clock size={20} />, color: 'amber' },
-              { label: 'Entregues Hoje', val: stats.completedToday, icon: <CheckCircle2 size={20} />, color: 'primary' }
-            ].map((card, i) => (
-              <div key={i} className="bg-white/75 backdrop-blur-md p-5 rounded-2xl border border-white/90 shadow-sm flex flex-col justify-between hover:shadow-md transition-all group">
-                <div className="flex items-center justify-between mb-2">
-                  <div className={`w-10 h-10 rounded-2xl flex items-center justify-center bg-slate-100 text-slate-500 group-hover:bg-[#006c55] group-hover:text-white transition-all shadow-inner`}>
-                    {card.icon}
-                  </div>
-                </div>
-                <div>
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">{card.label}</span>
-                  <span className="text-2xl font-black text-slate-900 tracking-tight">{card.val}</span>
-                </div>
-              </div>
-            ))}
-          </div>
+            {/* Main Grid Layout */}
+            {/* Kanban Section (Remaining Height) */}
+            <div className="flex-1 flex flex-col min-h-0">
 
-          {/* Kanban Workflow */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[720px]">
-            {['pending', 'printing', 'ready'].map((status) => (
-              <div
-                key={status}
-                className={`bg-white/30 dark:bg-slate-900/20 backdrop-blur-md rounded-2xl p-5 flex flex-col gap-5 border border-white/50 dark:border-white/5 shadow-sm transition-all ${status === 'printing' ? 'bg-[#006c55]/5 border-2 border-dashed border-[#006c55]/20' : ''}`}
-                onDragOver={allowDrop}
-                onDrop={(e) => handleDrop(e, status as any)}
-              >
-                <div className="flex items-center justify-between border-b border-white/40 pb-3">
-                  <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
-                    {status === 'pending' && <div className="w-2 h-2 rounded-full bg-amber-500" />}
-                    {status === 'printing' && <Loader2 size={14} className="text-[#006c55] animate-spin" />}
-                    {status === 'ready' && <CheckCircle2 size={16} className="text-emerald-500" />}
-                    {status === 'pending' ? 'Aguardando' : status === 'printing' ? 'Imprimindo' : 'Pronto'}
-                  </h3>
-                  <span className="text-[10px] font-black text-slate-400 bg-white/60 px-2 py-0.5 rounded-full">{filteredRequests.filter(r => r.status === status).length}</span>
-                </div>
-
-                <div className="flex-1 overflow-y-auto no-scrollbar space-y-4">
-                  {filteredRequests.filter(r => r.status === status).map(req => (
-                    <div
-                      key={req.id}
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, req.id)}
-                      className={`relative flex flex-col p-5 rounded-2xl border transition-all duration-300 cursor-grab active:grabbing group hover:shadow-lg animate-in slide-in-from-bottom-2 ${status === 'printing' ? 'border-l-4 border-l-[#006c55]' : ''
-                        } bg-gradient-to-br from-white/95 to-white/80 dark:from-slate-800/90 dark:to-slate-900/80 border-white dark:border-slate-700 hover:border-[#006c55]/20`}
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="w-10 h-10 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-300 dark:text-slate-500 group-hover:text-[#006c55] transition-colors">
-                          <FileText size={20} />
-                        </div>
-                        <span className="text-[11px] font-black text-slate-900 dark:text-white">R$ {req.totalPrice.toFixed(2)}</span>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
+                {['pending', 'printing', 'ready'].map((status) => (
+                  <div
+                    key={status}
+                    onDragOver={(e) => { allowDrop(e); setDragOverColumn(status); }}
+                    onDragLeave={() => setDragOverColumn(null)}
+                    onDrop={(e) => { handleDrop(e, status as any); setDragOverColumn(null); }}
+                    className="flex flex-col h-full bg-slate-100/50 dark:bg-slate-800/20 rounded-2xl p-2"
+                  >
+                    <div className="flex items-center justify-between mb-3 px-2 pt-2 flex-none">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-2.5 h-2.5 rounded-full ${status === 'pending' ? 'bg-amber-500' :
+                          status === 'printing' ? 'bg-blue-500' : 'bg-emerald-500'
+                          }`} />
+                        <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
+                          {status === 'pending' ? 'Pendentes' :
+                            status === 'printing' ? 'Imprimindo' : 'Concluídos'}
+                        </h3>
                       </div>
-                      <h4 className="text-[13px] font-black text-slate-900 dark:text-white truncate mb-0.5">{req.fileName}</h4>
-                      <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">{req.customerName}</p>
+                      <span className="bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[10px] font-bold px-2 py-0.5 rounded-lg shadow-sm">
+                        {filteredRequests.filter(r => r.status === status).length}
+                      </span>
+                    </div>
 
-                      {req.fileUrl && (
-                        <a
-                          href={req.fileUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="mt-3 flex items-center gap-2 text-[9px] font-black text-[#006c55] uppercase tracking-widest bg-[#006c55]/5 p-2 rounded-lg hover:bg-[#006c55] hover:text-white transition-all"
+                    <div className="flex-1 overflow-y-auto space-y-3 px-1 pb-1">
+                      {/* Dotted Placeholder for Drop Target - Moved to Top */}
+                      {dragOverColumn === status && (
+                        <div className="h-24 border-2 border-dashed border-emerald-500/50 bg-emerald-500/5 rounded-xl flex items-center justify-center m-2 animate-pulse mb-4">
+                          <span className="text-[10px] font-black uppercase text-emerald-600 tracking-widest">Soltar Aqui</span>
+                        </div>
+                      )}
+
+                      {filteredRequests.filter(r => r.status === status).map((req, index) => (
+                        <div
+                          key={req.id}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, req.id)}
+                          className={`p-3 rounded-xl transition-all cursor-grab active:grabbing group relative bg-white dark:bg-slate-800 ${req.priority === 'urgent'
+                            ? 'ring-2 ring-red-500 ring-offset-2 ring-offset-slate-100 dark:ring-offset-slate-900 animate-pulse'
+                            : 'border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md'
+                            }`}
                         >
-                          <Download size={12} /> Baixar Arquivo
-                        </a>
-                      )}
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <div className="p-1.5 bg-slate-50 dark:bg-slate-900 rounded-lg">
+                                <FilePdf className="text-slate-400" size={14} />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <h4 className="text-xs font-black text-slate-900 dark:text-white truncate max-w-[150px]" title={req.fileName}>
+                                  {req.fileName}
+                                </h4>
+                                <div className="flex flex-col gap-0.5 mt-0.5">
+                                  <p className="text-[11px] text-slate-600 dark:text-slate-300 font-bold truncate">
+                                    {req.customerName || 'Cliente sem nome'}
+                                  </p>
+                                  <p className={`text-[9px] font-bold uppercase tracking-wider ${req.paymentMethod === 'paid' ? 'text-emerald-500' : 'text-amber-500'}`}>
+                                    {req.paymentMethod === 'paid' ? '• Já Pago' : '• Pagar no Balcão'}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex flex-col items-end gap-1">
+                              <span className="text-[10px] font-black text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-900 px-1.5 py-0.5 rounded flex-none">
+                                R$ {req.totalPrice.toFixed(2)}
+                              </span>
+                              {status === 'pending' && (
+                                <span className="text-[9px] font-bold text-slate-500 bg-slate-50 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700">
+                                  #{index + 1}
+                                </span>
+                              )}
+                            </div>
+                          </div>
 
-                      {status === 'printing' && (
-                        <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mt-4 border border-slate-200 shadow-inner">
-                          <div className="h-full bg-[#006c55] animate-[loading_4s_ease-in-out_infinite]"></div>
+                          <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-700">
+                            <div className="flex items-center gap-2">
+                              {req.priority === 'urgent' && (
+                                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-red-500/10 rounded-lg border border-red-500/20 mr-2">
+                                  <div className="relative flex h-1.5 w-1.5">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500"></span>
+                                  </div>
+                                  <span className="text-[8px] font-black uppercase text-red-500 tracking-wider">Urgente</span>
+                                </div>
+                              )}
+                              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50 dark:bg-slate-900 px-1.5 py-0.5 rounded">
+                                {req.pages} pgs
+                              </span>
+
+                              {/* Icons for Request Details */}
+                              <div className="flex items-center gap-1.5">
+                                {/* Color/BW */}
+                                <div className="relative group/icon cursor-help">
+                                  <Droplets size={12} className={req.isColor ? "text-cyan-500" : "text-slate-300"} />
+                                  <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-slate-900 text-white text-[9px] rounded opacity-0 group-hover/icon:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                                    {req.isColor ? 'Colorido' : 'Preto & Branco'}
+                                  </span>
+                                </div>
+
+                                {/* Duplex */}
+                                <div className="relative group/icon cursor-help">
+                                  <Layers size={12} className={req.isDuplex ? "text-indigo-400" : "text-slate-300"} />
+                                  <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-slate-900 text-white text-[9px] rounded opacity-0 group-hover/icon:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                                    {req.isDuplex ? 'Frente e Verso' : 'Frente Única'}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex gap-1.5">
+                              {status === 'pending' && (
+                                <button
+                                  onClick={() => moveRequest(req.id, 'printing')}
+                                  className="p-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                                  title="Iniciar Impressão"
+                                >
+                                  <Play size={12} />
+                                </button>
+                              )}
+                              {status === 'printing' && (
+                                <button
+                                  onClick={() => moveRequest(req.id, 'ready')}
+                                  className="p-1.5 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors"
+                                  title="Concluir"
+                                >
+                                  <CheckCircle2 size={12} />
+                                </button>
+                              )}
+                              {status === 'ready' && (
+                                <button
+                                  onClick={() => { setSelectedRequest(req); setIsVerifyModalOpen(true); }}
+                                  className="p-1.5 bg-slate-900 dark:bg-slate-700 text-white rounded-lg hover:bg-black transition-colors"
+                                  title="Verificar"
+                                >
+                                  <ShieldCheck size={12} />
+                                </button>
+                              )}
+                              <a
+                                href={req.fileUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-1.5 bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 rounded-lg hover:bg-slate-200 transition-colors"
+                                title="Baixar Arquivo"
+                              >
+                                <Download size={12} />
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+
+                      {filteredRequests.filter(r => r.status === status).length === 0 && !dragOverColumn && (
+                        <div className="h-24 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-center opacity-40 m-2">
+                          <span className="text-[10px] font-bold uppercase tracking-widest">Vazio</span>
                         </div>
                       )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
 
-                      <div className="flex items-center justify-between pt-4 mt-4 border-t border-slate-50">
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">{req.pages} Pags</span>
-                        {status === 'pending' && (
-                          <button onClick={() => moveRequest(req.id, 'printing')} className="h-8 px-4 bg-[#006c55] text-white rounded-2xl hover:bg-emerald-600 transition-all text-[9px] font-black uppercase shadow-lg shadow-[#006c55]/10">Iniciar</button>
-                        )}
-                        {status === 'printing' && (
-                          <button onClick={() => moveRequest(req.id, 'ready')} className="h-8 px-4 bg-slate-900 text-white rounded-2xl hover:bg-black transition-all text-[9px] font-black uppercase shadow-lg">Finalizar</button>
-                        )}
-                        {status === 'ready' && (
-                          <button onClick={() => { setSelectedRequest(req); setIsVerifyModalOpen(true); }} className="h-8 px-4 bg-emerald-600 text-white rounded-2xl hover:bg-emerald-700 transition-all text-[9px] font-black uppercase shadow-lg shadow-emerald-500/10 flex items-center gap-1.5"><ShieldCheck size={12} /> Validar</button>
-                        )}
+          {/* Right Section: Chat & History (Fixed Layout) */}
+          <div className="xl:col-span-4 flex flex-col gap-6 h-full overflow-hidden">
+            {/* Chat Component (Flex Grow) */}
+            <div className="bg-white dark:bg-slate-800 rounded-3xl overflow-hidden shadow-xl border border-slate-200 dark:border-slate-700 flex flex-col flex-[2] min-h-0">
+              <div className="p-6 border-b border-slate-100 dark:border-slate-700">
+                <div className="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-2xl mb-4">
+                  <button
+                    onClick={() => setActiveChatTab('support')}
+                    className={`flex-1 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeChatTab === 'support' ? 'bg-white dark:bg-slate-800 shadow-sm text-emerald-600' : 'text-slate-500'
+                      }`}
+                  >
+                    Suporte
+                  </button>
+                  <button
+                    onClick={() => setActiveChatTab('clients')}
+                    className={`flex-1 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeChatTab === 'clients' ? 'bg-white dark:bg-slate-800 shadow-sm text-emerald-600' : 'text-slate-500'
+                      }`}
+                  >
+                    Clientes
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <h3 className="text-xs font-black uppercase tracking-widest text-slate-900 dark:text-white">
+                    {activeChatTab === 'support' ? 'Thoth Support' : 'Atendimento'}
+                  </h3>
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto no-scrollbar p-6 space-y-4">
+                {activeChat && activeChatTab === 'clients' ? (
+                  /* Aba de Conversa Ativa com Cliente */
+                  chatMessages.map(msg => (
+                    <div key={msg.id} className={`flex ${msg.role === 'assistant' ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[80%] p-4 rounded-2xl text-sm ${msg.role === 'assistant' ? 'bg-emerald-500 text-white rounded-br-none' : 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-bl-none'
+                        }`}>
+                        {msg.content}
                       </div>
                     </div>
-                  ))}
+                  ))
+                ) : activeChatTab === 'clients' ? (
+                  /* Lista de Mensagens de Clientes */
+                  clientChats.map(chat => (
+                    <button
+                      key={chat.id}
+                      onClick={() => openChat(chat.id)}
+                      className="w-full text-left p-4 rounded-2xl border border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all group"
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm font-black text-slate-900 dark:text-white">{chat.clientName}</span>
+                        <span className="text-[10px] font-bold text-slate-400">
+                          {new Date(chat.lastMessageTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 group-hover:text-emerald-500 transition-colors">
+                        {chat.lastMessage}
+                      </p>
+                    </button>
+                  ))
+                ) : (
+                  /* Suporte Messages */
+                  supportMessages.map(msg => (
+                    <div key={msg.id} className={`flex ${msg.role === 'assistant' ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[80%] p-4 rounded-2xl text-sm ${msg.role === 'assistant' ? 'bg-slate-900 text-white rounded-br-none' : 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-bl-none'
+                        }`}>
+                        {msg.content}
+                      </div>
+                    </div>
+                  ))
+                )}
+                <div ref={chatEndRef} />
+              </div>
+
+              <div className="p-6 pt-0">
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Digite sua mensagem..."
+                    className="w-full h-12 pl-4 pr-12 bg-slate-100 dark:bg-slate-900 border-none rounded-2xl text-sm focus:ring-2 focus:ring-emerald-500 transition-all"
+                  />
+                  <button
+                    onClick={handleSendMessage}
+                    className="absolute right-2 top-2 w-8 h-8 bg-emerald-500 text-white rounded-xl flex items-center justify-center hover:bg-emerald-600 transition-all active:scale-90"
+                  >
+                    <Send size={16} />
+                  </button>
                 </div>
               </div>
-            ))}
+            </div>
+
+            {/* Activity Section (Flex Init) */}
+            <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-xl border border-slate-200 dark:border-slate-700 flex-1 min-h-0 flex flex-col">
+              <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest mb-4 border-b border-slate-100 dark:border-slate-700 pb-2 flex-none">
+                Histórico Recente
+              </h3>
+              <div className="space-y-3 overflow-y-auto no-scrollbar flex-1 pr-1">
+                {requests.filter(r => r.status === 'ready').slice(0, 15).map(req => (
+                  <div key={req.id} className="flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className="p-1.5 bg-emerald-500/10 rounded-lg">
+                        <CheckCircle2 className="text-emerald-500" size={14} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-slate-900 dark:text-white truncate max-w-[100px]">{req.fileName}</p>
+                        <p className="text-[9px] text-slate-400 font-bold uppercase">{new Date(req.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                      </div>
+                    </div>
+                    <span className="text-xs font-black text-slate-900 dark:text-white whitespace-nowrap">R$ {req.totalPrice.toFixed(2)}</span>
+                  </div>
+                ))}
+                {requests.filter(r => r.status === 'ready').length === 0 && (
+                  <div className="text-center py-8 opacity-40">
+                    <p className="text-[10px] font-black uppercase">Sem atividade</p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
+      </main >
 
-        {/* Coluna Direita: Chat (Topo) e Histórico (Base) */}
-        <div className="xl:col-span-3 flex flex-col gap-6 h-full animate-in fade-in duration-700 delay-150">
-
-          {/* Chat Unificado */}
-          <div className="bg-slate-950 rounded-2xl flex flex-col h-[500px] shadow-2xl relative overflow-hidden group border border-white/5">
-            <div className="absolute top-[-40px] left-[-40px] w-64 h-64 bg-[#006c55]/15 rounded-full blur-[80px] opacity-40"></div>
-
-            <div className="p-6 pb-0 relative z-10">
-              <div className="flex bg-white/5 p-1 rounded-2xl gap-1 mb-6">
-                <button
-                  onClick={() => setActiveChatTab('support')}
-                  className={`flex-1 h-9 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${activeChatTab === 'support' ? 'bg-[#006c55] text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
-                >
-                  <ShieldCheck size={12} /> Suporte
-                </button>
-                <button
-                  onClick={() => setActiveChatTab('clients')}
-                  className={`flex-1 h-9 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${activeChatTab === 'clients' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
-                >
-                  <Users size={12} /> Clientes
+      {/* Modals & Overlays */}
+      {
+        showServiceManager && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
+              <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-widest">Gestão de Serviços</h2>
+                <button onClick={() => setShowServiceManager(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors">
+                  <X size={24} />
                 </button>
               </div>
 
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex flex-col">
-                  <h3 className="text-[10px] font-black text-white uppercase tracking-[0.3em]">
-                    {activeChatTab === 'support' ? 'Central Thoth' : 'Mensagens'}
-                  </h3>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className="w-1 h-1 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
-                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Tempo Real</span>
+              <div className="flex-1 overflow-y-auto p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Add/Edit Form */}
+                <div className="space-y-6">
+                  <h3 className="text-xs font-black uppercase tracking-[0.2em] text-emerald-500">Novo Serviço</h3>
+                  <div className="space-y-4">
+                    <input
+                      type="text" placeholder="Nome do Serviço"
+                      className="w-full h-12 px-4 bg-slate-50 dark:bg-slate-900 border-none rounded-2xl text-sm focus:ring-2 focus:ring-emerald-500"
+                      value={newService.name} onChange={e => setNewService({ ...newService, name: e.target.value })}
+                    />
+                    <textarea
+                      placeholder="Descrição"
+                      className="w-full p-4 bg-slate-50 dark:bg-slate-900 border-none rounded-2xl text-sm focus:ring-2 focus:ring-emerald-500 h-24"
+                      value={newService.description} onChange={e => setNewService({ ...newService, description: e.target.value })}
+                    />
+                    <div className="grid grid-cols-2 gap-4">
+                      <input
+                        type="number" placeholder="Preço Base"
+                        className="h-12 px-4 bg-slate-50 dark:bg-slate-900 border-none rounded-2xl text-sm"
+                        value={newService.basePrice} onChange={e => setNewService({ ...newService, basePrice: parseFloat(e.target.value) })}
+                      />
+                      <select
+                        className="h-12 px-4 bg-slate-50 dark:bg-slate-900 border-none rounded-2xl text-sm"
+                        value={newService.type} onChange={e => setNewService({ ...newService, type: e.target.value as any })}
+                      >
+                        <option value="document">Documento</option>
+                        <option value="photo">Foto</option>
+                        <option value="poster">Pôster</option>
+                      </select>
+                    </div>
+                    <button
+                      onClick={addService}
+                      className="w-full h-14 bg-emerald-500 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20"
+                    >
+                      Salvar Serviço
+                    </button>
                   </div>
                 </div>
-                <button className="text-slate-500 hover:text-white"><MoreVertical size={16} /></button>
-              </div>
-            </div>
 
-            <div className="flex-1 overflow-y-auto no-scrollbar p-6 pt-0 space-y-4 relative z-10">
-              {(activeChatTab === 'support' ? supportMessages : clientMessages).map(msg => (
-                <div key={msg.id} className={`flex flex-col ${msg.role === 'assistant' ? 'items-end' : 'items-start'}`}>
-                  <div className={`max-w-[90%] p-3 rounded-2xl text-[12px] leading-relaxed shadow-sm ${msg.role === 'assistant'
-                    ? 'bg-[#006c55] text-white rounded-tr-none'
-                    : msg.role === 'system'
-                      ? 'bg-white/5 text-slate-500 italic text-[10px] w-full text-center border border-white/5 py-1.5'
-                      : 'bg-white/10 text-slate-200 rounded-tl-none border border-white/5'
-                    }`}>
-                    {msg.content}
+                {/* Service List */}
+                <div className="space-y-6">
+                  <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Serviços Ativos</h3>
+                  <div className="space-y-3">
+                    {services.map(service => (
+                      <div key={service.id} className="p-3 bg-white dark:bg-slate-900 rounded-xl flex items-center justify-between group border border-slate-100 dark:border-slate-800 hover:border-emerald-500/30 transition-all shadow-sm">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wide truncate">{service.name}</h4>
+                            <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase ${service.isActive ? 'bg-emerald-500/10 text-emerald-600' : 'bg-red-500/10 text-red-500'}`}>
+                              {service.isActive ? 'Ativo' : 'Off'}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-4">
+                            <p className="text-[10px] font-bold text-slate-500">
+                              Base: R$ {service.basePrice.toFixed(2)}
+                            </p>
+                            <div className="flex items-center gap-1.5 opacity-60 group-hover:opacity-100 transition-opacity">
+                              {/* Color/BW Info */}
+                              <div className="relative group/icon cursor-help">
+                                {service.colorPrice > 0 ? (
+                                  <Droplets size={12} className="text-cyan-500" />
+                                ) : (
+                                  <Droplets size={12} className="text-slate-400" />
+                                )}
+                                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-slate-900 text-white text-[9px] rounded opacity-0 group-hover/icon:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                                  {service.colorPrice > 0 ? `Cor: +R$ ${service.colorPrice.toFixed(2)}` : 'Apenas P&B'}
+                                </span>
+                              </div>
+
+                              {/* Duplex Info (Symbolic) */}
+                              <div className="relative group/icon cursor-help">
+                                <Layers size={12} className="text-indigo-400" />
+                                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-slate-900 text-white text-[9px] rounded opacity-0 group-hover/icon:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                                  Frente e Verso Disponível
+                                </span>
+                              </div>
+
+                              {/* Type Info */}
+                              <div className="relative group/icon cursor-help">
+                                <FileText size={12} className="text-emerald-500" />
+                                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-slate-900 text-white text-[9px] rounded opacity-0 group-hover/icon:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                                  Tipo: {service.type}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={() => deleteService(service.id)}
+                          className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-all ml-2"
+                          title="Remover Serviço"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    ))}
                   </div>
-                  <span className="text-[7px] font-bold text-slate-600 uppercase mt-1 px-1 tracking-tighter">
-                    {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span>
                 </div>
-              ))}
-            </div>
-
-            <div className="p-6 pt-0 relative z-10">
-              <div className="relative">
-                <input
-                  type="text"
-                  value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                  placeholder="Mensagem..."
-                  className="w-full h-11 pl-4 pr-12 bg-white/5 border border-white/10 rounded-2xl text-[13px] text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#006c55]/30 focus:border-[#006c55] transition-all shadow-inner"
-                />
-                <button
-                  onClick={handleSendMessage}
-                  className="absolute right-1.5 top-1.5 w-8 h-8 bg-[#006c55] text-white rounded-xl flex items-center justify-center hover:bg-emerald-500 transition-all active:scale-90 shadow-lg"
-                >
-                  <Send size={14} />
-                </button>
               </div>
             </div>
           </div>
+        )
+      }
 
-          {/* Histórico Transacional */}
-          <div className="bg-white/50 backdrop-blur-xl rounded-2xl p-6 border border-white/60 shadow-2xl flex flex-col flex-1 min-h-[250px]">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex flex-col">
-                <h3 className="text-[13px] font-black text-slate-900 tracking-tight leading-none uppercase">Histórico</h3>
-                <span className="text-[9px] font-black text-[#006c55] uppercase tracking-widest mt-1 opacity-60">Fluxo Diário</span>
+      {
+        showAnalytics && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
+              <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-widest">Relatório de Performance</h2>
+                <button onClick={() => setShowAnalytics(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors">
+                  <X size={24} />
+                </button>
               </div>
-              <button className="p-2.5 bg-white/60 rounded-2xl hover:bg-[#006c55] hover:text-white transition-all shadow-sm">
-                <Download size={16} />
-              </button>
-            </div>
 
-            <div className="flex-1 overflow-y-auto no-scrollbar space-y-3">
-              {requests.filter(r => r.status === 'ready').slice(0, 8).map((req, i) => (
-                <div key={req.id} className="flex items-center justify-between p-3 bg-white/40 hover:bg-white/80 rounded-2xl transition-all border border-transparent hover:border-white shadow-sm group">
+              <div className="flex-1 overflow-y-auto p-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                  <div className="p-6 bg-emerald-500 text-white rounded-2xl">
+                    <p className="text-[10px] font-black uppercase tracking-tighter opacity-80 mb-1">Ticket Médio</p>
+                    <p className="text-xl font-black">R$ {analytics.avgOrderValue.toFixed(2)}</p>
+                  </div>
+                  <div className="p-6 bg-slate-900 text-white rounded-2xl">
+                    <p className="text-[10px] font-black uppercase tracking-tighter opacity-80 mb-1">Taxa de Conclusão</p>
+                    <p className="text-xl font-black">{analytics.completionRate.toFixed(1)}%</p>
+                  </div>
+                </div>
+
+                <div className="bg-slate-50 dark:bg-slate-900 rounded-3xl p-8 border border-slate-100 dark:border-slate-800">
+                  <h3 className="text-xs font-black uppercase tracking-widest mb-6">Demanda por tipo de serviço</h3>
+                  <div className="space-y-6">
+                    {analytics.serviceTypes.map(type => (
+                      <div key={type.name} className="space-y-2">
+                        <div className="flex justify-between text-xs font-black uppercase">
+                          <span>{type.name}</span>
+                          <span>{type.count} pedidos</span>
+                        </div>
+                        <div className="h-2 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-emerald-500"
+                            style={{ width: `${(type.count / (stats.completedTotal || 1)) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+      {
+        showSettings && (
+          <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl animate-in slide-in-from-bottom-4">
+              <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-widest">Configurações</h2>
+                <button onClick={() => setShowSettings(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors">
+                  <X size={24} />
+                </button>
+              </div>
+
+              <div className="p-8 space-y-8">
+                <div className="p-6 rounded-3xl bg-slate-950 text-white">
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h3 className="text-sm font-black uppercase tracking-wider mb-1">Status de Operação</h3>
+                      <p className="text-[10px] text-slate-500 font-bold uppercase">Define se sua gráfica aparece para alunos</p>
+                    </div>
+                    <div className={`w-3 h-3 rounded-full ${currentStation?.isOpen ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`} />
+                  </div>
+                  <button
+                    onClick={toggleShopStatus}
+                    className={`w-full h-14 rounded-2xl font-black uppercase tracking-widest transition-all ${currentStation?.isOpen ? 'bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white' : 'bg-emerald-500 text-white hover:bg-emerald-600'
+                      }`}
+                  >
+                    {currentStation?.isOpen ? 'Suspender Atividades' : 'Abrir Gráfica'}
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Preços Base</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl">
+                      <span className="text-[10px] font-black uppercase text-slate-500 block mb-2">Página P&B</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg font-black text-slate-900 dark:text-white">R$</span>
+                        <input
+                          type="number" step="0.01"
+                          value={currentStation?.prices?.pb ?? 0}
+                          onChange={(e) => updatePricing('pb', parseFloat(e.target.value))}
+                          className="bg-transparent text-lg font-black text-slate-900 dark:text-white focus:outline-none w-full"
+                        />
+                      </div>
+                    </div>
+                    <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl">
+                      <span className="text-[10px] font-black uppercase text-slate-500 block mb-2">Página Color</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg font-black text-slate-900 dark:text-white">R$</span>
+                        <input
+                          type="number" step="0.01"
+                          value={currentStation?.prices?.color ?? 0}
+                          onChange={(e) => updatePricing('color', parseFloat(e.target.value))}
+                          className="bg-transparent text-lg font-black text-slate-900 dark:text-white focus:outline-none w-full"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-2xl">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 group-hover:text-emerald-500 transition-colors">
-                      <CheckCircle2 size={16} />
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-[11px] font-black text-slate-800 truncate max-w-[100px]">{req.fileName}</span>
-                      <span className="text-[9px] font-bold text-slate-400">{new Date(req.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                    </div>
+                    <Clock size={20} />
+                    <span className="text-xs font-bold uppercase tracking-widest">Horário de Pico Estimado</span>
                   </div>
-                  <span className="text-[11px] font-black text-slate-900">R$ {req.totalPrice.toFixed(2)}</span>
+                  <span className="text-xs font-black">12:00 - 15:00</span>
                 </div>
-              ))}
-              {requests.filter(r => r.status === 'ready').length === 0 && (
-                <div className="h-full flex flex-col items-center justify-center opacity-30 italic text-[10px]">
-                  Nenhuma transação concluída hoje.
-                </div>
-              )}
-            </div>
 
-            <button className="mt-4 w-full text-center text-[9px] font-black text-slate-400 uppercase tracking-widest hover:text-[#006c55] transition-colors">Ver Relatório Completo</button>
-          </div>
-
-        </div>
-
-        {/* Painel de Configurações (Microserviço Sync) */}
-        {showSettings && (
-          <div className="xl:col-span-3 animate-in slide-in-from-right duration-500">
-            <div className="bg-white/80 backdrop-blur-3xl rounded-[32px] border border-white p-8 shadow-2xl space-y-8 sticky top-24">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
-                  <Settings2 size={18} className="text-[#006c55]" />
-                  Painel de Gestão
-                </h3>
-                <button onClick={() => setShowSettings(false)} className="text-slate-400 hover:text-slate-900"><X size={20} /></button>
-              </div>
-
-              {/* Toggle Aberto/Fechado */}
-              <div className="p-6 rounded-[24px] bg-slate-900 text-white relative overflow-hidden group">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-[#006c55]/20 blur-3xl -z-10"></div>
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 font-mono">Status da Loja</span>
-                  <div className={`w-2 h-2 rounded-full ${currentStation?.isOpen ? 'bg-emerald-500 animate-pulse shadow-[0_0_10px_emerald]' : 'bg-red-500'}`}></div>
-                </div>
                 <button
-                  onClick={toggleShopStatus}
-                  className={`w-full h-12 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${currentStation?.isOpen ? 'bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white' : 'bg-emerald-500 text-white hover:bg-emerald-600'}`}
+                  onClick={() => { localStorage.removeItem('thoth_station_id'); navigate('/printers/login'); }}
+                  className="w-full flex items-center justify-center gap-2 text-xs font-black text-red-500 uppercase tracking-widest py-4 border-2 border-red-500/10 rounded-2xl hover:bg-red-500 hover:text-white transition-all"
                 >
-                  {currentStation?.isOpen ? 'Fechar Gráfica Agora' : 'Abrir Gráfica Agora'}
+                  <LogOut size={16} /> Sair do Terminal
                 </button>
               </div>
-
-              {/* Tabela de Preços */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Zap size={14} className="text-amber-500" />
-                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Tabela de Preços (v1.0)</span>
-                </div>
-                <div className="grid grid-cols-1 gap-3">
-                  <div className="p-4 bg-white border border-slate-100 rounded-2xl flex items-center justify-between group hover:border-[#006c55]/30 transition-all">
-                    <div className="flex flex-col">
-                      <span className="text-[10px] font-black uppercase text-slate-400 tracking-tighter">Página P&B (R$)</span>
-                      <input
-                        type="number" step="0.05"
-                        value={currentStation?.prices.pb || 0}
-                        onChange={(e) => updatePricing('pb', parseFloat(e.target.value))}
-                        className="text-lg font-black text-slate-900 bg-transparent focus:outline-none w-24"
-                      />
-                    </div>
-                    <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-300 group-hover:bg-[#006c55]/10 group-hover:text-[#006c55] transition-all">
-                      <FileText size={14} />
-                    </div>
-                  </div>
-                  <div className="p-4 bg-white border border-slate-100 rounded-2xl flex items-center justify-between group hover:border-[#006c55]/30 transition-all">
-                    <div className="flex flex-col">
-                      <span className="text-[10px] font-black uppercase text-slate-400 tracking-tighter">Página Color (R$)</span>
-                      <input
-                        type="number" step="0.10"
-                        value={currentStation?.prices.color || 0}
-                        onChange={(e) => updatePricing('color', parseFloat(e.target.value))}
-                        className="text-lg font-black text-slate-900 bg-transparent focus:outline-none w-24"
-                      />
-                    </div>
-                    <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-300 group-hover:bg-[#006c55]/10 group-hover:text-[#006c55] transition-all">
-                      <Zap size={14} />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Horário e Descontos */}
-              <div className="space-y-4 pt-4 border-t border-slate-100">
-                <div className="flex items-center justify-between text-[11px] font-bold text-slate-600">
-                  <div className="flex items-center gap-2">
-                    <Calendar size={14} />
-                    <span>Período Ativo</span>
-                  </div>
-                  <span className="text-[#006c55]">{currentStation?.workingHours || '08:00 - 18:00'}</span>
-                </div>
-                <div className="flex items-center justify-between text-[11px] font-bold text-slate-600">
-                  <div className="flex items-center gap-2">
-                    <DollarSign size={14} />
-                    <span>Desconto Ativo</span>
-                  </div>
-                  <span className={currentStation?.discounts.active ? 'text-emerald-500' : 'text-slate-400'}>
-                    {currentStation?.discounts.active ? `${currentStation.discounts.percentage}%` : 'Inativo'}
-                  </span>
-                </div>
-              </div>
-
-              <button className="w-full py-4 bg-slate-100 text-slate-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 transition-all">
-                Histórico de Faturamento
-              </button>
             </div>
           </div>
-        )}
-      </main>
+        )
+      }
 
-      {/* Modal de Validação */}
-      {isVerifyModalOpen && selectedRequest && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/70 backdrop-blur-xl p-4 animate-in fade-in duration-300">
-          <div className="w-full max-w-[400px] bg-white rounded-2xl p-10 shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-500 border border-white">
-            <div className="absolute top-0 right-0 p-6">
-              <button onClick={() => setIsVerifyModalOpen(false)} className="w-10 h-10 bg-slate-50 text-slate-300 hover:text-slate-900 rounded-2xl flex items-center justify-center transition-all border border-slate-100">
+      {
+        isVerifyModalOpen && selectedRequest && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/70 backdrop-blur-xl p-4">
+            <div className="w-full max-w-[400px] bg-white dark:bg-slate-900 rounded-3xl p-10 shadow-2xl relative animate-in zoom-in-95 duration-300">
+              <button onClick={() => setIsVerifyModalOpen(false)} className="absolute top-6 right-6 p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-all">
                 <X size={20} />
               </button>
-            </div>
 
-            <div className="flex flex-col items-center text-center mb-8">
-              <div className="w-20 h-20 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-600 mb-6 shadow-2xl relative">
-                <div className="absolute inset-0 bg-emerald-400/20 rounded-full animate-ping opacity-20"></div>
-                <ShieldCheck size={40} />
-              </div>
-              <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-2">Checkout de Ativo</h2>
-              <p className="text-sm text-slate-500 font-medium">Insira o código de retirada gerado no app.</p>
-            </div>
-
-            <div className="space-y-6">
-              <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-200/60 text-center">
-                <h4 className="text-[15px] font-black text-slate-900 truncate mb-1">{selectedRequest.fileName}</h4>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{selectedRequest.customerName}</p>
+              <div className="flex flex-col items-center text-center mb-8">
+                <div className="w-20 h-20 bg-emerald-100 dark:bg-emerald-900/30 rounded-3xl flex items-center justify-center text-emerald-600 mb-6">
+                  <ShieldCheck size={40} />
+                </div>
+                <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-2 underline decoration-emerald-500 decoration-4">Retirada</h2>
+                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest leading-relaxed">
+                  Solicite o token de 4 dígitos para<br />validar a entrega do material.
+                </p>
               </div>
 
-              <div className="space-y-2 text-center">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Token de 4 Dígitos</label>
-                <input
-                  type="text"
-                  maxLength={4}
-                  value={verifyCode}
-                  onChange={(e) => setVerifyCode(e.target.value.replace(/\D/g, ''))}
-                  placeholder="0000"
-                  className="w-full h-20 bg-slate-50 border-2 border-slate-200 rounded-2xl text-center text-5xl font-black tracking-[0.5em] text-slate-900 focus:outline-none focus:ring-8 focus:ring-[#006c55]/10 focus:border-[#006c55] focus:bg-white transition-all shadow-inner"
-                />
-              </div>
+              <div className="space-y-6">
+                <div className="space-y-2 text-center">
+                  <input
+                    type="text" maxLength={4}
+                    value={verifyCode} onChange={(e) => setVerifyCode(e.target.value.replace(/\D/g, ''))}
+                    placeholder="0000"
+                    className="w-full h-24 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-3xl text-center text-6xl font-black tracking-[0.5em] text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 transition-all"
+                  />
+                </div>
 
-              <button
-                onClick={async () => {
-                  if (verifyCode === selectedRequest.pickupCode) {
-                    try {
-                      await PrintService.deleteRequest(selectedRequest.id);
-                      setIsVerifyModalOpen(false);
-                      setVerifyCode('');
-                      alert("Autenticação bem-sucedida. Ordem entregue.");
-                    } catch (error) {
-                      console.error("Erro ao finalizar pedido:", error);
+                <button
+                  onClick={async () => {
+                    if (verifyCode === selectedRequest.pickupCode) {
+                      try {
+                        await PrintService.toggleArchive(selectedRequest.id, true);
+                        setIsVerifyModalOpen(false);
+                        setVerifyCode('');
+                        alert("Entrega confirmada com sucesso!");
+                      } catch (e) {
+                        console.error(e);
+                      }
+                    } else {
+                      alert("Token inválido.");
                     }
-                  } else {
-                    alert("Token inválido. Verifique no terminal do aluno.");
-                  }
-                }}
-                className="w-full h-16 bg-[#006c55] hover:bg-[#005a46] text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-[#006c55]/20 transition-all active:scale-95 flex items-center justify-center gap-2"
-              >
-                Confirmar Entrega
-              </button>
+                  }}
+                  className="w-full h-16 bg-emerald-500 text-white rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 transition-all active:scale-95"
+                >
+                  Validar e Entregar
+                </button>
+              </div>
             </div>
           </div>
+        )
+      }
+      <div className="fixed bottom-0 left-0 right-0 h-10 bg-slate-950 border-t border-slate-800 z-50 flex items-center overflow-hidden">
+        <div className="flex items-center gap-12 animate-ticker whitespace-nowrap min-w-full pl-6">
+          <div className="flex items-center gap-4 text-emerald-500">
+            <span className="text-xs font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded">+12%</span>
+            <span className="text-sm font-black">R$ {stats.dailyRevenue.toFixed(2)}</span>
+            <span className="text-[10px] uppercase tracking-widest text-slate-400">Receita Hoje</span>
+          </div>
+
+          <div className="flex items-center gap-4 text-blue-500">
+            <span className="text-xs font-bold bg-blue-500/10 px-1.5 py-0.5 rounded">+8%</span>
+            <span className="text-sm font-black">R$ {stats.monthlyRevenue.toFixed(2)}</span>
+            <span className="text-[10px] uppercase tracking-widest text-slate-400">Receita Mensal</span>
+          </div>
+
+          <div className="flex items-center gap-4 text-amber-500">
+            <span className="text-xs font-bold bg-amber-500/10 px-1.5 py-0.5 rounded">{stats.pendingJobs}</span>
+            <span className="text-sm font-black">{stats.pendingJobs}</span>
+            <span className="text-[10px] uppercase tracking-widest text-slate-400">Pendentes</span>
+          </div>
+
+          <div className="flex items-center gap-4 text-purple-500">
+            <span className="text-xs font-bold bg-purple-500/10 px-1.5 py-0.5 rounded">{stats.completedToday}</span>
+            <span className="text-sm font-black">{stats.completedToday}</span>
+            <span className="text-[10px] uppercase tracking-widest text-slate-400">Concluídos Hoje</span>
+          </div>
+
+          {/* Duplicate for seamless infinite scroll */}
+          <div className="flex items-center gap-4 text-emerald-500">
+            <span className="text-xs font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded">+12%</span>
+            <span className="text-sm font-black">R$ {stats.dailyRevenue.toFixed(2)}</span>
+            <span className="text-[10px] uppercase tracking-widest text-slate-400">Receita Hoje</span>
+          </div>
+
+          <div className="flex items-center gap-4 text-blue-500">
+            <span className="text-xs font-bold bg-blue-500/10 px-1.5 py-0.5 rounded">+8%</span>
+            <span className="text-sm font-black">R$ {stats.monthlyRevenue.toFixed(2)}</span>
+            <span className="text-[10px] uppercase tracking-widest text-slate-400">Receita Mensal</span>
+          </div>
+
+          <div className="flex items-center gap-4 text-amber-500">
+            <span className="text-xs font-bold bg-amber-500/10 px-1.5 py-0.5 rounded">{stats.pendingJobs}</span>
+            <span className="text-sm font-black">{stats.pendingJobs}</span>
+            <span className="text-[10px] uppercase tracking-widest text-slate-400">Pendentes</span>
+          </div>
         </div>
-      )}
+      </div>
 
       <style>{`
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
-        @keyframes loading {
-          0% { transform: translateX(-100%); }
-          100% { transform: translateX(100%); }
+        @keyframes ticker {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        .animate-ticker {
+          animation: ticker 30s linear infinite;
+        }
+        .animate-ticker:hover {
+          animation-play-state: paused;
         }
       `}</style>
-    </div>
+    </div >
   );
 };
 
