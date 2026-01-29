@@ -5,7 +5,7 @@ import { LifeBuoy, MessageSquare, Book, ShieldQuestion } from 'lucide-react';
 const Support: React.FC = () => {
   return (
     <div className="flex flex-col gap-[30px] mt-0 animate-in fade-in duration-500">
-      <div className="thoth-page-header">
+      <div className="thoth-page-header hidden lg:block">
         <h1 className="text-[28px] md:text-[32px] font-black text-slate-900 tracking-tight leading-tight">
           Suporte Thoth
         </h1>

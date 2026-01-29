@@ -38,6 +38,7 @@ const Mensagens = lazy(() => import('./pages/Mensagens/Mensagens'));
 const Notificacoes = lazy(() => import('./pages/Notificacoes/Notificacoes'));
 const Onboarding = lazy(() => import('./pages/Auth/Onboarding'));
 const AdminPortal = lazy(() => import('./pages/Admin/AdminPortal'));
+const Calendario = lazy(() => import('./pages/Calendario/Calendario'));
 
 const MainLayout: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -76,7 +77,7 @@ const MainLayout: React.FC = () => {
             main { padding-top: 24px !important; }
           }
         `}</style>
-        <div className="w-full px-4 md:px-6 lg:px-0 lg:w-[1005px] flex flex-col box-border pb-12">
+        <div className="w-full px-4 md:px-6 lg:px-0 lg:w-[1005px] flex flex-col box-border">
           <UtilityHeader />
           <Suspense fallback={<AppLoadingPage />}>
             <Outlet />
@@ -166,6 +167,7 @@ const AppRoutes: React.FC = () => {
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/configuracoes" element={<Settings />} />
             <Route path="/suporte" element={<Support />} />
+            <Route path="/calendario" element={<Calendario />} />
           </Route>
           <Route path="*" element={<Navigate to="/home" replace />} />
         </Routes>

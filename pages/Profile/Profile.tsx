@@ -152,22 +152,22 @@ const Profile: React.FC = () => {
 
   if (profileNotFound) return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 animate-in fade-in">
-      <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center text-slate-400">
+      <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-400 dark:text-slate-500">
         <User size={40} />
       </div>
       <div className="text-center">
-        <h3 className="text-lg font-black text-slate-900 uppercase tracking-tighter">Perfil não encontrado</h3>
-        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">O link pode estar quebrado ou o usuário não existe.</p>
+        <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tighter">Perfil não encontrado</h3>
+        <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">O link pode estar quebrado ou o usuário não existe.</p>
       </div>
     </div>
   );
 
   if (loading) return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 animate-pulse">
-      <div className="w-20 h-20 bg-slate-100 rounded-full border-4 border-[#006c55]/20 border-t-[#006c55] animate-spin" />
+      <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full border-4 border-[#006c55]/20 border-t-[#006c55] animate-spin" />
       <div className="text-center">
-        <h3 className="text-lg font-black text-slate-900 uppercase tracking-tighter">Preparando Portfólio</h3>
-        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Sincronizando com a Rede Thoth</p>
+        <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tighter">Preparando Portfólio</h3>
+        <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Sincronizando com a Rede Thoth</p>
       </div>
     </div>
   );
@@ -175,8 +175,8 @@ const Profile: React.FC = () => {
   return (
     <div className="flex flex-col gap-[30px] mt-0 animate-in fade-in duration-500 w-full">
 
-      {/* Header Actions */}
-      <div className="flex justify-end gap-2">
+      {/* Header Actions - Hidden on mobile */}
+      <div className="hidden lg:flex justify-end gap-2">
         {isOwner ? (
           <button
             onClick={() => setIsEditing(true)}
@@ -189,11 +189,11 @@ const Profile: React.FC = () => {
             Conectar
           </button>
         )}
-        <button className="p-2 bg-white text-slate-600 rounded-xl hover:bg-slate-50 transition-all border border-slate-100 shadow-sm">
+        <button className="p-2 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-all border border-slate-100 dark:border-white/5 shadow-sm">
           <Share2 size={18} />
         </button>
         {isOwner && (
-          <button className="p-2 bg-white text-slate-600 rounded-xl hover:bg-slate-50 transition-all border border-slate-100 shadow-sm">
+          <button className="p-2 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-all border border-slate-100 dark:border-white/5 shadow-sm">
             <Settings size={18} />
           </button>
         )}
@@ -245,7 +245,7 @@ const Profile: React.FC = () => {
           <div className="space-y-6 animate-in slide-in-from-bottom-4">
             <div className="liquid-glass p-8 rounded-[24px] shadow-2xl">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-black text-slate-900">Sobre</h2>
+                <h2 className="text-xl font-black text-slate-900 dark:text-white">Sobre</h2>
               </div>
               {profileData.bio ? (
                 <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">{profileData.bio}</p>
@@ -253,7 +253,7 @@ const Profile: React.FC = () => {
                 <p className="text-sm text-slate-400 italic">Nenhuma descrição fornecida.</p>
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8 pt-8 border-t border-slate-50">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8 pt-8 border-t border-slate-50 dark:border-white/5">
                 <div className="flex items-center gap-3 text-slate-600">
                   <GraduationCap className="text-[#006c55]" size={20} />
                   <div>
@@ -272,7 +272,7 @@ const Profile: React.FC = () => {
             </div>
 
             <div className="liquid-glass p-8 rounded-[24px] shadow-2xl">
-              <h2 className="text-xl font-black text-slate-900 mb-6">Trajetória</h2>
+              <h2 className="text-xl font-black text-slate-900 dark:text-white mb-6">Trajetória</h2>
               <div className="space-y-8">
                 {profileData.trajectory && profileData.trajectory.length > 0 ? (
                   profileData.trajectory.map((item: any, idx: number) => (
@@ -301,21 +301,21 @@ const Profile: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {projects.length > 0 ? projects.map(project => (
                 <div key={project.id} className="liquid-glass rounded-[24px] overflow-hidden shadow-sm hover:shadow-2xl transition-all group">
-                  <div className="h-40 bg-slate-100 relative overflow-hidden">
+                  <div className="h-40 bg-slate-100 dark:bg-slate-800 relative overflow-hidden">
                     <img src={project.coverImage || "https://images.unsplash.com/photo-1551650975-87deedd944c3"} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Cover" />
                   </div>
                   <div className="p-5">
-                    <h3 className="text-base font-black text-slate-900 mb-2 truncate">{project.title}</h3>
-                    <p className="text-xs text-slate-500 line-clamp-2 mb-4">{project.description}</p>
+                    <h3 className="text-base font-black text-slate-900 dark:text-white mb-2 truncate">{project.title}</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mb-4">{project.description}</p>
                     <div className="flex items-center gap-2">
-                      <span className="px-2 py-1 bg-slate-50 text-slate-600 rounded-md text-[9px] font-bold uppercase tracking-wider">{project.category || 'Geral'}</span>
+                      <span className="px-2 py-1 bg-slate-50 dark:bg-slate-800/40 text-slate-600 dark:text-slate-400 rounded-md text-[9px] font-bold uppercase tracking-wider">{project.category || 'Geral'}</span>
                     </div>
                   </div>
                 </div>
               )) : (
                 <div className="col-span-full p-8 text-center liquid-glass rounded-[24px]">
-                  <Briefcase className="w-8 h-8 text-slate-300 mx-auto mb-3" />
-                  <p className="text-sm text-slate-500">Nenhum projeto publicado ainda.</p>
+                  <Briefcase className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Nenhum projeto publicado ainda.</p>
                 </div>
               )}
             </div>

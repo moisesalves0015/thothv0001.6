@@ -264,12 +264,12 @@ const SidebarFeed: React.FC<SidebarConfig> = ({ title = "Feed do Conhecimento", 
             <div className="flex-shrink-0 w-4"></div>
           </>
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 px-6">
-            <div className="w-16 h-16 mb-4 rounded-2xl bg-slate-100 flex items-center justify-center">
-              <BookOpen size={24} className="opacity-30" />
+          <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-6">
+            <div className="w-16 h-16 mb-4 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+              <BookOpen size={24} className="opacity-30 dark:text-slate-400" />
             </div>
-            <p className="text-sm font-medium mb-1">Nenhuma publicação encontrada</p>
-            <p className="text-xs opacity-70 text-center max-w-sm">
+            <p className="text-sm font-medium mb-1 text-slate-900 dark:text-white">Nenhuma publicação encontrada</p>
+            <p className="text-xs opacity-70 text-center max-w-sm dark:text-slate-400">
               {activeFilter === 'all'
                 ? "O feed está vazio. Seja o primeiro a compartilhar conhecimento!"
                 : `Nenhum post do tipo "${getActiveFilterLabel().toLowerCase()}" encontrado.`}

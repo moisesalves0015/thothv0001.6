@@ -11,7 +11,8 @@ import {
     ChevronLeft,
     ChevronRight,
     Printer,
-    GraduationCap
+    GraduationCap,
+    MessageCircle
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { PrinterService } from '../../modules/print/printer.service';
@@ -46,6 +47,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
 
     const menuItems = [
         { icon: LayoutDashboard, label: 'Página Inicial', path: '/home' },
+        { icon: MessageCircle, label: 'Mensagens', path: '/mensagens' },
         { icon: GraduationCap, label: 'Estudos', path: '/estudos' },
         { icon: BookOpen, label: 'Disciplinas', path: '/disciplinas' },
         { icon: Users, label: 'Conexões', path: '/conexoes' },
@@ -58,7 +60,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
         <aside className={`sidebar ${isCollapsed ? 'collapsed' : ''} hidden lg:flex`}>
             {/* Cabeçalho do Sidebar */}
             <div className="sidebar-header">
-                {!isCollapsed && <div className="sidebar-logo">thoth</div>}
+                {!isCollapsed && (
+                    <button
+                        onClick={() => navigate('/home')}
+                        className="sidebar-logo hover:opacity-70 transition-opacity active:scale-95"
+                    >
+                        thoth
+                    </button>
+                )}
                 <button
                     className="sidebar-toggle"
                     onClick={() => setIsCollapsed(!isCollapsed)}

@@ -5,7 +5,7 @@ import { BookOpen, Sparkles } from 'lucide-react';
 const Disciplinas: React.FC = () => {
   return (
     <div className="flex flex-col gap-[30px] mt-0 animate-in fade-in duration-500">
-      <div className="thoth-page-header">
+      <div className="thoth-page-header hidden lg:block">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-[28px] md:text-[32px] font-black text-slate-900 tracking-tight leading-tight">

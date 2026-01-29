@@ -10,12 +10,12 @@ interface StatsHeaderProps {
 const StatsHeader: React.FC<StatsHeaderProps> = ({ connectionCount, pendingCount, sentCount = 0 }) => {
     return (
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-slate-200/60 pb-6">
-            <div>
-                <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+            <div className="hidden lg:block">
+                <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
                     <Users className="text-[#006c55]" size={32} />
                     Networking
                 </h1>
-                <p className="text-slate-500 font-medium mt-2 max-w-lg leading-relaxed">
+                <p className="text-slate-500 dark:text-slate-400 font-medium mt-2 max-w-lg leading-relaxed">
                     Expanda sua rede profissional da ufersa.
                     Conecte-se com alunos, professores e pesqusiadores.
                 </p>

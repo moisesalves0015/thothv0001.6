@@ -59,7 +59,7 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({ activeTab, setActiveTab, stat
                                     absolute top-2 right-2 px-1.5 py-0.5 rounded-md text-[10px] font-bold transition-colors
                                     ${isActive
                                         ? 'bg-white/20 text-[#006c55] dark:text-emerald-400'
-                                        : 'bg-slate-100/80 text-slate-400 dark:text-slate-500 group-hover:bg-[#006c55]/10 group-hover:text-[#006c55] dark:group-hover:text-emerald-400'
+                                        : 'bg-slate-100/80 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 group-hover:bg-[#006c55]/10 group-hover:text-[#006c55] dark:group-hover:text-emerald-400'
                                     }
                                 `}>
                                     {tab.count}

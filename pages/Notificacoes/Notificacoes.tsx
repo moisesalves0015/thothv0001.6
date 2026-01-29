@@ -118,7 +118,7 @@ const Notificacoes: React.FC = () => {
     <div className="flex flex-col gap-6 pb-20 animate-in fade-in duration-500">
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-2">
-        <div className="thoth-page-header">
+        <div className="thoth-page-header hidden lg:block">
           <h1 className="text-[28px] font-black text-slate-900 tracking-tight leading-tight">Notificações</h1>
           <p className="text-slate-500 text-xs uppercase font-bold tracking-widest">Alertas do Sistema</p>
         </div>

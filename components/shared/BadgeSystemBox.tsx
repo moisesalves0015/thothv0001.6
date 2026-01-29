@@ -61,7 +61,7 @@ const BadgeSystemBox: React.FC = () => {
           {/* Red Line Divider for Mobile */}
           {isMobile && (
             <div className="absolute left-0 w-full h-[2px] bg-red-500/20 z-0 pointer-events-none flex items-center justify-center" style={{ top: `${tileSize * 8}px` }}>
-              <span className="bg-red-50 text-[8px] font-black text-red-400 px-2 uppercase tracking-widest">Limite de Quadro</span>
+              <span className="bg-red-50 dark:bg-red-900/40 text-[8px] font-black text-red-400 px-2 uppercase tracking-widest">Limite de Quadro</span>
             </div>
           )}
 
@@ -93,7 +93,7 @@ const BadgeSystemBox: React.FC = () => {
                   padding: '0px'
                 }}
               >
-                <div className={`w-full h-full relative overflow-hidden rounded-sm bg-white ${isDragging ? 'shadow-none' : 'shadow-none'}`}>
+                <div className={`w-full h-full relative overflow-hidden rounded-sm bg-white dark:bg-slate-800 ${isDragging ? 'shadow-none' : 'shadow-none'}`}>
                   <img
                     src={slot.badge.imageUrl}
                     className="w-full h-full object-cover pointer-events-none select-none"

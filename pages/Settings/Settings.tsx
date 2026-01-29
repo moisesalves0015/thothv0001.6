@@ -63,7 +63,7 @@ const Settings: React.FC = () => {
 
   return (
     <div className="flex flex-col gap-6 pb-20 animate-in fade-in duration-500">
-      <div className="thoth-page-header">
+      <div className="thoth-page-header hidden lg:block">
         <h1 className="text-[28px] font-black text-slate-900 dark:text-white tracking-tight leading-tight uppercase">Configurações</h1>
         <p className="text-slate-500 text-xs uppercase font-bold tracking-widest">Painel de Controle e Preferências</p>
       </div>

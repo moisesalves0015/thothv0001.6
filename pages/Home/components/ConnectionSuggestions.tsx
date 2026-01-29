@@ -58,15 +58,15 @@ const ConnectionSuggestions: React.FC = () => {
           <div className="flex items-center justify-between">
             <div className="h-7 w-48 bg-slate-200 rounded animate-pulse"></div>
             <div className="flex gap-2">
-              <div className="w-9 h-9 bg-slate-200 rounded-lg animate-pulse"></div>
-              <div className="w-9 h-9 bg-slate-200 rounded-lg animate-pulse"></div>
+              <div className="w-9 h-9 bg-slate-200 dark:bg-slate-700 rounded-lg animate-pulse"></div>
+              <div className="w-9 h-9 bg-slate-200 dark:bg-slate-700 rounded-lg animate-pulse"></div>
             </div>
           </div>
           <div className="h-4 w-32 bg-slate-200 rounded mt-2 animate-pulse"></div>
         </div>
         <div className="flex gap-3 px-6">
           {[1, 2, 3].map(i => (
-            <div key={i} className="w-[190px] h-[260px] bg-slate-100 rounded-2xl animate-pulse"></div>
+            <div key={i} className="w-[190px] h-[260px] bg-slate-100 dark:bg-slate-800/40 rounded-2xl animate-pulse"></div>
           ))}
         </div>
       </div>
@@ -209,8 +209,8 @@ const ConnectionSuggestions: React.FC = () => {
       >
         {filteredSuggestions.length === 0 ? (
           <div className="w-full h-full flex flex-col items-center justify-center text-center px-6">
-            <div className="w-16 h-16 mb-4 rounded-2xl bg-slate-100 flex items-center justify-center">
-              <Users size={24} className="text-slate-300" />
+            <div className="w-16 h-16 mb-4 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+              <Users size={24} className="text-slate-300 dark:text-slate-600" />
             </div>
             <p className="text-sm font-medium text-slate-900 mb-1">
               {searchQuery ? 'Nenhum resultado encontrado' : 'Nenhuma sugestão disponível'}

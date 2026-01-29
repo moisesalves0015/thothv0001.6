@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
   User,
   Settings,
@@ -98,6 +98,7 @@ const Topbar = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const avatarAtual = user?.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.displayName || 'Thoth'}`;
 
@@ -116,6 +117,7 @@ const Topbar = () => {
 
   const mobileMenuItems = [
     { icon: LayoutDashboard, label: 'Página Inicial', path: '/home' },
+    { icon: MessageCircle, label: 'Mensagens', path: '/mensagens' },
     { icon: GraduationCap, label: 'Estudos', path: '/estudos' },
     { icon: BookOpen, label: 'Disciplinas', path: '/disciplinas' },
     { icon: Users, label: 'Conexões', path: '/conexoes' },
@@ -187,7 +189,22 @@ const Topbar = () => {
             )}
           </button>
 
-          <div className="font-black text-[#006c55] dark:text-emerald-400 text-[24px] tracking-tighter">thoth</div>
+          <button
+            onClick={() => navigate('/home')}
+            className="flex flex-col items-center justify-center group active:scale-95 transition-all"
+          >
+            <div className="font-black text-[#006c55] dark:text-emerald-400 text-[24px] tracking-tighter leading-none">thoth</div>
+            {location.pathname !== '/home' && (
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-white/40 mt-0.5 animate-in slide-in-from-top-1 duration-300">
+                {mobileMenuItems.find(item => location.pathname.startsWith(item.path))?.label ||
+                  (location.pathname === '/' ? 'Login' :
+                    location.pathname.includes('/perfil') ? 'Perfil' :
+                      location.pathname.includes('/configuracoes') ? 'Configurações' :
+                        location.pathname.includes('/notificacoes') ? 'Notificações' :
+                          location.pathname.includes('/calendario') ? 'Calendário' : '')}
+              </span>
+            )}
+          </button>
 
           <div className="relative" ref={dropdownRef}>
             <div

@@ -75,14 +75,14 @@ const SearchPage: React.FC = () => {
         <div className="flex flex-col gap-6 animate-in fade-in duration-500">
             {/* Header / Context */}
             <div className="glass-panel p-6 rounded-2xl flex flex-col gap-4">
-                <div className="flex items-center gap-3 mb-2">
+                <div className="hidden lg:flex items-center gap-3 mb-2">
                     <div className="w-10 h-10 rounded-full bg-[#006c55]/10 flex items-center justify-center text-[#006c55]">
                         <SearchIcon size={20} />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-none">Resultados</h1>
-                        <p className="text-sm text-slate-500 font-medium">
-                            Exibindo resultados para <span className="text-slate-900 font-bold">"{query}"</span>
+                        <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight leading-none">Resultados</h1>
+                        <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">
+                            Exibindo resultados para <span className="text-slate-900 dark:text-slate-200 font-bold">"{query}"</span>
                         </p>
                     </div>
                 </div>

@@ -424,11 +424,11 @@ const RemindersBox: React.FC = () => {
           </div>
         ) : filteredReminders.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center py-20 opacity-40 text-center animate-in fade-in">
-            <div className="w-16 h-16 bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-2xl flex items-center justify-center mb-6">
-              <Check size={32} className="text-emerald-500" />
+            <div className="w-16 h-16 bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/40 rounded-2xl flex items-center justify-center mb-6">
+              <Check size={32} className="text-emerald-500 dark:text-emerald-400" />
             </div>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Tudo em dia!</p>
-            <p className="text-[9px] text-slate-400 mt-2 max-w-[180px]">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Tudo em dia!</p>
+            <p className="text-[9px] text-slate-400 dark:text-slate-500 mt-2 max-w-[180px]">
               {activeFilter === 'all'
                 ? 'Nenhum lembrete criado ainda'
                 : `Nenhum lembrete do tipo ${typeFilters.find(f => f.id === activeFilter)?.label.toLowerCase()}`}
@@ -554,8 +554,8 @@ const RemindersBox: React.FC = () => {
                       type="button"
                       onClick={() => setNewType(filter.id as any)}
                       className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all ${isActive
-                        ? `${filter.bg} border-2 ${filter.color.replace('text-', 'border-')} font-bold`
-                        : 'bg-white border-slate-100 hover:bg-slate-50'
+                        ? `${filter.bg} dark:bg-emerald-950/30 border-2 ${filter.color.replace('text-', 'border-')} font-bold`
+                        : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
                         }`}
                     >
                       <Icon size={16} className={isActive ? filter.color : 'text-slate-400'} />

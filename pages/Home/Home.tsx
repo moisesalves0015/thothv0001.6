@@ -51,7 +51,7 @@ const Home: React.FC = () => {
 
   return (
     <div className="flex flex-col gap-[20px] mt-0 animate-in fade-in duration-500">
-      <div className="thoth-page-header flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="thoth-page-header hidden lg:flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-[28px] md:text-[32px] font-black text-slate-900 dark:text-white tracking-tight leading-tight">
             Bem-vindo, {firstName}

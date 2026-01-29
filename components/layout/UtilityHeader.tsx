@@ -1,11 +1,12 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import {
   Search,
   MessageCircle,
   Bell,
   ChevronLeft,
+  Calendar as CalendarIcon,
   User as UserIcon,
   Settings,
   LifeBuoy,
@@ -28,6 +29,7 @@ const UtilityHeader: React.FC = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
 
   // Sincronizar campo de busca com a URL
@@ -85,7 +87,7 @@ const UtilityHeader: React.FC = () => {
   };
 
   return (
-    <header className="flex items-center justify-between w-full h-[64px] mb-4 bg-transparent gap-2 md:gap-4 box-border relative utility-header-transparent">
+    <header className="flex items-center justify-between w-full h-[52px] md:h-[64px] mb-2 md:mb-4 bg-transparent gap-2 md:gap-4 box-border relative utility-header-transparent">
       <style>{`
         @keyframes badge-pulse {
           0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.4); }
@@ -101,12 +103,22 @@ const UtilityHeader: React.FC = () => {
         .animate-badge-amber { animation: badge-pulse-amber 2s infinite; }
       `}</style>
       <div className="flex items-center flex-shrink-0">
-        <button
-          onClick={() => window.history.back()}
-          className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full liquid-glass text-slate-700 dark:text-slate-300 hover:bg-[#006c55] hover:text-white dark:hover:bg-[#006c55] dark:hover:text-white transition-all active:scale-90"
-        >
-          <ChevronLeft size={20} />
-        </button>
+        {location.pathname !== '/home' && location.pathname !== '/' ? (
+          <button
+            onClick={() => window.history.back()}
+            className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full liquid-glass text-slate-700 dark:text-slate-300 hover:bg-[#006c55] hover:text-white dark:hover:bg-[#006c55] dark:hover:text-white transition-all active:scale-90"
+          >
+            <ChevronLeft size={20} />
+          </button>
+        ) : (
+          <button
+            onClick={() => navigate('/calendario')}
+            className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full liquid-glass text-slate-700 dark:text-slate-300 hover:bg-[#006c55] hover:text-white dark:hover:bg-[#006c55] dark:hover:text-white transition-all active:scale-90 shadow-sm border border-white/40 dark:border-white/5"
+            title="Super Calendário"
+          >
+            <CalendarIcon size={20} />
+          </button>
+        )}
       </div>
 
       <div className="flex-1 h-10 md:h-12 relative min-w-0">
@@ -133,7 +145,7 @@ const UtilityHeader: React.FC = () => {
       <div className="flex items-center gap-1.5 md:gap-3 flex-shrink-0">
         <button
           onClick={() => navigate('/mensagens')}
-          className="relative w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full liquid-glass text-slate-700 dark:text-slate-300 hover:bg-[#006c55] hover:text-white transition-all active:scale-90 group"
+          className={`relative w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full transition-all active:scale-90 group ${location.pathname === '/mensagens' ? 'bg-[#006c55] text-white' : 'liquid-glass text-slate-700 dark:text-slate-300 hover:bg-[#006c55] hover:text-white'}`}
         >
           <MessageCircle size={18} />
           {messagesCount > 0 && (

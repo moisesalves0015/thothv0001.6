@@ -97,13 +97,23 @@ export class ChatService {
 
         if (existingReactionIndex >= 0) {
             const reaction = newReactions[existingReactionIndex];
-            if (!reaction.userIds.includes(userId)) {
+            if (reaction.userIds.includes(userId)) {
+                // Toggle off: remove user from this emoji
+                const newUserIds = reaction.userIds.filter(id => id !== userId);
+                if (newUserIds.length === 0) {
+                    newReactions.splice(existingReactionIndex, 1);
+                } else {
+                    newReactions[existingReactionIndex] = { ...reaction, userIds: newUserIds };
+                }
+            } else {
+                // Toggle on: add user to existing emoji
                 newReactions[existingReactionIndex] = {
                     ...reaction,
                     userIds: [...reaction.userIds, userId]
                 };
             }
         } else {
+            // Add new emoji reaction
             newReactions.push({ emoji, userIds: [userId] });
         }
 
@@ -171,7 +181,8 @@ export class ChatService {
 
                             if (userProfile) {
                                 finalName = userProfile.name;
-                                finalAvatar = userProfile.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${userProfile.name}`;
+                                // Prioritize photoURL if it exists in the user document
+                                finalAvatar = (userProfile as any).photoURL || userProfile.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${userProfile.name}`;
                             }
                         } catch (e) {
                             console.error("Error fetching peer profile", e);
