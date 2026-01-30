@@ -24,6 +24,7 @@ const SubjectDetail = lazy(() => import('./pages/Disciplinas/SubjectDetail'));
 const Conexoes = lazy(() => import('./pages/Conexoes/Conexoes'));
 const SearchPage = lazy(() => import('./pages/Search/SearchPage'));
 const Eventos = lazy(() => import('./pages/Eventos/Eventos'));
+const EventDetail = lazy(() => import('./pages/Eventos/EventDetail'));
 const Pesquisas = lazy(() => import('./pages/Pesquisas/Pesquisas'));
 const Vagas = lazy(() => import('./pages/Vagas/Vagas'));
 const Login = lazy(() => import('./pages/Auth/Login'));
@@ -155,6 +156,7 @@ const AppRoutes: React.FC = () => {
             <Route path="/explorar" element={<SearchPage />} />
             <Route path="/conexoes" element={<Conexoes />} />
             <Route path="/eventos" element={<Eventos />} />
+            <Route path="/eventos/:id" element={<EventDetail />} />
             <Route path="/pesquisas" element={<Pesquisas />} />
             <Route path="/vagas" element={<Vagas />} />
             <Route path="/badges/create" element={<BadgeCreator />} />

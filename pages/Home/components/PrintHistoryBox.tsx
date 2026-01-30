@@ -1,7 +1,8 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { PrintService } from '../../../modules/print/print.service';
-import { PrintRequest } from '../../../types';
+import { PrintChatService } from '../../../modules/print/print-chat.service';
+import { PrintRequest, PrintRequestMessage } from '../../../types';
 import {
   Printer,
   Clock,
@@ -22,7 +23,9 @@ import {
   Calculator,
   Info,
   MapPin,
-  Upload
+  Upload,
+  MessageCircle,
+  Send
 } from 'lucide-react';
 import { PrinterService, PrinterStation } from '../../../modules/print/printer.service';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -141,6 +144,14 @@ const PrintHistoryBox: React.FC = () => {
   const [newPaymentMethod, setNewPaymentMethod] = useState<'paid' | 'on_pickup'>('paid');
   const [newPriority, setNewPriority] = useState<'normal' | 'urgent'>('normal');
 
+  // Chat states
+  const [chatRequest, setChatRequest] = useState<PrintRequest | null>(null);
+  const [chatMessages, setChatMessages] = useState<PrintRequestMessage[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
+  const [stationQueues, setStationQueues] = useState<Record<string, PrintRequest[]>>({});
+  const chatMessagesEndRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (!user) return;
     const unsubOrders = PrintService.subscribeToUserRequests(user.uid, setRequests);
@@ -151,9 +162,96 @@ const PrintHistoryBox: React.FC = () => {
     };
   }, [user]);
 
+  // Subscribe to chat messages when chat is open
+  useEffect(() => {
+    if (!chatRequest) return;
+    const unsubMessages = PrintChatService.subscribeToMessages(chatRequest.id, setChatMessages);
+    return () => unsubMessages();
+  }, [chatRequest]);
+
+  // Subscribe to unread counts for all requests
+  useEffect(() => {
+    if (!user || requests.length === 0) return;
+    const unsubscribers = requests.map(req =>
+      PrintChatService.subscribeToUnreadCount(req.id, user.uid, (count) => {
+        setUnreadCounts(prev => ({ ...prev, [req.id]: count }));
+      })
+    );
+    return () => unsubscribers.forEach(unsub => unsub());
+  }, [user, requests]);
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    chatMessagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatMessages]);
+
+  // Subscribe to all pending requests for each station (to calculate queue positions)
+  useEffect(() => {
+    if (requests.length === 0) return;
+
+    // Get unique station IDs from user's requests
+    const stationIds = [...new Set(requests.map(r => r.stationId).filter((id): id is string => !!id))];
+    console.log('[PrintHistoryBox] Subscribing to station queues:', stationIds);
+
+    const unsubscribers = stationIds.map((stationId: string) =>
+      PrintService.subscribeToStationPendingRequests(stationId, (stationRequests) => {
+        console.log(`[PrintHistoryBox] Station ${stationId} queue updated:`, stationRequests.length, 'requests');
+        console.log(`[PrintHistoryBox] Queue details:`, stationRequests.map(r => ({
+          id: r.id,
+          customerId: r.customerId,
+          customerName: r.customerName,
+          fileName: r.fileName,
+          status: r.status,
+          archived: r.archived,
+          timestamp: r.timestamp,
+          date: new Date(r.timestamp).toLocaleString('pt-BR')
+        })));
+        setStationQueues(prev => ({ ...prev, [stationId]: stationRequests }));
+      })
+    );
+
+    return () => unsubscribers.forEach(unsub => unsub());
+  }, [requests]);
+
   const selectedStation = useMemo(() =>
     stations.find(s => s.stationId === selectedStationId) || null
     , [stations, selectedStationId]);
+
+  const getQueuePosition = (req: PrintRequest): number => {
+    if (req.status !== 'pending') return 0;
+
+    // Use the global station queue if available
+    const queueData = stationQueues[req.stationId];
+
+    console.log(`[PrintHistoryBox] getQueuePosition called for ${req.id}:`, {
+      stationId: req.stationId,
+      hasQueueData: !!queueData,
+      queueDataLength: queueData?.length,
+      stationQueuesKeys: Object.keys(stationQueues)
+    });
+
+    if (!queueData) {
+      console.warn(`[PrintHistoryBox] No queue data for station ${req.stationId}, using fallback`);
+      // Fallback: calculate based on user's own requests
+      const fallbackPosition = PrintService.calculateQueuePosition(requests, req);
+      console.log(`[PrintHistoryBox] Fallback position for ${req.id}:`, fallbackPosition);
+      return fallbackPosition;
+    }
+
+    const position = PrintService.calculateQueuePosition(queueData, req);
+    console.log(`[PrintHistoryBox] Queue position for ${req.id}:`, position, 'out of', queueData.length);
+    return position;
+  };
+
+  const handleSendMessage = async () => {
+    if (!chatInput.trim() || !chatRequest) return;
+    try {
+      await PrintChatService.sendMessage(chatRequest.id, chatInput, 'customer');
+      setChatInput('');
+    } catch (error) {
+      console.error('Erro ao enviar mensagem:', error);
+    }
+  };
 
   const parsePageCount = (pageStr: string): number => {
     if (pageStr.toLowerCase().trim() === 'todas') return totalDetectedPages;
@@ -322,7 +420,20 @@ const PrintHistoryBox: React.FC = () => {
     }
   };
 
-  const filteredRequests = requests.filter(r => viewTab === 'active' ? !r.archived : r.archived);
+  const filteredRequests = requests
+    .filter(r => viewTab === 'active' ? !r.archived : r.archived)
+    .sort((a, b) => {
+      // Sort pending orders by priority first, then timestamp
+      if (a.status === 'pending' && b.status === 'pending') {
+        // Urgent orders come first
+        if (a.priority === 'urgent' && b.priority !== 'urgent') return -1;
+        if (a.priority !== 'urgent' && b.priority === 'urgent') return 1;
+        // Within same priority, oldest first (1st in queue)
+        return a.timestamp - b.timestamp;
+      }
+      // Keep other statuses in original order (newest first)
+      return b.timestamp - a.timestamp;
+    });
 
   return (
     <div className="w-full lg:w-[315px] h-[437px] lg:h-[350px] liquid-glass rounded-[24px] flex flex-col shadow-lg relative overflow-hidden border border-white/40 dark:border-white/10">
@@ -422,7 +533,7 @@ const PrintHistoryBox: React.FC = () => {
                       {config.icon}
                       {config.text}
                       {req.status === 'pending' && (
-                        <> - {requests.filter(r => !r.archived && r.status === 'pending' && r.timestamp < req.timestamp).length + 1}º</>
+                        <> - {getQueuePosition(req)}º</>
                       )}
                     </div>
 
@@ -440,6 +551,21 @@ const PrintHistoryBox: React.FC = () => {
                   <>
                     <div className="fixed inset-0 z-[40]" onClick={(e) => { e.stopPropagation(); setActiveMenu(null); }} />
                     <div className="absolute right-2 top-10 w-40 bg-white dark:bg-slate-800 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.15)] border border-slate-100 dark:border-slate-700 z-[51] py-1.5 animate-in fade-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setChatRequest(req);
+                          setActiveMenu(null);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-1.5 text-[12px] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors relative"
+                      >
+                        <MessageCircle size={12} /> Chat com Gráfica
+                        {unreadCounts[req.id] > 0 && (
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">
+                            {unreadCounts[req.id]}
+                          </span>
+                        )}
+                      </button>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -761,7 +887,81 @@ const PrintHistoryBox: React.FC = () => {
         )
       }
 
+      {/* Modal de Chat */}
+      {
+        chatRequest && (
+          <div className="absolute inset-0 z-[70] bg-white/95 dark:bg-slate-900/95 backdrop-blur-md p-6 flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex flex-col">
+                <h4 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+                  <MessageCircle size={16} className="text-[#006c55]" />
+                  Chat - {chatRequest.printerName}
+                </h4>
+                <span className="text-[10px] text-slate-400 dark:text-slate-500">Pedido: {chatRequest.fileName}</span>
+              </div>
+              <button
+                onClick={() => setChatRequest(null)}
+                className="text-slate-400 hover:text-slate-900 dark:hover:text-white"
+              >
+                <X size={20} />
+              </button>
+            </div>
 
+            {/* Área de Mensagens */}
+            <div className="flex-1 overflow-y-auto no-scrollbar space-y-3 mb-4 bg-slate-50/50 dark:bg-slate-800/30 rounded-xl p-4">
+              {chatMessages.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center opacity-30">
+                  <MessageCircle size={32} />
+                  <span className="text-[10px] font-black uppercase tracking-widest mt-2">Nenhuma mensagem</span>
+                </div>
+              ) : (
+                chatMessages.map((msg) => {
+                  const isCustomer = msg.senderRole === 'customer';
+                  return (
+                    <div
+                      key={msg.id}
+                      className={`flex ${isCustomer ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div
+                        className={`max-w-[75%] rounded-xl p-3 ${isCustomer
+                          ? 'bg-[#006c55] text-white'
+                          : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700'
+                          }`}
+                      >
+                        <p className="text-xs font-bold break-words">{msg.text}</p>
+                        <span className={`text-[9px] font-bold mt-1 block ${isCustomer ? 'text-emerald-100' : 'text-slate-400 dark:text-slate-500'
+                          }`}>
+                          {new Date(msg.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+              <div ref={chatMessagesEndRef} />
+            </div>
+
+            {/* Input de Mensagem */}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                placeholder="Digite sua mensagem..."
+                className="flex-1 h-12 px-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold dark:text-slate-200 outline-none focus:border-[#006c55] transition-colors"
+              />
+              <button
+                onClick={handleSendMessage}
+                disabled={!chatInput.trim()}
+                className="w-12 h-12 bg-[#006c55] text-white rounded-xl flex items-center justify-center hover:bg-[#005544] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Send size={18} />
+              </button>
+            </div>
+          </div>
+        )
+      }
 
       <style jsx="true">{`
         .no-scrollbar::-webkit-scrollbar { display: none; }

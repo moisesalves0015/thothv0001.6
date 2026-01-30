@@ -37,7 +37,16 @@ service cloud.firestore {
         allow read, write: if isOwner(userId);
       }
 
-      // Sub-coleção: Favoritos (Bookmarks)
+      // Sub-coleção: Certificados
+      match /certificates/{certId} {
+        allow read: if isAuthenticated();
+        // Allow creating/writing if you are the issuer (creator of event usually)
+        // Simplified to authenticated for now to unblock feature
+        allow create: if isAuthenticated();
+        allow update, delete: if isAdmin(); 
+      }
+
+      // Sub-coleção: Bookmarks (Salvos)
       match /bookmarks/{bookmarkId} {
         allow read, write: if isOwner(userId);
       }
@@ -107,11 +116,13 @@ service cloud.firestore {
 
     // Coleção de Pedidos de Impressão (Optimized Sync)
     match /printRequests/{orderId} {
+      // Admin tem acesso total a TUDO (verificado primeiro, antes de resource.data)
+      allow read, write: if isAdmin();
+      
       // Leitura permitida para o dono do pedido ou o dono da gráfica (via email no token)
       allow read: if isAuthenticated() && (
         resource.data.customerId == request.auth.uid || 
-        request.auth.token.email.lower() == resource.data.stationOwnerEmail.lower() ||
-        isAdmin()
+        request.auth.token.email.lower() == resource.data.stationOwnerEmail.lower()
       );
       
       allow create: if isAuthenticated() && request.resource.data.customerId == request.auth.uid;
@@ -119,11 +130,34 @@ service cloud.firestore {
       // Atualização (ex: mudar status) permitida para quem tem acesso de leitura
       allow update: if isAuthenticated() && (
         resource.data.customerId == request.auth.uid || 
-        request.auth.token.email.lower() == resource.data.stationOwnerEmail.lower() ||
-        isAdmin()
+        request.auth.token.email.lower() == resource.data.stationOwnerEmail.lower()
       );
       
-      allow delete: if isAuthenticated() && (resource.data.customerId == request.auth.uid || isAdmin());
+      allow delete: if isAuthenticated() && resource.data.customerId == request.auth.uid;
+
+      // Sub-coleção: Mensagens do Chat
+      match /messages/{messageId} {
+        // Função helper para verificar acesso ao pedido pai
+        function canAccessParentOrder() {
+          let parentOrder = get(/databases/$(database)/documents/printRequests/$(orderId));
+          return parentOrder.data.customerId == request.auth.uid || 
+                 request.auth.token.email.lower() == parentOrder.data.stationOwnerEmail.lower() ||
+                 isAdmin();
+        }
+        
+        // Permitir leitura se o usuário tem acesso ao pedido pai
+        allow read: if isAuthenticated() && canAccessParentOrder();
+        
+        // Permitir criação se o usuário tem acesso ao pedido pai e é o remetente
+        allow create: if isAuthenticated() && 
+          canAccessParentOrder() &&
+          request.resource.data.senderId == request.auth.uid;
+        
+        // Atualização permitida apenas para marcar como lida
+        allow update: if isAuthenticated() && 
+          canAccessParentOrder() &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+      }
     }
 
     // Coleção de Chats (Mensagens)
@@ -136,6 +170,11 @@ service cloud.firestore {
         allow read, create: if isAuthenticated() && 
           request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.members;
       }
+    }
+
+    // Coleção de Eventos
+    match /events/{eventId} {
+      allow read, write: if request.auth != null;
     }
 
     // Regra Global de Lembretes (caso o service salve na raiz)

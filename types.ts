@@ -110,6 +110,21 @@ export interface PrintRequest {
 }
 
 /**
+ * PrintRequestMessage
+ * Mensagem de chat entre usuário e gráfica no contexto de um pedido.
+ */
+export interface PrintRequestMessage {
+  id: string;
+  orderId: string;
+  senderId: string;
+  senderName: string;
+  senderRole: 'customer' | 'shop'; // Identifica quem enviou
+  text: string;
+  timestamp: number;
+  read: boolean;
+}
+
+/**
  * PrinterStats
  * Estatísticas para o dashboard de impressoras (receita, trabalhos pendentes etc).
  */
@@ -246,4 +261,24 @@ export interface GeneratedVideo {
 export interface Transcription {
   role: 'user' | 'assistant';
   text: string;
+}
+
+/**
+ * Event
+ * Representa um evento acadêmico ou social na plataforma.
+ */
+export interface ThothEvent {
+  id: string;
+  title: string;
+  description: string;
+  type: 'workshop' | 'palestra' | 'social' | 'estudo' | 'outro';
+  date: any; // Timestamp do Firebase
+  location: string;
+  creatorId: string;
+  participants: string[]; // UIDs confirmados
+  interested: string[]; // UIDs interessados
+  invited: string[]; // UIDs convidados
+  maxParticipants?: number;
+  coverImage?: string;
+  createdAt: any;
 }

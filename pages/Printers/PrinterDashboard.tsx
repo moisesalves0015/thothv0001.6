@@ -127,8 +127,9 @@ import {
   Printer as PrinterIcon
 } from 'lucide-react';
 import { PrintService } from '../../modules/print/print.service';
+import { PrintChatService } from '../../modules/print/print-chat.service';
 import { PrinterService, PrinterStation } from '../../modules/print/printer.service';
-import { PrintRequest, Message } from '../../types';
+import { PrintRequest, Message, PrintRequestMessage } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface ServiceItem {
@@ -215,8 +216,9 @@ const PrinterDashboard: React.FC = () => {
     }
   ]);
 
-  const [activeChat, setActiveChat] = useState<string | null>(null);
-  const [chatMessages, setChatMessages] = useState<Message[]>([]);
+  const [activeChat, setActiveChat] = useState<PrintRequest | null>(null);
+  const [chatMessages, setChatMessages] = useState<PrintRequestMessage[]>([]);
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   const [supportMessages, setSupportMessages] = useState<Message[]>([
@@ -265,6 +267,24 @@ const PrinterDashboard: React.FC = () => {
     };
   }, [navigate, userProfile, loading]);
 
+  // Subscribe to chat messages when a chat is active
+  useEffect(() => {
+    if (!activeChat) return;
+    const unsubMessages = PrintChatService.subscribeToMessages(activeChat.id, setChatMessages);
+    return () => unsubMessages();
+  }, [activeChat]);
+
+  // Subscribe to unread counts for all requests
+  useEffect(() => {
+    if (!authUser || requests.length === 0) return;
+    const unsubscribers = requests.map(req =>
+      PrintChatService.subscribeToUnreadCount(req.id, authUser.uid, (count) => {
+        setUnreadCounts(prev => ({ ...prev, [req.id]: count }));
+      })
+    );
+    return () => unsubscribers.forEach(unsub => unsub());
+  }, [authUser, requests]);
+
   const moveRequest = async (id: string, newStatus: PrintRequest['status']) => {
     // Optimistic Update
     setRequests(prev => prev.map(r => r.id === id ? { ...r, status: newStatus } : r));
@@ -285,17 +305,16 @@ const PrinterDashboard: React.FC = () => {
   const handleDragStart = (e: React.DragEvent, id: string) => e.dataTransfer.setData('requestId', id);
   const allowDrop = (e: React.DragEvent) => e.preventDefault();
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!chatInput.trim()) return;
 
-    if (activeChat) {
-      const msg: Message = {
-        id: Date.now().toString(),
-        role: 'assistant',
-        content: chatInput,
-        timestamp: Date.now()
-      };
-      setChatMessages(prev => [...prev, msg]);
+    if (activeChat && activeChatTab === 'clients') {
+      try {
+        await PrintChatService.sendMessage(activeChat.id, chatInput, 'shop');
+        setChatInput('');
+      } catch (error) {
+        console.error('Erro ao enviar mensagem:', error);
+      }
     } else if (activeChatTab === 'support') {
       const msg: Message = {
         id: Date.now().toString(),
@@ -304,9 +323,13 @@ const PrinterDashboard: React.FC = () => {
         timestamp: Date.now()
       };
       setSupportMessages(prev => [...prev, msg]);
+      setChatInput('');
     }
+  };
 
-    setChatInput('');
+  const getQueuePosition = (req: PrintRequest): number => {
+    if (req.status !== 'pending') return 0;
+    return PrintService.calculateQueuePosition(requests, req);
   };
 
   const filteredRequests = useMemo(() => {
@@ -470,23 +493,9 @@ const PrinterDashboard: React.FC = () => {
     await PrinterService.updateStation(currentStation.id, { services: updatedServices as any });
   };
 
-  const openChat = (chatId: string) => {
-    setActiveChat(chatId);
-    // Simular carregamento de mensagens
-    setChatMessages([
-      {
-        id: '1',
-        role: 'user',
-        content: 'Olá, gostaria de saber sobre o status do meu pedido',
-        timestamp: Date.now() - 1000 * 60 * 60
-      },
-      {
-        id: '2',
-        role: 'assistant',
-        content: 'Claro! Seu pedido está sendo impresso agora.',
-        timestamp: Date.now() - 1000 * 60 * 30
-      }
-    ]);
+  const openChat = (request: PrintRequest) => {
+    setActiveChat(request);
+    setActiveChatTab('clients');
   };
 
   useEffect(() => {
@@ -668,7 +677,7 @@ const PrinterDashboard: React.FC = () => {
                               </span>
                               {status === 'pending' && (
                                 <span className="text-[9px] font-bold text-slate-500 bg-slate-50 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700">
-                                  #{index + 1}
+                                  #{getQueuePosition(req)}
                                 </span>
                               )}
                             </div>
@@ -746,6 +755,18 @@ const PrinterDashboard: React.FC = () => {
                               >
                                 <Download size={12} />
                               </a>
+                              <button
+                                onClick={() => openChat(req)}
+                                className="p-1.5 bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 rounded-lg hover:bg-slate-200 transition-colors relative"
+                                title="Chat com Cliente"
+                              >
+                                <MessageSquare size={12} />
+                                {unreadCounts[req.id] > 0 && (
+                                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 text-white text-[8px] font-black rounded-full flex items-center justify-center">
+                                    {unreadCounts[req.id]}
+                                  </span>
+                                )}
+                              </button>
                             </div>
                           </div>
                         </div>
@@ -788,41 +809,77 @@ const PrinterDashboard: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                   <h3 className="text-xs font-black uppercase tracking-widest text-slate-900 dark:text-white">
-                    {activeChatTab === 'support' ? 'Thoth Support' : 'Atendimento'}
+                    {activeChatTab === 'support' ? 'Thoth Support' : activeChat ? `Chat - ${activeChat.customerName}` : 'Atendimento'}
                   </h3>
+                  {activeChat && (
+                    <button
+                      onClick={() => setActiveChat(null)}
+                      className="ml-auto p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
                 </div>
               </div>
 
               <div className="flex-1 overflow-y-auto no-scrollbar p-6 space-y-4">
                 {activeChat && activeChatTab === 'clients' ? (
                   /* Aba de Conversa Ativa com Cliente */
-                  chatMessages.map(msg => (
-                    <div key={msg.id} className={`flex ${msg.role === 'assistant' ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[80%] p-4 rounded-2xl text-sm ${msg.role === 'assistant' ? 'bg-emerald-500 text-white rounded-br-none' : 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-bl-none'
-                        }`}>
-                        {msg.content}
-                      </div>
+                  chatMessages.length === 0 ? (
+                    <div className="h-full flex flex-col items-center justify-center opacity-30">
+                      <MessageSquare size={32} />
+                      <span className="text-[10px] font-black uppercase tracking-widest mt-2">Nenhuma mensagem</span>
                     </div>
-                  ))
+                  ) : (
+                    chatMessages.map(msg => {
+                      const isShop = msg.senderRole === 'shop';
+                      return (
+                        <div key={msg.id} className={`flex ${isShop ? 'justify-end' : 'justify-start'}`}>
+                          <div className={`max-w-[80%] p-4 rounded-2xl text-sm ${isShop
+                            ? 'bg-emerald-500 text-white rounded-br-none'
+                            : 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-bl-none'
+                            }`}>
+                            <p className="break-words">{msg.text}</p>
+                            <span className={`text-[9px] font-bold mt-1 block ${isShop ? 'text-emerald-100' : 'text-slate-400'
+                              }`}>
+                              {new Date(msg.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )
                 ) : activeChatTab === 'clients' ? (
-                  /* Lista de Mensagens de Clientes */
-                  clientChats.map(chat => (
-                    <button
-                      key={chat.id}
-                      onClick={() => openChat(chat.id)}
-                      className="w-full text-left p-4 rounded-2xl border border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all group"
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm font-black text-slate-900 dark:text-white">{chat.clientName}</span>
-                        <span className="text-[10px] font-bold text-slate-400">
-                          {new Date(chat.lastMessageTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 group-hover:text-emerald-500 transition-colors">
-                        {chat.lastMessage}
-                      </p>
-                    </button>
-                  ))
+                  /* Lista de Pedidos com Chat */
+                  requests.filter(r => !r.archived).length === 0 ? (
+                    <div className="h-full flex flex-col items-center justify-center opacity-30">
+                      <Inbox size={32} />
+                      <span className="text-[10px] font-black uppercase tracking-widest mt-2">Nenhum pedido</span>
+                    </div>
+                  ) : (
+                    requests.filter(r => !r.archived).map(req => (
+                      <button
+                        key={req.id}
+                        onClick={() => openChat(req)}
+                        className="w-full text-left p-4 rounded-2xl border border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all group relative"
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm font-black text-slate-900 dark:text-white">{req.customerName || 'Cliente'}</span>
+                          <span className="text-[10px] font-bold text-slate-400">
+                            {new Date(req.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 group-hover:text-emerald-500 transition-colors">
+                          {req.fileName} • {req.pages} pgs
+                        </p>
+                        {unreadCounts[req.id] > 0 && (
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">
+                            {unreadCounts[req.id]}
+                          </span>
+                        )}
+                      </button>
+                    ))
+                  )
                 ) : (
                   /* Suporte Messages */
                   supportMessages.map(msg => (

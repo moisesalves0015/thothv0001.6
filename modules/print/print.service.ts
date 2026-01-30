@@ -108,4 +108,89 @@ export class PrintService {
   static async deleteRequest(id: string) {
     return deleteDoc(doc(db, this.collectionName, id));
   }
+
+  /**
+   * Calcula a posição de um pedido na fila de uma gráfica específica
+   */
+  static calculateQueuePosition(requests: PrintRequest[], currentRequest: PrintRequest): number {
+    const queueRequests = requests
+      .filter(r =>
+        r.stationId === currentRequest.stationId &&
+        r.status === 'pending' &&
+        !r.archived
+      )
+      .sort((a, b) => {
+        // Urgent orders come first
+        if (a.priority === 'urgent' && b.priority !== 'urgent') return -1;
+        if (a.priority !== 'urgent' && b.priority === 'urgent') return 1;
+        // Within same priority, sort by timestamp (oldest first)
+        return a.timestamp - b.timestamp;
+      });
+
+    console.log(`[PrintService] Calculating queue for order ${currentRequest.id}:`, {
+      stationId: currentRequest.stationId,
+      totalRequests: requests.length,
+      filteredRequests: queueRequests.length,
+      currentStatus: currentRequest.status,
+      currentArchived: currentRequest.archived,
+      currentPriority: currentRequest.priority,
+      queueDetails: queueRequests.map(r => ({
+        id: r.id,
+        timestamp: r.timestamp,
+        date: new Date(r.timestamp).toLocaleString('pt-BR'),
+        customerId: r.customerId,
+        customerName: r.customerName,
+        fileName: r.fileName,
+        status: r.status,
+        archived: r.archived,
+        priority: r.priority
+      }))
+    });
+
+    const position = queueRequests.findIndex(r => r.id === currentRequest.id);
+    return position >= 0 ? position + 1 : 0;
+  }
+
+  /**
+   * Assina todos os pedidos pendentes de uma gráfica específica (para calcular posição na fila)
+   */
+  static subscribeToStationPendingRequests(stationId: string, callback: (requests: PrintRequest[]) => void): Unsubscribe {
+    const q = query(
+      collection(db, this.collectionName),
+      where('stationId', '==', stationId),
+      where('status', '==', 'pending'),
+      where('archived', '==', false),
+      orderBy('timestamp', 'asc')
+    );
+
+    // Add options to detect cache vs server data
+    return onSnapshot(q, { includeMetadataChanges: true }, (snapshot) => {
+      const requests = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as PrintRequest));
+
+      console.log(`🔍 [PrintService] subscribeToStationPendingRequests for ${stationId}:`, {
+        totalDocs: snapshot.docs.length,
+        fromCache: snapshot.metadata.fromCache,
+        hasPendingWrites: snapshot.metadata.hasPendingWrites,
+        docIds: snapshot.docs.map(d => d.id),
+        archivedValues: snapshot.docs.map(d => ({
+          id: d.id,
+          archived: d.data().archived,
+          archivedType: typeof d.data().archived,
+          hasArchivedField: d.data().hasOwnProperty('archived'),
+          fromCache: d.metadata.fromCache
+        }))
+      });
+
+      // Only call callback with server data, ignore cache-only updates
+      if (!snapshot.metadata.fromCache) {
+        console.log(`✅ [PrintService] Using SERVER data for station ${stationId}`);
+        callback(requests);
+      } else {
+        console.log(`⚠️ [PrintService] Ignoring CACHE data for station ${stationId}, waiting for server...`);
+      }
+    });
+  }
 }
