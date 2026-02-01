@@ -17,6 +17,7 @@ import {
   Users,
   LayoutGrid
 } from 'lucide-react';
+import Cropper from 'react-easy-crop';
 import { useBadgeCreator } from '../../hooks/useBadgeCreator';
 
 const BadgeCreator: React.FC = () => {
@@ -44,11 +45,10 @@ const BadgeCreator: React.FC = () => {
     platformFee,
     totalPrice,
     isFree,
-    scale, setScale,
-    position, setPosition,
-    imgDimensions,
-    isDraggingImage, setIsDraggingImage,
-    dragStart,
+    crop, setCrop,
+    zoom, setZoom,
+    rotation, setRotation,
+    onCropComplete,
     handleImageUpload,
     submitBadge,
     downloadReceipt
@@ -382,159 +382,53 @@ const BadgeCreator: React.FC = () => {
               <LayoutGrid size={14} className="text-[#006c55]" /> Preview do Mural
             </h3>
 
-            <div
-              className="relative w-full aspect-square bg-slate-100 rounded-xl overflow-hidden cursor-move group dark:bg-slate-800"
-              onMouseDown={e => {
-                if (!imageUrl) return;
-                // Only drag if not resizing
-                if ((e.target as HTMLElement).dataset.handle) return;
-
-                setIsDraggingImage(true);
-                dragStart.current = { x: e.clientX - position.x, y: e.clientY - position.y };
-              }}
-              onMouseMove={e => {
-                // Drag Logic
-                if (isDraggingImage) {
-                  e.preventDefault();
-                  const newX = e.clientX - dragStart.current.x;
-                  const newY = e.clientY - dragStart.current.y;
-                  setPosition({ x: newX, y: newY });
-                }
-              }}
-              onMouseUp={() => {
-                setIsDraggingImage(false);
-                // Stop resizing helper if we had one (implemented via document listener usually, but here simplicity first)
-              }}
-              onMouseLeave={() => setIsDraggingImage(false)}
-              onTouchStart={e => {
-                if (!imageUrl) return;
-                setIsDraggingImage(true);
-                dragStart.current = { x: e.touches[0].clientX - position.x, y: e.touches[0].clientY - position.y };
-              }}
-              onTouchMove={e => {
-                if (!isDraggingImage) return;
-                // Prevent scrolling on mobile
-                // e.preventDefault(); // Might block scroll page? careful.
-                const newX = e.touches[0].clientX - dragStart.current.x;
-                const newY = e.touches[0].clientY - dragStart.current.y;
-                setPosition({ x: newX, y: newY });
-              }}
-              onTouchEnd={() => setIsDraggingImage(false)}
-            >
+            <div className="relative w-full aspect-square bg-slate-100 rounded-xl overflow-hidden group dark:bg-slate-800 ring-4 ring-slate-100 dark:ring-slate-700">
               {imageUrl ? (
-                <>
-                  {/* The Moveable Image Container */}
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div
-                      className="relative transition-transform duration-75 origin-center pointer-events-auto"
-                      style={{
-                        transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
-                        // Smart Size Calculation
-                        // We want the wrapper to have the Aspect Ratio of the IMAGE, not the MASK.
-                        // But it must cover the mask area initially.
-                        ...(() => {
-                          const maskW = Math.min(width * 100, 260);
-                          const maskH = Math.min(height * 100, 260);
-                          const maskRatio = maskW / maskH;
-                          const imgRatio = imgDimensions.ratio || 1;
+                <div className="absolute inset-0">
+                  <Cropper
+                    image={imageUrl}
+                    crop={crop}
+                    zoom={zoom}
+                    rotation={rotation}
+                    aspect={width / height}
+                    onCropChange={setCrop}
+                    onCropComplete={onCropComplete}
+                    onZoomChange={setZoom}
+                    onRotationChange={setRotation}
+                    showGrid={false}
+                    classes={{
+                      containerClassName: "rounded-xl",
+                      mediaClassName: "",
+                      cropAreaClassName: "border-2 border-[#006c55]/50 shadow-[0_0_0_9999px_rgba(0,0,0,0.7)]"
+                    }}
+                  />
 
-                          let wrapperW, wrapperH;
-
-                          if (imgRatio > maskRatio) {
-                            // Image is wider than mask -> Fix Height to Mask, let Width grow
-                            wrapperH = maskH;
-                            wrapperW = maskH * imgRatio;
-                          } else {
-                            // Image is taller -> Fix Width to Mask, let Height grow
-                            wrapperW = maskW;
-                            wrapperH = maskW / imgRatio;
-                          }
-
-                          return {
-                            width: `${wrapperW}px`,
-                            height: `${wrapperH}px`,
-                          };
-                        })(),
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}
-                    >
-                      <img
-                        src={imageUrl}
-                        className="w-full h-full object-cover pointer-events-none select-none"
-                        alt="Badge Preview"
-                        draggable={false}
-                      />
-
-                      {/* Resize Handles Overlay (Visible on Hover/Active) */}
-                      <div className="absolute inset-0 ring-1 ring-white/50 group-hover:ring-[#006c55]/50 transition-all">
-                        {/* Corner Handles */}
-                        {[
-                          { pos: '-top-1.5 -left-1.5', cursor: 'nw-resize', dir: -1 },
-                          { pos: '-top-1.5 -right-1.5', cursor: 'ne-resize', dir: 1 },
-                          { pos: '-bottom-1.5 -left-1.5', cursor: 'sw-resize', dir: 1 },
-                          { pos: '-bottom-1.5 -right-1.5', cursor: 'se-resize', dir: -1 }
-                        ].map((h, i) => (
-                          <div
-                            key={i}
-                            data-handle="true"
-                            className={`absolute ${h.pos} w-3 h-3 bg-white border border-[#006c55] rounded-full shadow-sm z-50 hover:scale-150 transition-transform cursor-${h.cursor}`}
-                            onMouseDown={(e) => {
-                              e.stopPropagation();
-                              const startY = e.clientY;
-                              const startScale = scale;
-
-                              const onResize = (moveEvent: MouseEvent) => {
-                                const deltaY = moveEvent.clientY - startY;
-                                // Direction determines if pulling down grows or shrinks depending on corner?
-                                // Actually simpler: Pulling OUT (away from center) grows.
-                                // Logic: If I drag Mouse Down and I am at Bottom, I am moving away -> Grow.
-                                // Simplified: Just use Y delta. Down = +Y.
-                                // If Top handle: +Y means moving IN -> Shrink.
-                                // If Bottom handle: +Y means moving OUT -> Grow.
-                                // h.pos.includes('bottom') gives us sign.
-                                const isBottom = h.pos.includes('bottom');
-                                const sign = isBottom ? 1 : -1;
-
-                                const newScale = Math.max(0.5, Math.min(4, startScale + (deltaY * 0.01 * sign)));
-                                setScale(newScale);
-                              };
-
-                              const onStop = () => {
-                                window.removeEventListener('mousemove', onResize);
-                                window.removeEventListener('mouseup', onStop);
-                              };
-
-                              window.addEventListener('mousemove', onResize);
-                              window.addEventListener('mouseup', onStop);
-                            }}
-                          />
-                        ))}
-                      </div>
-                    </div>
+                  {/* Custom Grid Overlay - Always 1x1 tiles */}
+                  <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                    {/* 
+                       The crop area in react-easy-crop is centered. 
+                       We need our grid to match exactly that area visually.
+                       This implementation relies on the fact that react-easy-crop centers the crop area.
+                       However, since we can't easily hook into the exact pixel dimension of the crop area from outside without resize observer,
+                       we rely on visual approximation or specific CSS if needed.
+                       
+                       Actually, react-easy-crop's `cropAreaClassName` allows styling the box.
+                       So we can visualize the grid INSIDE that box if we could put children in it, but we can't easily.
+                       
+                       Strategy: Use the `aspect` ratio to calculate the grid lines.
+                       The crop area is visible. The shadow covers the rest.
+                       We will overlay a CSS grid on top of the entire container, but masked to the crop area? 
+                       No, simpler: The Crop Area itself has a border.
+                       We need to draw lines *within* the crop area.
+                       
+                       Since we can't easily put DOM elements inside the crop area div controlled by the library,
+                       we will rely on the library's grid if it supported custom columns/rows, but it implies 3x3.
+                       
+                       Alternative: CSS `mask` or `background-image` on the cropAreaClassName?
+                       Yes! passing a class with ::after pseudo-element to draw grid lines.
+                     */}
                   </div>
-
-                  {/* The Mask Overlay */}
-                  <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-10">
-                    <div
-                      className="border-2 border-white/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.6)] relative"
-                      style={{
-                        width: `${Math.min(width * 100, 260)}px`,
-                        height: `${Math.min(height * 100, 260)}px`,
-                        aspectRatio: `${width}/${height}`
-                      }}
-                    >
-                      <div
-                        className="absolute inset-0 opacity-20"
-                        style={{
-                          backgroundImage: `linear-gradient(white 1px, transparent 1px), linear-gradient(90deg, white 1px, transparent 1px)`,
-                          backgroundSize: `${(Math.min(width * 100, 260)) / width}px ${(Math.min(height * 100, 260)) / height}px`
-                        }}
-                      />
-                    </div>
-                  </div>
-                </>
+                </div>
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center opacity-20 pointer-events-none">
                   <Sparkles size={64} />
@@ -543,18 +437,56 @@ const BadgeCreator: React.FC = () => {
               )}
             </div>
 
-            {imageUrl && step === 1 && (
-              <p className="text-[9px] text-slate-400 font-bold mt-4 text-center uppercase tracking-normal dark:text-slate-300">
-                Arraste a imagem para posicionar • Puxe os cantos para redimensionar
-              </p>
+            {imageUrl && (
+              <div className="mt-6 space-y-4 animate-in fade-in slide-in-from-bottom-2">
+                <div className="space-y-2">
+                  <div className="flex justify-between text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                    <span>Zoom</span>
+                    <span>{zoom.toFixed(1)}x</span>
+                  </div>
+                  <input
+                    type="range"
+                    value={zoom}
+                    min={1}
+                    max={3}
+                    step={0.1}
+                    aria-labelledby="Zoom"
+                    onChange={(e) => setZoom(Number(e.target.value))}
+                    className="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer dark:bg-slate-700 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-[#006c55] [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:transition-all [&::-webkit-slider-thumb]:hover:scale-125"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex justify-between text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                    <span>Rotação</span>
+                    <span>{rotation}°</span>
+                  </div>
+                  <input
+                    type="range"
+                    value={rotation}
+                    min={0}
+                    max={360}
+                    step={1}
+                    aria-labelledby="Rotation"
+                    onChange={(e) => setRotation(Number(e.target.value))}
+                    className="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer dark:bg-slate-700 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-[#006c55] [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:transition-all [&::-webkit-slider-thumb]:hover:scale-125"
+                  />
+                </div>
+
+                <style>{`
+                  .reactEasyCrop_CropArea {
+                    border: 2px solid rgba(0, 108, 85, 0.5) !important;
+                    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7) !important;
+                    background-image: 
+                      linear-gradient(rgba(255, 255, 255, 0.3) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(255, 255, 255, 0.3) 1px, transparent 1px);
+                    background-size: ${100 / width}% ${100 / height}% !important;
+                    background-position: -1px -1px !important;
+                  }
+                `}</style>
+              </div>
             )}
 
-
-            {!imageUrl && (
-              <p className="text-[9px] text-slate-400 font-bold mt-4 text-center uppercase tracking-normal dark:text-slate-300">
-                Faça o upload para visualizar o preview
-              </p>
-            )}
 
             <div className="mt-8 space-y-6">
               <div className="flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-700">

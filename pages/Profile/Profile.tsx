@@ -32,6 +32,7 @@ const Profile: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [profileNotFound, setProfileNotFound] = useState(false);
+  const [targetUid, setTargetUid] = useState<string>('');
 
   const [posts, setPosts] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
@@ -81,6 +82,7 @@ const Profile: React.FC = () => {
           return;
         }
 
+        setTargetUid(targetUid);
         setIsOwner(user?.uid === targetUid);
 
         const userRef = doc(db, 'users', targetUid);
@@ -209,7 +211,7 @@ const Profile: React.FC = () => {
           />
         </div>
         <div className="w-full lg:w-[660px]">
-          <BadgeSystemBox />
+          <BadgeSystemBox userId={targetUid} isOwner={isOwner} />
         </div>
       </div>
 

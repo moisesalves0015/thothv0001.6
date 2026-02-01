@@ -30,6 +30,7 @@ const Vagas = lazy(() => import('./pages/Vagas/Vagas'));
 const Login = lazy(() => import('./pages/Auth/Login'));
 const Signup = lazy(() => import('./pages/Auth/Signup'));
 const BadgeCreator = lazy(() => import('./pages/Badges/BadgeCreator'));
+const BadgesPage = lazy(() => import('./pages/Badges/BadgesPage'));
 const PrinterLogin = lazy(() => import('./pages/Printers/PrinterLogin'));
 const PrinterDashboard = lazy(() => import('./pages/Printers/PrinterDashboard'));
 const Profile = lazy(() => import('./pages/Profile/Profile'));
@@ -159,6 +160,7 @@ const AppRoutes: React.FC = () => {
             <Route path="/eventos/:id" element={<EventDetail />} />
             <Route path="/pesquisas" element={<Pesquisas />} />
             <Route path="/vagas" element={<Vagas />} />
+            <Route path="/badges" element={<BadgesPage />} />
             <Route path="/badges/create" element={<BadgeCreator />} />
             <Route path="/perfil" element={<Profile />} />
             {/* Rota dinâmica para perfis de usuário (ex: thoth.com/moises) */}

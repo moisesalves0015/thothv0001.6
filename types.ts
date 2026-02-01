@@ -146,7 +146,13 @@ export interface Badge {
   width: number; // em tiles (1-4)
   height: number; // em tiles (1-4)
   creatorId: string;
-  price: number;
+  creatorName?: string;
+  creatorAvatar?: string;
+  createdAt?: any; // Firestore Timestamp
+  isPublic?: boolean; // Se outros podem ver/salvar
+  tags?: string[]; // Para busca
+  usageCount?: number; // Quantas vezes foi salvo
+  price?: number; // Legacy field, pode ser removido no futuro
 }
 
 /**
@@ -166,6 +172,7 @@ export interface BadgeSlot {
 export interface SidebarConfig {
   title: string;
   maxPosts?: number;
+  userId?: string; // Optional: filter posts by specific user
 }
 
 /**

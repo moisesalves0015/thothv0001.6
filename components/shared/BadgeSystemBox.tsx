@@ -3,7 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { Sparkles, Loader2, AlertTriangle } from 'lucide-react';
 import { useBadgeSystem } from '../../hooks/useBadgeSystem';
 
-const BadgeSystemBox: React.FC = () => {
+interface BadgeSystemBoxProps {
+  userId?: string;
+  isOwner?: boolean;
+}
+
+const BadgeSystemBox: React.FC<BadgeSystemBoxProps> = ({ userId, isOwner = true }) => {
   const navigate = useNavigate();
   const {
     isMobile,
@@ -19,7 +24,7 @@ const BadgeSystemBox: React.FC = () => {
     handleStartDrag,
     toVisual,
     draggingSlot
-  } = useBadgeSystem();
+  } = useBadgeSystem(userId);
 
   return (
     <div className={`w-full lg:w-[660px] h-auto liquid-glass rounded-[24px] flex flex-col p-5 shadow-2xl relative overflow-hidden select-none transition-all duration-500`}>
@@ -30,13 +35,15 @@ const BadgeSystemBox: React.FC = () => {
             Conquistas & Emblemas
           </span>
         </div>
-        <button
-          onClick={() => navigate('/badges/create')}
-          className="w-9 h-9 rounded-full bg-white/60 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 hover:text-[#006c55] dark:hover:text-emerald-400 hover:bg-white dark:hover:bg-slate-700 transition-all border border-white/90 dark:border-white/10 shadow-sm active:scale-95 flex items-center justify-center"
-          title="Novo Emblema"
-        >
-          <Sparkles size={18} />
-        </button>
+        {isOwner && (
+          <button
+            onClick={() => navigate('/badges/create')}
+            className="w-9 h-9 rounded-full bg-white/60 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 hover:text-[#006c55] dark:hover:text-emerald-400 hover:bg-white dark:hover:bg-slate-700 transition-all border border-white/90 dark:border-white/10 shadow-sm active:scale-95 flex items-center justify-center"
+            title="Novo Emblema"
+          >
+            <Sparkles size={18} />
+          </button>
+        )}
       </div>
 
       <div className="flex-1 bg-slate-100/30 dark:bg-slate-900/30 rounded-lg relative overflow-hidden flex flex-col">

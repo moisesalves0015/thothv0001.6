@@ -2,6 +2,8 @@
 import { Post } from '../../types';
 import ImageModal from './ImageModal';
 import NewPost from './NewPost';
+import ClickableAvatar from './ClickableAvatar';
+import ProfilePreviewModal from './ProfilePreviewModal';
 import {
   BookOpen,
   GraduationCap,
@@ -54,8 +56,26 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
   const [likeCount, setLikeCount] = useState(post.likes || 0);
   const [shareCount, setShareCount] = useState(post.repostedBy?.length || 0);
   const [isReposting, setIsReposting] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
-  // Sync state with post data
+  // Helper para obter o avatar mais atualizado do usuário logado
+  // Isso garante que se você mudar sua foto, seus posts antigos atualizem imediatamente para você
+  const getAuthorAvatar = (authorId: string, currentAvatar: string) => {
+    // Se o usuário estiver logado e for o autor deste conteúdo
+    if (user && user.uid === authorId) {
+      // Prioriza a foto atual do perfil (do Firebase Auth)
+      if (user.photoURL) return user.photoURL;
+
+      // Se não tiver foto, usa o avatar padrão gerado (igual ao Topbar)
+      // Isso evita mostrar uma foto antiga "congelada" no post se o usuário removeu a foto
+      return `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.displayName || 'Thoth'}`;
+    }
+
+    // Se não for o usuário logado, mostra a foto salva no post (snapshot do momento da criação)
+    return currentAvatar;
+  };
+
+  // Sincronizar estado com dados do post
   useEffect(() => {
     if (user) {
       setIsLiked(post.likedBy?.includes(user.uid) || false);
@@ -223,7 +243,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
   };
 
   const formatTimestamp = (timestamp: any) => {
-    console.log('formatTimestamp called with:', timestamp, 'type:', typeof timestamp);
+    // console.log('formatTimestamp called with:', timestamp, 'type:', typeof timestamp);
     if (!timestamp) return '';
 
     let date: Date;
@@ -415,7 +435,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
             <div className="flex items-center gap-2.5 min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <Repeat2 size={16} className="text-[#006c55]" />
-                <img src={post.author.avatar} className="w-6 h-6 rounded-lg object-cover" alt={post.author.name} />
+                <img src={getAuthorAvatar(post.author.id, post.author.avatar)} className="w-6 h-6 rounded-lg object-cover" alt={post.author.name} />
               </div>
               <div className="flex flex-col min-w-0 flex-1 justify-center">
                 <div className="flex items-center gap-1.5">
@@ -452,16 +472,38 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
         <div className="flex items-start justify-between mb-4 flex-shrink-0 relative">
           <div className="flex items-start gap-3 overflow-hidden flex-1 min-w-0">
             <div className="relative flex-shrink-0">
-              <img src={displayAuthor.avatar} className="w-12 h-12 rounded-2xl object-cover border-2 border-white dark:border-slate-700 shadow-sm" alt={displayAuthor.name} />
+              <ClickableAvatar
+                userId={displayAuthor.id}
+                username={displayAuthor.username}
+                photoURL={getAuthorAvatar(displayAuthor.id, displayAuthor.avatar)}
+                displayName={displayAuthor.name}
+                size="lg"
+              />
               {displayAuthor.verified && <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-gradient-to-r from-[#006c55] to-[#00876a] rounded-full flex items-center justify-center border-2 border-white dark:border-slate-800"><CheckCircle size={8} className="text-white" fill="white" /></div>}
             </div>
             <div className="flex flex-col min-w-0 flex-1">
               <div className="flex items-center gap-2 mb-0.5 min-w-0">
-                <h4 className="text-[14px] font-black text-slate-900 dark:text-white leading-tight truncate shrink-1">{displayAuthor.name}</h4>
+                <h4
+                  className="text-[14px] font-black text-slate-900 dark:text-white leading-tight truncate shrink-1 cursor-pointer hover:text-[#006c55] dark:hover:text-emerald-400 transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsProfileModalOpen(true);
+                  }}
+                >
+                  {displayAuthor.name}
+                </h4>
                 {displayAuthor.verified && <span className="text-[8px] font-black text-[#006c55] dark:text-emerald-400 bg-[#006c55]/10 dark:bg-emerald-400/10 px-1.5 py-0.5 rounded-md uppercase tracking-tighter flex-shrink-0">V</span>}
               </div>
               <div className="flex flex-col text-[11px] text-slate-500 dark:text-slate-400">
-                <span className="font-bold truncate">{displayAuthor.username?.startsWith('@') ? displayAuthor.username : `@${displayAuthor.username}`}</span>
+                <span
+                  className="font-bold truncate cursor-pointer hover:text-[#006c55] dark:hover:text-emerald-400 transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsProfileModalOpen(true);
+                  }}
+                >
+                  {displayAuthor.username?.startsWith('@') ? displayAuthor.username : `@${displayAuthor.username}`}
+                </span>
                 {/* Data sempre visível agora - Se for repost, tenta mostrar a data original se disponível no post, senão mostra timestamp do post atual mesmo (fallback) */}
                 <div className="flex items-center gap-1 mt-0.5 opacity-70">
                   <Clock size={10} />
@@ -625,6 +667,14 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
           }}
         />
       )}
+
+      {/* Profile Preview Modal */}
+      <ProfilePreviewModal
+        userId={displayAuthor.id}
+        username={displayAuthor.username}
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+      />
     </>
   );
 };

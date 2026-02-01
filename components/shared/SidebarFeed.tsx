@@ -3,6 +3,9 @@ import { SidebarConfig } from '../../types';
 import PostCard from './PostCard';
 import NewPost from './NewPost';
 import { useFeed } from '../../hooks/useFeed';
+import { PostService } from '../../modules/post/post.service';
+import { db } from '../../firebase';
+import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import { auth } from '../../firebase'; // Keep auth if used elsewhere, check usage.
 import { Post } from '../../types'; // Keep for types if used
 import {
@@ -23,13 +26,48 @@ import {
 /**
  * SidebarFeed Component - Feed de conhecimento universitário simplificado
  */
-const SidebarFeed: React.FC<SidebarConfig> = ({ title = "Feed do Conhecimento", maxPosts = 50 }) => {
+const SidebarFeed: React.FC<SidebarConfig> = ({ title = "Feed do Conhecimento", maxPosts = 50, userId }) => {
   const [isPostModalOpen, setPostModalOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState<'all' | 'study' | 'resource' | 'question' | 'event' | 'bookmarks'>('all');
-  const { posts, loading, refreshing, handleRefresh, fetchPosts, setPosts } = useFeed(activeFilter);
+  const { posts: feedPosts, loading: feedLoading, refreshing, handleRefresh: feedRefresh, fetchPosts, setPosts: setFeedPosts } = useFeed(activeFilter);
+  const [userPosts, setUserPosts] = useState<Post[]>([]);
+  const [userPostsLoading, setUserPostsLoading] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const filterRef = useRef<HTMLDivElement>(null);
+
+  // If userId is provided, fetch posts for that specific user
+  useEffect(() => {
+    if (userId) {
+      setUserPostsLoading(true);
+      const q = query(
+        collection(db, 'posts'),
+        where('author.id', '==', userId),
+        orderBy('timestamp', 'desc')
+      );
+
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const posts = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Post[];
+        setUserPosts(posts);
+        setUserPostsLoading(false);
+      }, (error) => {
+        console.error('[SidebarFeed] Error fetching user posts:', error);
+        setUserPostsLoading(false);
+      });
+
+      return () => unsubscribe();
+    }
+  }, [userId]);
+
+  // Use userPosts if userId is provided, otherwise use feedPosts
+  const posts = userId ? userPosts : feedPosts;
+  const loading = userId ? userPostsLoading : feedLoading;
+  const handleRefresh = userId ? async () => {
+    // Refresh will happen automatically via subscription
+  } : feedRefresh;
 
   // Reset scroll when posts change
   useEffect(() => {
@@ -247,6 +285,7 @@ const SidebarFeed: React.FC<SidebarConfig> = ({ title = "Feed do Conhecimento", 
                   post={post}
                   onBookmarkToggle={(postId, bookmarked) => {
                     if (activeFilter === 'bookmarks' && !bookmarked) {
+                      const setPosts = userId ? setUserPosts : setFeedPosts;
                       setPosts(prev => prev.filter(p => p.id !== postId));
                     }
                   }}

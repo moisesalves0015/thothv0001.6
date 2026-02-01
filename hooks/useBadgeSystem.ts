@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { collection, onSnapshot, query, orderBy, updateDoc, doc } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, where, updateDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { BadgeSlot } from '../types';
+import { useAuth } from '../contexts/AuthContext';
 
-export const useBadgeSystem = () => {
+export const useBadgeSystem = (userId?: string) => {
+    const { user } = useAuth();
     const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
     const [tileSize, setTileSize] = useState(33);
     const [slots, setSlots] = useState<BadgeSlot[]>([]);
@@ -23,7 +25,18 @@ export const useBadgeSystem = () => {
 
     // Fetch Badges
     useEffect(() => {
-        const q = query(collection(db, 'badges'), orderBy('createdAt', 'desc'));
+        // Use provided userId or fallback to current user
+        const targetUserId = userId || user?.uid;
+        if (!targetUserId) {
+            setLoading(false);
+            return;
+        }
+
+        const q = query(
+            collection(db, 'badges'),
+            where('creatorId', '==', targetUserId),
+            orderBy('createdAt', 'desc')
+        );
         const unsubscribe = onSnapshot(q, { includeMetadataChanges: false },
             (snapshot) => {
                 const badgesData = snapshot.docs.map(doc => {
@@ -54,7 +67,7 @@ export const useBadgeSystem = () => {
             }
         );
         return () => unsubscribe();
-    }, []);
+    }, [userId, user]);
 
     // Resize Handler
     useEffect(() => {

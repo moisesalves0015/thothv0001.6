@@ -1,10 +1,11 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { BadgeService } from '../modules/badges/badge.service';
 import { jsPDF } from 'jspdf';
+import { getCroppedImg } from '../utils/canvasUtils';
 
 export const useBadgeCreator = () => {
     const navigate = useNavigate();
@@ -34,11 +35,11 @@ export const useBadgeCreator = () => {
 
     const isAdmin = userProfile?.role === 'Admin';
 
-    // Image Adjustment State
-    const [scale, setScale] = useState(1);
-    const [position, setPosition] = useState({ x: 0, y: 0 });
-    const [isDraggingImage, setIsDraggingImage] = useState(false);
-    const dragStart = useRef({ x: 0, y: 0 });
+    // Crop State
+    const [crop, setCrop] = useState({ x: 0, y: 0 });
+    const [zoom, setZoom] = useState(1);
+    const [rotation, setRotation] = useState(0);
+    const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
 
     useEffect(() => {
         const checkHistory = async () => {
@@ -60,8 +61,6 @@ export const useBadgeCreator = () => {
     const isFree = isAdmin || isFirstBadge;
     const totalPrice = useMemo(() => isFree ? 0 : subtotal + platformFee, [subtotal, platformFee, isFree]);
 
-    const [imgDimensions, setImgDimensions] = useState({ width: 0, height: 0, ratio: 1 });
-
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
@@ -69,103 +68,27 @@ export const useBadgeCreator = () => {
             reader.onloadend = () => {
                 const result = reader.result as string;
                 setImageUrl(result);
-
-                // Calculate dimensions
-                const img = new Image();
-                img.onload = () => {
-                    setImgDimensions({
-                        width: img.naturalWidth,
-                        height: img.naturalHeight,
-                        ratio: img.naturalWidth / img.naturalHeight
-                    });
-                };
-                img.src = result;
-
-                // Reset adjustment on new image
-                setScale(1);
-                setPosition({ x: 0, y: 0 });
+                // Reset crop state
+                setCrop({ x: 0, y: 0 });
+                setZoom(1);
+                setRotation(0);
             };
             reader.readAsDataURL(file);
         }
     };
 
-    const getCroppedImage = async () => {
-        if (!imageUrl) return imageUrl;
-
-        return new Promise<string>((resolve) => {
-            const img = new Image();
-            img.src = imageUrl;
-            img.crossOrigin = 'anonymous';
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                // High resolution output
-                const baseSize = 300;
-                canvas.width = width * baseSize;
-                canvas.height = height * baseSize;
-                const ctx = canvas.getContext('2d');
-
-                if (!ctx) {
-                    resolve(imageUrl);
-                    return;
-                }
-
-                // 1. Calculate CSS Visual Reference Values (must match JSX logic exactly)
-                // The Preview Mask Size in CSS (max 260px)
-                const maskCSSWidth = Math.min(width * 100, 260);
-                const maskCSSHeight = Math.min(height * 100, 260);
-
-                // The Scale Factor between CSS Pixels and Canvas Pixels
-                const k = canvas.width / maskCSSWidth;
-
-                // 2. Calculate Wrapper Size (The image container size in CSS)
-                const maskRatio = maskCSSWidth / maskCSSHeight;
-                const imgRatio = imgDimensions.ratio || (img.width / img.height);
-
-                let wrapperCSSWidth, wrapperCSSHeight;
-
-                if (imgRatio > maskRatio) {
-                    // Image is wider -> Height fixed to Mask
-                    wrapperCSSHeight = maskCSSHeight;
-                    wrapperCSSWidth = maskCSSHeight * imgRatio;
-                } else {
-                    // Image is taller -> Width fixed to Mask
-                    wrapperCSSWidth = maskCSSWidth;
-                    wrapperCSSHeight = maskCSSWidth / imgRatio;
-                }
-
-                // 3. Draw on Canvas
-                ctx.save();
-
-                // Start at Center of Canvas
-                ctx.translate(canvas.width / 2, canvas.height / 2);
-
-                // Apply User Translations (converted from CSS pixels to Canvas pixels)
-                ctx.translate(position.x * k, position.y * k);
-
-                // Apply User Scale
-                ctx.scale(scale, scale);
-
-                // Draw Image Centered
-                // Dimensions must be the Wrapper Size scaled up by K
-                const drawW = wrapperCSSWidth * k;
-                const drawH = wrapperCSSHeight * k;
-
-                ctx.drawImage(img, -drawW / 2, -drawH / 2, drawW, drawH);
-
-                ctx.restore();
-
-                resolve(canvas.toDataURL('image/webp', 0.9));
-            };
-            img.onerror = () => resolve(imageUrl);
-        });
-    };
+    const onCropComplete = useCallback((croppedArea: any, croppedAreaPixels: any) => {
+        setCroppedAreaPixels(croppedAreaPixels);
+    }, []);
 
     const submitBadge = async () => {
         if (isProcessing) return;
         setIsProcessing(true);
 
         try {
-            const finalImage = await getCroppedImage();
+            const finalImage = await getCroppedImg(imageUrl, croppedAreaPixels, rotation);
+
+            if (!finalImage) throw new Error('Failed to crop image');
 
             // Update state to show the final cropped version in the Success screen
             setImageUrl(finalImage);
@@ -259,12 +182,10 @@ export const useBadgeCreator = () => {
         platformFee,
         totalPrice,
         isFree,
-        isFree,
-        scale, setScale,
-        position, setPosition,
-        imgDimensions,
-        isDraggingImage, setIsDraggingImage,
-        dragStart,
+        crop, setCrop,
+        zoom, setZoom,
+        rotation, setRotation,
+        onCropComplete,
         handleImageUpload,
         submitBadge,
         downloadReceipt

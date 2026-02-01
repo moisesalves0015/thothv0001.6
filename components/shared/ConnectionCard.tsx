@@ -4,6 +4,7 @@ import { Author } from '../../types';
 import { User, Layers, Plus, Check, Loader2, Clock, MessageCircle, X, UserCheck, UserX, MoreVertical, BookOpen, MapPin, GraduationCap, Shield, Star } from 'lucide-react';
 import { ConnectionService } from '../../modules/connection/connection.service';
 import { NotificationService } from '../../modules/notification/notification.service';
+import ProfilePreviewModal from './ProfilePreviewModal';
 
 interface ConnectionCardProps {
   author: Author;
@@ -27,6 +28,7 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
   const [showMenu, setShowMenu] = useState(false);
   const [showRejectConfirm, setShowRejectConfirm] = useState(false);
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   const celebrate = () => {
     confetti({
@@ -120,7 +122,10 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
 
   return (
     <div className="flex-shrink-0 w-[190px] h-[260px] relative rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 group border border-white/20">
-      <div className="absolute inset-0 rounded-2xl overflow-hidden">
+      <div
+        className="absolute inset-0 rounded-2xl overflow-hidden cursor-pointer"
+        onClick={() => setIsProfileModalOpen(true)}
+      >
         {/* Background Image */}
         <img
           src={author.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${author.name}`}
@@ -137,7 +142,13 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
           <div className="flex items-start justify-between mb-0.5">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1 mb-0.5">
-                <h4 className="text-[13px] font-black text-white leading-tight truncate shadow-sm">
+                <h4
+                  className="text-[13px] font-black text-white leading-tight truncate shadow-sm cursor-pointer hover:text-emerald-200 transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsProfileModalOpen(true);
+                  }}
+                >
                   {author.name}
                 </h4>
                 {author.verified && (
@@ -342,6 +353,14 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
           </div>
         </>
       )}
+
+      {/* Profile Preview Modal */}
+      <ProfilePreviewModal
+        userId={author.id}
+        username={author.username}
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+      />
 
       <style jsx="true">{`
         @keyframes fadeIn {
