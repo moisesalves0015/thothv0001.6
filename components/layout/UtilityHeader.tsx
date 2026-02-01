@@ -11,7 +11,8 @@ import {
   Settings,
   LifeBuoy,
   LogOut,
-  ChevronDown
+  ChevronDown,
+  Plus
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { signOut } from 'firebase/auth';
@@ -102,7 +103,7 @@ const UtilityHeader: React.FC = () => {
         .animate-badge-rose { animation: badge-pulse 2s infinite; }
         .animate-badge-amber { animation: badge-pulse-amber 2s infinite; }
       `}</style>
-      <div className="flex items-center flex-shrink-0">
+      <div className="flex items-center flex-shrink-0 gap-1.5 md:gap-3">
         {location.pathname !== '/home' && location.pathname !== '/' ? (
           <button
             onClick={() => window.history.back()}
@@ -117,6 +118,16 @@ const UtilityHeader: React.FC = () => {
             title="Super Calendário"
           >
             <CalendarIcon size={20} />
+          </button>
+        )}
+
+        {location.pathname === '/mensagens' && (
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('thoth:create-group'))}
+            className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full liquid-glass text-slate-700 dark:text-slate-300 hover:bg-[#006c55] hover:text-white dark:hover:bg-[#006c55] dark:hover:text-white transition-all active:scale-90 shadow-sm border border-white/40 dark:border-white/5"
+            title="Criar Novo Grupo"
+          >
+            <Plus size={20} />
           </button>
         )}
       </div>

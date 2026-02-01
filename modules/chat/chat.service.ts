@@ -215,22 +215,27 @@ export class ChatService {
      * Busca conexões do usuário para criar grupos (substitui mock searchUsers)
      */
     static async getUserConnections(userId: string): Promise<Author[]> {
-        // Implementar busca real em 'connections' subcollection
+        // Implementação corrigida usando a coleção raiz 'connections'
         try {
-            const connectionsRef = collection(db, "users", userId, "connections");
-            const q = query(connectionsRef, where("status", "==", "accepted"));
+            const connectionsRef = collection(db, "connections");
+            const q = query(connectionsRef, where("users", "array-contains", userId), where("status", "==", "accepted"));
             const snapshot = await getDocs(q);
 
-            const authors: Author[] = [];
-            for (const docSnap of snapshot.docs) {
-                // Para cada conexão, buscar dados do usuário
-                const userRef = doc(db, "users", docSnap.id); // ID da conexão é o UID do target
-                const userSnap = await getDoc(userRef);
-                if (userSnap.exists()) {
-                    authors.push({ id: userSnap.id, ...userSnap.data() } as Author);
-                }
-            }
-            return authors;
+            return snapshot.docs.map(doc => {
+                const data = doc.data();
+                const otherUserId = data.users.find((id: string) => id !== userId);
+                // O documento de conexão contém metadados do usuário (cacheado)
+                // Se não tiver, poderíamos buscar em 'users', mas ConnectionService salva isso.
+                const otherUserData = data[otherUserId] || {};
+
+                return {
+                    id: otherUserId,
+                    name: otherUserData.name || otherUserData.fullName || 'Usuário',
+                    username: otherUserData.username,
+                    avatar: otherUserData.avatar,
+                    university: otherUserData.university
+                } as Author;
+            });
         } catch (error) {
             console.error("Error fetching connections:", error);
             return [];

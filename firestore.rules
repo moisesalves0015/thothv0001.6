@@ -55,6 +55,11 @@ service cloud.firestore {
       match /savedBadges/{badgeId} {
         allow read, write: if isOwner(userId);
       }
+
+      // Sub-coleção: Connections (Conexões do Usuário)
+      match /connections/{connectionId} {
+        allow read, write: if isOwner(userId);
+      }
     }
 
     // Coleção de Conexões (Raiz)

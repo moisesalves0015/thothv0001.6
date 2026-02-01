@@ -168,11 +168,10 @@ const Mensagens: React.FC = () => {
   }, [selectedChatId, chats]);
 
   useEffect(() => {
-    if ((showGroupCreator || showNewChat) && user) {
+    if (user) {
       ChatService.getUserConnections(user.uid).then(setAvailableConnections);
-      setModalSearchQuery(''); // Reset search
     }
-  }, [showGroupCreator, showNewChat, user]);
+  }, [user]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -181,7 +180,15 @@ const Mensagens: React.FC = () => {
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+
+    // Listener custom event from UtilityHeader
+    const handleCreateGroupEvent = () => setShowGroupCreator(true);
+    window.addEventListener('thoth:create-group', handleCreateGroupEvent);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener('thoth:create-group', handleCreateGroupEvent);
+    };
   }, []);
 
   const activeChat = useMemo(() =>
@@ -292,6 +299,8 @@ const Mensagens: React.FC = () => {
       setSelectedChatId(chatId);
       setSelectedChatType('direct');
       setShowNewChat(false);
+      setSearchQuery(''); // Limpa a busca para remover os resultados da tela (evita duplicidade visual)
+      setIsMobileListVisible(false); // No mobile, já abre o chat
     } catch (error) {
       console.error("Error starting chat:", error);
     }
@@ -391,6 +400,14 @@ const Mensagens: React.FC = () => {
     return `https://api.dicebear.com/7.x/initials/svg?seed=${senderId}`;
   };
 
+  // Lock Body Scroll to prevent UtilityHeader from scrolling
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = ''; // Re-enable on unmount
+    };
+  }, []);
+
   return (
     <div className="flex flex-col gap-4 md:gap-6 animate-in fade-in duration-500 h-[calc(100vh-160px)]">
       {/* Header - Hidden on mobile, title moves to topbar */}
@@ -412,280 +429,326 @@ const Mensagens: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Container */}
-      <div className="flex-1 flex gap-4 overflow-hidden relative">
+      {/* Main Container - Desktop Layout Correction: Locked Top/Bottom to prevent page scroll */}
+      <div className="fixed inset-x-0 bottom-0 top-[138px] z-40 flex flex-col lg:static lg:z-auto lg:bg-transparent lg:flex-1 lg:flex-row lg:gap-4 lg:overflow-hidden lg:min-h-0 pointer-events-auto">
 
-        {/* Sidebar - Chats List */}
-        <div className={`w-full lg:w-[360px] flex flex-col liquid-glass rounded-[24px] overflow-hidden shadow-2xl transition-all duration-300 ${!isMobileListVisible ? 'hidden lg:flex' : 'flex'}`}>
-          <div className="p-4 border-b border-white/40 dark:border-white/5">
-            <div className="relative group">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-[#006c55] transition-colors" size={16} />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Buscar conversas..."
-                className="w-full h-12 pl-10 pr-4 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl text-[15px] dark:text-white focus:outline-none focus:ring-4 focus:ring-[#006c55]/10 focus:border-[#006c55] transition-all"
-              />
-            </div>
+        {/* Wrapper for Columns - Fills remaining height, Glass effect on mobile */}
+        <div className="flex-1 flex flex-col lg:flex-row gap-4 overflow-hidden relative lg:bg-transparent">
 
-            <div className="flex gap-2 mt-3 overflow-x-auto no-scrollbar pb-1">
-              <button onClick={() => setMessageFilter('all')} className={`whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-tighter transition-all ${messageFilter === 'all' ? 'bg-[#006c55] text-white shadow-lg shadow-[#006c55]/20' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}>Todas</button>
-              <button onClick={() => setMessageFilter('direct')} className={`whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-tighter transition-all ${messageFilter === 'direct' ? 'bg-[#006c55] text-white shadow-lg shadow-[#006c55]/20' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}>Conexões</button>
-              <button onClick={() => setMessageFilter('group')} className={`whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-tighter transition-all ${messageFilter === 'group' ? 'bg-[#006c55] text-white shadow-lg shadow-[#006c55]/20' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}>Grupos</button>
-              <button onClick={() => setMessageFilter('study')} className={`whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-tighter transition-all ${messageFilter === 'study' ? 'bg-[#006c55] text-white shadow-lg shadow-[#006c55]/20' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}>Disciplinas</button>
-            </div>
-          </div>
-
-          <div className="flex-1 overflow-y-auto no-scrollbar p-2 space-y-1">
-            {loadingChats ? (
-              <div className="flex justify-center p-4">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#006c55]"></div>
+          {/* Sidebar - Chats List */}
+          <div className={`w-full lg:w-[360px] flex flex-col liquid-glass rounded-t-[24px] lg:rounded-[24px] lg:overflow-hidden lg:shadow-2xl transition-all duration-300 lg:bg-transparent h-full ${!isMobileListVisible ? 'hidden lg:flex' : 'flex'}`}>
+            <div className="p-4 border-b border-gray-200/20 dark:border-white/10 lg:bg-transparent shrink-0">
+              <div className="relative group">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-[#006c55] transition-colors" size={16} />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Buscar conversas ou pessoas..."
+                  className="w-full h-12 pl-10 pr-4 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl text-base dark:text-white focus:outline-none focus:ring-4 focus:ring-[#006c55]/10 focus:border-[#006c55] transition-all"
+                />
               </div>
-            ) : filteredChats.length === 0 ? (
-              <div className="flex flex-col items-center justify-center p-8 text-center h-full">
-                <div className="w-12 h-12 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mb-3">
-                  <MessageSquare size={20} className="text-slate-300 dark:text-slate-600" />
+
+              <div className="flex gap-2 mt-3 overflow-x-auto no-scrollbar pb-1">
+                <button onClick={() => setMessageFilter('all')} className={`whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-tighter transition-all ${messageFilter === 'all' ? 'bg-[#006c55] text-white shadow-lg shadow-[#006c55]/20' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}>Todas</button>
+                <button onClick={() => setMessageFilter('direct')} className={`whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-tighter transition-all ${messageFilter === 'direct' ? 'bg-[#006c55] text-white shadow-lg shadow-[#006c55]/20' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}>Conexões</button>
+                <button onClick={() => setMessageFilter('group')} className={`whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-tighter transition-all ${messageFilter === 'group' ? 'bg-[#006c55] text-white shadow-lg shadow-[#006c55]/20' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}>Grupos</button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto no-scrollbar p-2 space-y-1 pb-20 lg:pb-2">
+              {loadingChats ? (
+                <div className="flex justify-center p-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#006c55]"></div>
                 </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mb-3">Nenhuma conversa encontrada</p>
-                <button
-                  onClick={() => setShowNewChat(true)}
-                  className="px-4 py-2 bg-[#006c55] text-white text-xs font-bold rounded-xl shadow-lg shadow-[#006c55]/20 hover:scale-105 transition-transform"
-                >
-                  Iniciar Nova Mensagem
-                </button>
-              </div>
-            ) : (
-              filteredChats
-                .filter(chat => {
-                  if (messageFilter === 'all') return true;
-                  // Merge all non-direct chats into 'Grupos' as per user feedback
-                  if (messageFilter === 'group') return chat.type === 'group' || chat.type === 'project' || chat.type === 'study';
-                  // Disciplinas specifically for academics (study), but empty if user prefers them in Groups
-                  if (messageFilter === 'study') return chat.type === 'study';
-                  return chat.type === messageFilter;
-                })
-                .map(chat => (
-                  <div
-                    key={chat.id}
-                    onClick={() => {
-                      setSelectedChatId(chat.id);
-                      setSelectedChatType(chat.type);
-                      setIsMobileListVisible(false);
-                    }}
-                    className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all group ${selectedChatId === chat.id
-                      ? 'bg-[#006c55] text-white shadow-lg shadow-[#006c55]/20'
-                      : 'hover:bg-[#006c55]/5 dark:hover:bg-slate-800/40'
-                      }`}
-                  >
-                    <div className="relative shrink-0">
-                      <img src={chat.avatar || `https://api.dicebear.com/7.x/shapes/svg?seed=${chat.id}`} className="w-11 h-11 rounded-xl object-cover border-2 border-white dark:border-slate-800 shadow-sm bg-white dark:bg-slate-800" alt={chat.name} />
-                      {chat.type === 'group' && (
-                        <div className={`absolute -bottom-1 -right-1 w-4 h-4 bg-blue-500 rounded-full border-2 border-white dark:border-slate-800 flex items-center justify-center`}>
-                          <Users size={8} className="text-white" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-center mb-0.5">
-                        <h4 className="text-[15px] font-black truncate dark:text-white">{chat.name}</h4>
-                        {chat.lastMessage && (
-                          <span className={`text-sm font-bold uppercase ${selectedChatId === chat.id ? 'text-white/60' : 'text-slate-400 dark:text-slate-500'}`}>
-                            {new Date(chat.lastMessage.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        )}
-                      </div>
-                      <p className={`text-[13px] truncate ${selectedChatId === chat.id ? 'text-white/80' : 'text-slate-500 dark:text-slate-400'}`}>
-                        {chat.lastMessage ? chat.lastMessage.text : "Nova conversa"}
-                      </p>
-                    </div>
+              ) : (searchQuery && filteredChats.length === 0 && availableConnections.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()) && !chats.find(chat => chat.members?.includes(c.id) && chat.type === 'direct')).length === 0) ? (
+                <div className="flex flex-col items-center justify-center p-8 text-center h-full">
+                  <div className="w-12 h-12 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mb-3">
+                    <MessageSquare size={20} className="text-slate-300 dark:text-slate-600" />
                   </div>
-                ))
-            )}
-          </div>
-        </div>
-
-        {/* Main Chat Area */}
-        <div className={`flex-1 flex flex-col liquid-glass rounded-[24px] overflow-hidden shadow-2xl transition-all duration-300 ${isMobileListVisible ? 'hidden lg:flex' : 'flex'}`}>
-          <div className="px-6 py-4 border-b border-slate-50 dark:border-white/5 flex items-center justify-between bg-white/40 dark:bg-slate-900/20 backdrop-blur-md z-10 shrink-0">
-            <div className="flex items-center gap-4">
-              <button onClick={() => setIsMobileListVisible(true)} className="lg:hidden p-2 -ml-2 text-slate-400 hover:text-slate-600">
-                <ArrowLeft size={20} />
-              </button>
-
-              {activeChat ? (
-                <div className="flex items-center gap-3">
-                  <div className="relative">
-                    <img src={activeChat.avatar || `https://api.dicebear.com/7.x/shapes/svg?seed=${activeChat.id}`} className="w-12 h-12 rounded-xl object-cover shadow-sm border-2 border-white dark:border-slate-800 bg-white dark:bg-slate-800" alt="Avatar" />
-                  </div>
-                  <div>
-                    <h3 className="text-[17px] font-black text-slate-900 dark:text-white leading-none">{activeChat.name}</h3>
-                    <p className="text-[9px] font-bold text-slate-400 dark:text-slate-500 mt-1">
-                      {activeChat.members?.length || 2} participantes
-                    </p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mb-3">Nenhum resultado encontrado</p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setShowNewChat(true)}
+                      className="px-4 py-2 bg-[#006c55] text-white text-xs font-bold rounded-xl shadow-lg shadow-[#006c55]/20 hover:scale-105 transition-transform"
+                    >
+                      Nova Mensagem
+                    </button>
+                    <button
+                      onClick={() => setShowGroupCreator(true)}
+                      className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold rounded-xl hover:bg-slate-200"
+                    >
+                      Criar Grupo
+                    </button>
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-slate-100/50 dark:bg-slate-800/50 rounded-xl"></div>
-                  <div><h3 className="text-sm font-bold text-slate-300 dark:text-slate-700">Selecione uma conversa</h3></div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gradient-to-b from-slate-400/5 to-transparent no-scrollbar">
-            {!selectedChatId ? (
-              <div className="h-full flex flex-col items-center justify-center text-center p-8">
-                <div className="w-20 h-20 bg-gradient-to-br from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-900 rounded-2xl flex items-center justify-center mb-4 shadow-sm border border-white dark:border-white/5">
-                  <MessageSquare size={32} className="text-slate-300 dark:text-slate-700" />
-                </div>
-                <h3 className="text-lg font-black text-slate-900 dark:text-white mb-2">Bem-vindo ao Chat</h3>
-                <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs mx-auto mb-6">
-                  Selecione uma conversa ao lado para começar.
-                </p>
-              </div>
-            ) : (
-              <>
-                {activeMessages.map((msg) => (
-                  <div key={msg.id} className={`flex ${msg.senderId === user?.uid ? 'justify-end' : 'justify-start items-end gap-2'}`}>
-                    {msg.senderId !== user?.uid && (
-                      <img
-                        src={getSenderAvatar(msg.senderId) || avatarUrls[0]}
-                        className="w-6 h-6 rounded-full object-cover border border-white shadow-sm mb-1"
-                        alt="Sender"
-                      />
-                    )}
-                    <div className={`max-w-[80%] animate-in slide-in-from-bottom-2 duration-300 group relative flex flex-col ${msg.senderId === user?.uid ? 'items-end' : 'items-start'}`}>
-                      {!msg.senderId.includes('system') && (
-                        <span className="text-[10px] font-black uppercase tracking-tighter text-slate-400 dark:text-slate-500 mb-1 leading-none whitespace-nowrap">
-                          {(msg.timestamp?.toMillis ? new Date(msg.timestamp.toMillis()) : new Date(msg.timestamp)).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', hour12: false })}
-                        </span>
-                      )}
-
-                      {replyingTo?.id === msg.id && <div className="text-[10px] text-slate-400 mb-1">Respondendo...</div>}
-
-                      <div className={`px-4 py-3 rounded-2xl shadow-sm ${msg.senderId === user?.uid
-                        ? 'bg-[#006c55] text-white rounded-tr-none'
-                        : msg.senderId === 'system'
-                          ? 'bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 text-amber-800 dark:text-amber-200 mx-auto w-full text-center'
-                          : 'bg-white/80 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-tl-none'
-                        } ${msg.pinned ? 'ring-2 ring-amber-400' : ''}`}>
-                        {renderMessageContent(msg)}
-
-                        <div className={`flex items-center justify-end mt-1 gap-1 opacity-0 group-hover:opacity-100 transition-opacity`}>
-                          <div className={`flex items-center gap-1 ${msg.senderId === user?.uid ? 'text-white/60' : 'text-slate-400'}`}>
-                            <button onClick={() => setReplyingTo(msg)}><SendHorizonal size={12} /></button>
-                            <button onClick={() => handlePinMessage(msg.id, msg.pinned)}><Pin size={12} className={msg.pinned ? 'fill-current' : ''} /></button>
-                            {msg.senderId === user?.uid && (
-                              <>
-                                <button onClick={() => { setEditingMessage(msg); setMessageText(msg.text); }}><Edit2 size={12} /></button>
-                                <button onClick={() => handleDeleteMessage(msg.id)}><Trash2 size={12} /></button>
-                              </>
+                <>
+                  {/* Existing Chats */}
+                  {filteredChats
+                    .filter(chat => {
+                      if (messageFilter === 'all') return true;
+                      if (messageFilter === 'group') return chat.type === 'group' || chat.type === 'project' || chat.type === 'study';
+                      return chat.type === messageFilter;
+                    })
+                    .map(chat => (
+                      <div
+                        key={chat.id}
+                        onClick={() => {
+                          setSelectedChatId(chat.id);
+                          setSelectedChatType(chat.type);
+                          setIsMobileListVisible(false);
+                        }}
+                        className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all group ${selectedChatId === chat.id
+                          ? 'bg-[#006c55] text-white shadow-lg shadow-[#006c55]/20'
+                          : 'hover:bg-[#006c55]/5 dark:hover:bg-slate-800/40 bg-white dark:bg-slate-800 lg:bg-transparent'
+                          }`}
+                      >
+                        <div className="relative shrink-0">
+                          <img src={chat.avatar || `https://api.dicebear.com/7.x/shapes/svg?seed=${chat.id}`} className="w-11 h-11 rounded-xl object-cover border-2 border-white dark:border-slate-800 shadow-sm bg-white dark:bg-slate-800" alt={chat.name} />
+                          {chat.type === 'group' && (
+                            <div className={`absolute -bottom-1 -right-1 w-4 h-4 bg-blue-500 rounded-full border-2 border-white dark:border-slate-800 flex items-center justify-center`}>
+                              <Users size={8} className="text-white" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex justify-between items-center mb-0.5">
+                            <h4 className="text-[15px] font-black truncate dark:text-white">{chat.name}</h4>
+                            {chat.lastMessage && (
+                              <span className={`text-sm font-bold uppercase ${selectedChatId === chat.id ? 'text-white/60' : 'text-slate-400 dark:text-slate-500'}`}>
+                                {new Date(chat.lastMessage.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </span>
                             )}
-                            <button onClick={() => setShowReactions(showReactions === msg.id ? null : msg.id)}><Smile size={12} /></button>
                           </div>
-
-                          <div className="flex gap-0.5">
-                            {msg.reactions?.map((r, i) => (
-                              <span key={i} className="text-[10px] bg-black/10 px-1 rounded hover:bg-black/20 cursor-pointer" onClick={() => handleReaction(msg.id, r.emoji)}>{r.emoji} {r.userIds.length}</span>
-                            ))}
-                          </div>
+                          <p className={`text-[13px] truncate ${selectedChatId === chat.id ? 'text-white/80' : 'text-slate-500 dark:text-slate-400'}`}>
+                            {chat.lastMessage ? chat.lastMessage.text : "Nova conversa"}
+                          </p>
                         </div>
                       </div>
+                    ))}
 
-                      {showReactions === msg.id && (
-                        <div className="absolute -top-8 left-0 bg-white dark:bg-slate-800 p-1 rounded-full shadow-lg flex gap-1 animate-in zoom-in border dark:border-white/5">
-                          {['👍', '❤️', '😂', '😮', '😢', '👏'].map(e => (
-                            <button key={e} onClick={() => { handleReaction(msg.id, e); setShowReactions(null); }} className="hover:scale-125 transition-transform">{e}</button>
-                          ))}
+                  {/* Search Results - New Connections */}
+                  {searchQuery && availableConnections
+                    .filter(c =>
+                      c.name.toLowerCase().includes(searchQuery.toLowerCase())
+                    )
+                    .map(user => (
+                      <div
+                        key={user.id}
+                        className="flex items-center justify-between gap-3 p-3 rounded-xl hover:bg-[#006c55]/5 dark:hover:bg-slate-800/40 bg-white dark:bg-slate-800 lg:bg-transparent transition-all border-l-4 border-transparent hover:border-[#006c55]"
+                      >
+                        <div className="flex items-center gap-3 overflow-hidden">
+                          <div className="relative shrink-0">
+                            <img src={user.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${user.name}`} className="w-11 h-11 rounded-xl object-cover border-2 border-white dark:border-slate-800 shadow-sm opacity-80" alt={user.name} />
+                          </div>
+                          <div className="min-w-0">
+                            <h4 className="text-[15px] font-bold truncate text-slate-700 dark:text-slate-300">{user.name}</h4>
+                            <p className="text-[11px] text-slate-400 uppercase font-bold tracking-wider">Nova Conexão</p>
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-                <div ref={chatEndRef} />
-              </>
-            )}
+                        <button
+                          onClick={() => handleStartDirectChat(user)}
+                          className="bg-[#006c55]/10 hover:bg-[#006c55] text-[#006c55] hover:text-white px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-tight transition-all"
+                        >
+                          Iniciar Chat
+                        </button>
+                      </div>
+                    ))}
+                </>
+              )}
+            </div>
           </div>
 
-          <div className="p-4 bg-white/40 dark:bg-slate-900/20 border-t border-slate-50 dark:border-white/5 flex items-center gap-3 shrink-0 backdrop-blur-md relative overflow-visible">
-            {replyingTo && (
-              <div className="absolute bottom-full left-0 w-full bg-slate-50 dark:bg-slate-800 p-2 border-t border-slate-200 dark:border-white/10 flex justify-between items-center text-xs text-slate-500 dark:text-slate-400 animate-in slide-in-from-bottom-2">
-                <span className="flex items-center gap-2"><SendHorizonal size={12} /> Respondendo a mensagem...</span>
-                <button onClick={() => setReplyingTo(null)} className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full"><X size={14} /></button>
-              </div>
-            )}
+          {/* Main Chat Area */}
+          <div className={`flex-1 flex flex-col liquid-glass rounded-t-[24px] lg:rounded-[24px] lg:overflow-hidden lg:shadow-2xl transition-all duration-300 lg:bg-transparent fixed inset-x-0 bottom-0 top-[138px] z-50 lg:static lg:z-auto ${isMobileListVisible ? 'hidden lg:flex' : 'flex'}`}>
+            <div className="px-4 lg:px-6 py-4 border-b border-gray-200/20 dark:border-white/10 flex items-center justify-between lg:bg-white/40 lg:dark:bg-slate-900/20 backdrop-blur-md z-10 shrink-0">
+              <div className="flex items-center gap-4">
+                <button onClick={() => setIsMobileListVisible(true)} className="lg:hidden p-2 -ml-2 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300">
+                  <ArrowLeft size={20} />
+                </button>
 
-            {uploadedFile && (
-              <div className="absolute bottom-full left-0 w-full bg-blue-50 dark:bg-blue-900/20 p-2 border-t border-blue-200 dark:border-blue-900/40 flex justify-between items-center text-xs text-blue-600 dark:text-blue-400 animate-in slide-in-from-bottom-2">
-                <span className="flex items-center gap-2 font-black uppercase tracking-tighter">
-                  <FileText size={14} /> Arquivo Pronto: {uploadedFile.name}
-                </span>
-                <button onClick={() => setUploadedFile(null)} className="p-1 hover:bg-blue-100 dark:hover:bg-blue-800 rounded-full"><X size={14} /></button>
-              </div>
-            )}
-
-            {stagedAssignment && (
-              <div className="absolute bottom-full left-0 w-full bg-emerald-50 dark:bg-emerald-900/20 p-2 border-t border-emerald-200 dark:border-emerald-900/40 flex justify-between items-center text-xs text-emerald-600 dark:text-emerald-400 animate-in slide-in-from-bottom-2">
-                <span className="flex items-center gap-2 font-black uppercase tracking-tighter">
-                  <BookOpen size={14} /> Compartilhando: {stagedAssignment.title}
-                </span>
-                <button onClick={() => setStagedAssignment(null)} className="p-1 hover:bg-emerald-100 dark:hover:bg-emerald-800 rounded-full"><X size={14} /></button>
-              </div>
-            )}
-
-            <div className="relative" ref={optionsRef}>
-              <button
-                onClick={() => setShowOptions(!showOptions)}
-                className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${showOptions ? 'bg-[#006c55] text-white rotate-45 shadow-lg' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-[#006c55] hover:bg-[#006c55]/10'}`}
-              >
-                <Plus size={24} strokeWidth={2.5} />
-              </button>
-
-              {showOptions && (
-                <div className="absolute bottom-14 left-0 w-56 liquid-glass rounded-2xl border border-white/60 dark:border-white/10 shadow-2xl p-2 animate-in slide-in-from-bottom-4 zoom-in-95 duration-200 z-[100] bg-white dark:bg-slate-900">
-                  <button
-                    onClick={() => { fileInputRef.current?.click(); setShowOptions(false); }}
-                    className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[#006c55]/5 text-slate-700 dark:text-slate-200 text-sm font-black uppercase tracking-tight transition-all"
-                  >
-                    <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-500">
-                      <Paperclip size={18} />
+                {activeChat ? (
+                  <div className="flex items-center gap-3">
+                    <div className="relative">
+                      <img src={activeChat.avatar || `https://api.dicebear.com/7.x/shapes/svg?seed=${activeChat.id}`} className="w-10 lg:w-12 h-10 lg:h-12 rounded-xl object-cover shadow-sm border-2 border-white dark:border-slate-800 bg-white dark:bg-slate-800" alt="Avatar" />
                     </div>
-                    Anexar Arquivo
-                  </button>
-                  <button
-                    onClick={() => { setShowAssignments(true); setShowOptions(false); }}
-                    className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[#006c55]/5 text-slate-700 dark:text-slate-200 text-sm font-black uppercase tracking-tight transition-all"
-                  >
-                    <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center text-emerald-500">
-                      <BookOpen size={18} />
+                    <div>
+                      <h3 className="text-[15px] lg:text-[17px] font-black text-slate-900 dark:text-white leading-none">{activeChat.name}</h3>
+                      <p className="text-[9px] font-bold text-slate-400 dark:text-slate-500 mt-1">
+                        {activeChat.members?.length || 2} participantes
+                      </p>
                     </div>
-                    Trabalho Acadêmico
-                  </button>
-                </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-slate-100/50 dark:bg-slate-800/50 rounded-xl"></div>
+                    <div><h3 className="text-sm font-bold text-slate-300 dark:text-slate-700">Selecione uma conversa</h3></div>
+                  </div>
+                )}
+              </div>
+              {/* Actions */}
+              {activeChat && (
+                <button className="p-2 text-slate-400 hover:text-[#006c55] transition-colors"><MoreVertical size={20} /></button>
               )}
             </div>
 
-            <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
+            <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-6 lg:bg-gradient-to-b lg:from-slate-400/5 lg:to-transparent no-scrollbar pb-[100px] lg:pb-6">
+              {!selectedChatId ? (
+                <div className="h-full flex flex-col items-center justify-center text-center p-8">
+                  <div className="w-20 h-20 bg-gradient-to-br from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-900 rounded-2xl flex items-center justify-center mb-4 shadow-sm border border-white dark:border-white/5">
+                    <MessageSquare size={32} className="text-slate-300 dark:text-slate-700" />
+                  </div>
+                  <h3 className="text-lg font-black text-slate-900 dark:text-white mb-2">Bem-vindo ao Chat</h3>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs mx-auto mb-6">
+                    Selecione uma conversa ao lado para começar.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {activeMessages.map((msg) => (
+                    <div key={msg.id} className={`flex ${msg.senderId === user?.uid ? 'justify-end' : 'justify-start items-end gap-2'}`}>
+                      {msg.senderId !== user?.uid && (
+                        <img
+                          src={getSenderAvatar(msg.senderId) || avatarUrls[0]}
+                          className="w-6 h-6 rounded-full object-cover border border-white shadow-sm mb-1"
+                          alt="Sender"
+                        />
+                      )}
+                      <div className={`max-w-[80%] animate-in slide-in-from-bottom-2 duration-300 group relative flex flex-col ${msg.senderId === user?.uid ? 'items-end' : 'items-start'}`}>
+                        {!msg.senderId.includes('system') && (
+                          <span className="text-[9px] font-black uppercase tracking-tighter text-slate-400 dark:text-slate-500 mb-1 leading-none whitespace-nowrap">
+                            {(msg.timestamp?.toMillis ? new Date(msg.timestamp.toMillis()) : new Date(msg.timestamp)).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', hour12: false })}
+                          </span>
+                        )}
 
-            <div className="flex-1 relative flex items-center gap-2 bg-slate-100 dark:bg-slate-800 rounded-xl px-4 transition-all focus-within:ring-4 focus-within:ring-[#006c55]/10 focus-within:bg-white dark:focus-within:bg-slate-800 border border-transparent focus-within:border-[#006c55]">
-              <textarea
-                value={messageText}
-                onChange={(e) => setMessageText(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
-                disabled={!selectedChatId}
-                placeholder="Digite sua mensagem direta ou acadêmica..."
-                className="w-full min-h-[44px] max-h-32 bg-transparent py-3 text-[15px] font-medium dark:text-white focus:outline-none transition-all resize-none disabled:opacity-50 no-scrollbar"
-                rows={1}
-              />
-              <button
-                onClick={handleSendMessage}
-                disabled={(!messageText.trim() && !uploadedFile) || !selectedChatId}
-                className={`p-2 transition-all ${(!messageText.trim() && !uploadedFile) ? 'text-slate-300' : 'text-[#006c55] hover:scale-110 active:scale-90'}`}
-              >
-                <Send size={24} strokeWidth={2.5} />
-              </button>
+                        {replyingTo?.id === msg.id && <div className="text-[10px] text-slate-400 mb-1">Respondendo...</div>}
+
+                        <div className={`px-4 py-3 rounded-2xl shadow-sm max-w-full md:max-w-[700px] break-words ${msg.senderId === user?.uid
+                          ? 'bg-[#006c55] text-white rounded-tr-none'
+                          : msg.senderId === 'system'
+                            ? 'bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 text-amber-800 dark:text-amber-200 mx-auto w-full text-center'
+                            : 'bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-tl-none'
+                          } ${msg.pinned ? 'ring-2 ring-amber-400' : ''}`}>
+                          {renderMessageContent(msg)}
+
+                          <div className={`flex items-center justify-end mt-1 gap-1 opacity-0 group-hover:opacity-100 transition-opacity`}>
+                            <div className={`flex items-center gap-1 ${msg.senderId === user?.uid ? 'text-white/60' : 'text-slate-400'}`}>
+                              <button onClick={() => setReplyingTo(msg)}><SendHorizonal size={12} /></button>
+                              <button onClick={() => handlePinMessage(msg.id, msg.pinned)}><Pin size={12} className={msg.pinned ? 'fill-current' : ''} /></button>
+                              {msg.senderId === user?.uid && (
+                                <>
+                                  <button onClick={() => { setEditingMessage(msg); setMessageText(msg.text); }}><Edit2 size={12} /></button>
+                                  <button onClick={() => handleDeleteMessage(msg.id)}><Trash2 size={12} /></button>
+                                </>
+                              )}
+                              <button onClick={() => setShowReactions(showReactions === msg.id ? null : msg.id)}><Smile size={12} /></button>
+                            </div>
+
+                            <div className="flex gap-0.5">
+                              {msg.reactions?.map((r, i) => (
+                                <span key={i} className="text-[10px] bg-black/10 px-1 rounded hover:bg-black/20 cursor-pointer" onClick={() => handleReaction(msg.id, r.emoji)}>{r.emoji} {r.userIds.length}</span>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+
+                        {showReactions === msg.id && (
+                          <div className="absolute -top-8 left-0 bg-white dark:bg-slate-800 p-1 rounded-full shadow-lg flex gap-1 animate-in zoom-in border dark:border-white/5">
+                            {['👍', '❤️', '😂', '😮', '😢', '👏'].map(e => (
+                              <button key={e} onClick={() => { handleReaction(msg.id, e); setShowReactions(null); }} className="hover:scale-125 transition-transform">{e}</button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  <div ref={chatEndRef} />
+                </>
+              )}
+            </div>
+
+            {/* Input Area - Fixed Bottom on Mobile */}
+            <div className="fixed bottom-0 left-0 right-0 p-3 bg-white border-t border-slate-100 dark:bg-slate-900 dark:border-slate-800 z-[70] lg:static lg:bg-white/40 lg:dark:bg-slate-900/20 lg:border-t-0 lg:p-4 lg:backdrop-blur-md">
+              <div className="flex items-center gap-3 shrink-0 relative overflow-visible max-w-[1005px] mx-auto w-full">
+                {replyingTo && (
+                  <div className="absolute bottom-full left-0 w-full bg-slate-50 dark:bg-slate-800 p-2 border-t border-slate-200 dark:border-white/10 flex justify-between items-center text-xs text-slate-500 dark:text-slate-400 animate-in slide-in-from-bottom-2">
+                    <span className="flex items-center gap-2"><SendHorizonal size={12} /> Respondendo a mensagem...</span>
+                    <button onClick={() => setReplyingTo(null)} className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full"><X size={14} /></button>
+                  </div>
+                )}
+
+                {uploadedFile && (
+                  <div className="absolute bottom-full left-0 w-full bg-blue-50 dark:bg-blue-900/20 p-2 border-t border-blue-200 dark:border-blue-900/40 flex justify-between items-center text-xs text-blue-600 dark:text-blue-400 animate-in slide-in-from-bottom-2">
+                    <span className="flex items-center gap-2 font-black uppercase tracking-tighter">
+                      <FileText size={14} /> Arquivo Pronto: {uploadedFile.name}
+                    </span>
+                    <button onClick={() => setUploadedFile(null)} className="p-1 hover:bg-blue-100 dark:hover:bg-blue-800 rounded-full"><X size={14} /></button>
+                  </div>
+                )}
+
+                {stagedAssignment && (
+                  <div className="absolute bottom-full left-0 w-full bg-emerald-50 dark:bg-emerald-900/20 p-2 border-t border-emerald-200 dark:border-emerald-900/40 flex justify-between items-center text-xs text-emerald-600 dark:text-emerald-400 animate-in slide-in-from-bottom-2">
+                    <span className="flex items-center gap-2 font-black uppercase tracking-tighter">
+                      <BookOpen size={14} /> Compartilhando: {stagedAssignment.title}
+                    </span>
+                    <button onClick={() => setStagedAssignment(null)} className="p-1 hover:bg-emerald-100 dark:hover:bg-emerald-800 rounded-full"><X size={14} /></button>
+                  </div>
+                )}
+
+                <div className="relative" ref={optionsRef}>
+                  <button
+                    onClick={() => setShowOptions(!showOptions)}
+                    className={`w-10 h-10 lg:w-12 lg:h-12 rounded-xl flex items-center justify-center transition-all ${showOptions ? 'bg-[#006c55] text-white rotate-45 shadow-lg' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-[#006c55] hover:bg-[#006c55]/10'}`}
+                  >
+                    <Plus size={20} strokeWidth={2.5} />
+                  </button>
+
+                  {showOptions && (
+                    <div className="absolute bottom-14 left-0 w-56 liquid-glass rounded-2xl border border-white/60 dark:border-white/10 shadow-2xl p-2 animate-in slide-in-from-bottom-4 zoom-in-95 duration-200 z-[100] bg-white dark:bg-slate-900">
+                      <button
+                        onClick={() => { fileInputRef.current?.click(); setShowOptions(false); }}
+                        className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[#006c55]/5 text-slate-700 dark:text-slate-200 text-sm font-black uppercase tracking-tight transition-all"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-500">
+                          <Paperclip size={18} />
+                        </div>
+                        Anexar Arquivo
+                      </button>
+                      <button
+                        onClick={() => { setShowAssignments(true); setShowOptions(false); }}
+                        className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[#006c55]/5 text-slate-700 dark:text-slate-200 text-sm font-black uppercase tracking-tight transition-all"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center text-emerald-500">
+                          <BookOpen size={18} />
+                        </div>
+                        Trabalho Acadêmico
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
+
+                <div className="flex-1 relative flex items-center gap-2 bg-slate-100 dark:bg-slate-800 rounded-xl px-4 transition-all focus-within:ring-4 focus-within:ring-[#006c55]/10 focus-within:bg-white dark:focus-within:bg-slate-800 border border-transparent focus-within:border-[#006c55]">
+                  <textarea
+                    value={messageText}
+                    onChange={(e) => setMessageText(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
+                    disabled={!selectedChatId}
+                    placeholder="Digite sua mensagem..."
+                    className="w-full min-h-[44px] max-h-32 bg-transparent py-3 text-base font-medium dark:text-white focus:outline-none transition-all resize-none disabled:opacity-50 no-scrollbar"
+                    rows={1}
+                  />
+                  <button
+                    onClick={handleSendMessage}
+                    disabled={(!messageText.trim() && !uploadedFile) || !selectedChatId}
+                    className={`p-2 transition-all ${(!messageText.trim() && !uploadedFile) ? 'text-slate-300' : 'text-[#006c55] hover:scale-110 active:scale-90'}`}
+                  >
+                    <Send size={24} strokeWidth={2.5} />
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -794,8 +857,8 @@ const Mensagens: React.FC = () => {
 
       {/* Group Creation Modal */}
       {showGroupCreator && (
-        <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300">
-          <div className="liquid-glass rounded-[24px] w-full max-w-md shadow-2xl animate-in slide-in-from-bottom-4 duration-300 border border-white/40 dark:border-white/10">
+        <div className="fixed inset-0 z-[100] bg-transparent backdrop-blur-[4px] flex items-center justify-center p-4 animate-in fade-in duration-300">
+          <div className="bg-white dark:bg-slate-900 rounded-[24px] w-full max-w-md shadow-2xl animate-in slide-in-from-bottom-4 duration-300 border border-slate-200 dark:border-white/10">
             <div className="px-6 py-4 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-black text-slate-900 dark:text-white">Criar Novo Grupo</h3>
