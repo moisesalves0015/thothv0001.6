@@ -117,8 +117,6 @@ const Topbar = () => {
 
   const mobileMenuItems = [
     { icon: LayoutDashboard, label: 'Página Inicial', path: '/home' },
-    { icon: MessageCircle, label: 'Mensagens', path: '/mensagens' },
-    { icon: GraduationCap, label: 'Estudos', path: '/estudos' },
     { icon: BookOpen, label: 'Disciplinas', path: '/disciplinas' },
     { icon: Users, label: 'Conexões', path: '/conexoes' },
     { icon: Calendar, label: 'Eventos', path: '/eventos' },

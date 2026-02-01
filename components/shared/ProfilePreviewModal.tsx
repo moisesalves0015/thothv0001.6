@@ -73,7 +73,8 @@ const ProfilePreviewModal: React.FC<ProfilePreviewModalProps> = ({
     if (!isOpen) return null;
 
     const isOwnProfile = user?.uid === userId;
-    const displayUsername = username || profileData?.username || 'usuario';
+    const rawUsername = username || profileData?.username || 'usuario';
+    const displayUsername = rawUsername.replace(/^@/, '');
 
     const handleViewFullProfile = () => {
         onClose();

@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { StorageService } from '../../modules/storage/storage.service';
 import { PostService } from '../../modules/post/post.service';
-import { auth } from '../../firebase';
+import { useAuth } from '../../contexts/AuthContext';
 import { Author } from '../../types';
 
 type AttachmentType = 'none' | 'image' | 'file' | 'link';
@@ -250,7 +250,11 @@ const NewPost: React.FC<NewPostProps> = ({ isOpen, onClose, onPostCreated, mode 
       alert("Por favor, escreva algo ou adicione uma mídia!");
       return;
     }
-    const user = auth.currentUser;
+    if (!text.trim() && !hasMedia) {
+      alert("Por favor, escreva algo ou adicione uma mídia!");
+      return;
+    }
+    const { user, userProfile } = useAuth();
     if (!user) {
       alert("Você precisa estar logado.");
       return;
@@ -280,10 +284,10 @@ const NewPost: React.FC<NewPostProps> = ({ isOpen, onClose, onPostCreated, mode 
       if (mode === 'create') {
         const author = {
           id: user.uid,
-          name: user.displayName || 'Usuário',
-          username: '@' + (user.email?.split('@')[0] || 'usuario'),
+          name: userProfile?.name || user.displayName || 'Usuário',
+          username: userProfile?.username || user.email?.split('@')[0] || 'usuario',
           avatar: user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}`,
-          verified: false
+          verified: userProfile?.verified || false
         };
         await PostService.createPost(text, hashtags, finalImages, author, selectedLink, finalFileAttachment, postType);
         if (onPostCreated) onPostCreated();

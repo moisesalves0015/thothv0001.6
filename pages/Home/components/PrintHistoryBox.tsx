@@ -61,71 +61,121 @@ const PrintHistoryBox: React.FC = () => {
       format: 'a4'
     });
 
-    // Cores e Design
-    const primaryColor = [0, 108, 85]; // #006c55
-    const secondaryColor = [241, 245, 249]; // slate-100
+    // Brand Colors
+    const thothGreen = [0, 108, 85]; // #006c55
+    const lightGreen = [236, 253, 245]; // emerald-50
+    const darkText = [30, 41, 59]; // slate-800
+    const labelColor = [71, 85, 105]; // slate-600
 
-    // Cabeçalho colorido
-    doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-    doc.rect(0, 0, 210, 40, 'F');
+    // --- Header Background with Curve ---
+    doc.setFillColor(thothGreen[0], thothGreen[1], thothGreen[2]);
+    // Draw a big green rect at top
+    doc.rect(0, 0, 210, 50, 'F');
 
+    // Simulating a curve (simple method: white circle over bottom part or just a straight bar for cleanliness)
+    // Going for a clean modern straight bar as jsPDF curves are complex without SVG
+
+    // --- Logo (Text Only as requested) ---
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(32);
-    doc.text('THOTH', 105, 20, { align: 'center' });
-    doc.setFontSize(10);
-    doc.text('COMPROVANTE DE IMPRESSÃO', 105, 30, { align: 'center' });
+    doc.setFontSize(48);
+    doc.text('thoth', 105, 32, { align: 'center', charSpace: 1 });
 
-    // Corpo do documento
-    doc.setTextColor(30, 41, 59); // slate-800
-    doc.setFontSize(14);
-    doc.text('Detalhes do Pedido', 20, 55);
+    // --- Title ---
+    doc.setTextColor(thothGreen[0], thothGreen[1], thothGreen[2]);
+    doc.setFontSize(24);
+    doc.text('Pedido de Impressão', 105, 70, { align: 'center' });
 
-    doc.setDrawColor(226, 232, 240); // slate-200
-    doc.line(20, 58, 190, 58);
+    // --- Main Details Box (Rounded) ---
+    const boxTop = 85;
+    const boxHeight = 75; // Increased depth to fit all items
+    const boxWidth = 160;
+    const boxX = (210 - boxWidth) / 2;
 
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
+    doc.setDrawColor(thothGreen[0], thothGreen[1], thothGreen[2]);
+    doc.setLineWidth(0.5);
+    doc.setFillColor(250, 250, 250);
+    doc.roundedRect(boxX, boxTop, boxWidth, boxHeight, 3, 3, 'FD');
 
-    const details = [
-      ['Arquivo:', req.fileName],
-      ['Gráfica:', req.printerName],
-      ['Data/Hora:', new Date(req.timestamp).toLocaleString()],
-      ['Páginas:', `${req.pages} ${isCover ? '(+ Capa Thoth)' : ''}`],
-      ['Valor Total:', `R$ ${req.totalPrice.toFixed(2)}`],
-      ['Pagamento:', req.paymentMethod === 'paid' ? 'Pago via App' : 'Pagar na Retirada'],
-      ['Status:', req.priority === 'urgent' ? 'Urgente' : 'Normal']
-    ];
+    // Content inside Box
+    const startX = boxX + 15;
+    const valueX = boxX + 50;
+    let currentY = boxTop + 15;
+    const lineHeight = 10;
 
-    let y = 70;
-    details.forEach(([label, value]) => {
+    // Helper to draw row
+    const drawRow = (label: string, value: string) => {
       doc.setFont('helvetica', 'bold');
-      doc.text(label, 20, y);
+      doc.setFontSize(11);
+      doc.setTextColor(thothGreen[0], thothGreen[1], thothGreen[2]);
+      doc.text(label, startX, currentY);
+
       doc.setFont('helvetica', 'normal');
-      doc.text(value, 60, y);
-      y += 8;
-    });
+      doc.setTextColor(darkText[0], darkText[1], darkText[2]);
+      doc.text(value, valueX, currentY);
 
-    // Mensagem Criativa / Incentivo
-    doc.setFillColor(248, 250, 252); // slate-50
-    doc.roundedRect(20, 130, 170, 40, 5, 5, 'F');
+      // Underline
+      doc.setDrawColor(200, 200, 200);
+      doc.setLineWidth(0.1);
+      doc.line(startX, currentY + 2, boxX + boxWidth - 15, currentY + 2);
 
-    doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+      currentY += lineHeight;
+    };
+
+    const userName = user?.displayName || 'Estudante';
+
+    drawRow('Nome:', userName);
+    drawRow('Arquivo:', req.fileName.length > 30 ? req.fileName.substring(0, 28) + '...' : req.fileName);
+    drawRow('Gráfica:', req.printerName);
+    drawRow('Valor:', `R$ ${req.totalPrice.toFixed(2)}`);
+    drawRow('Data:', new Date(req.timestamp).toLocaleDateString('pt-BR'));
+    drawRow('Status:', req.paymentMethod === 'paid' ? 'Pago Online' : 'Pagamento na Retirada');
+
+
+    // --- Interaction / Footer Box ---
+    // Pushing it to the bottom of the page
+    const footerBoxTop = 200;
+    const footerBoxHeight = 55;
+
+    doc.setFillColor(241, 245, 249); // slate-100
+    doc.setDrawColor(200, 200, 200);
+    doc.roundedRect(boxX, footerBoxTop, boxWidth, footerBoxHeight, 3, 3, 'FD');
+
+    // QR Code Placeholder
+    const qrSize = 35;
+    doc.setFillColor(255, 255, 255);
+    doc.rect(boxX + 10, footerBoxTop + 10, qrSize, qrSize, 'F');
+    // Draw simple pattern to look like QR
+    doc.setFillColor(0, 0, 0);
+    doc.rect(boxX + 13, footerBoxTop + 13, 8, 8, 'F');
+    doc.rect(boxX + 34, footerBoxTop + 13, 8, 8, 'F');
+    doc.rect(boxX + 13, footerBoxTop + 34, 8, 8, 'F');
+    doc.rect(boxX + 25, footerBoxTop + 25, 4, 4, 'F');
+
+    // Footer Text
+    const textStartX = boxX + qrSize + 20;
+    doc.setTextColor(thothGreen[0], thothGreen[1], thothGreen[2]);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(12);
-    doc.text('🚀 Economize com o Thoth!', 105, 142, { align: 'center' });
+    doc.text('Retire seu pedido no ponto de', textStartX, footerBoxTop + 15);
+    doc.text('impressão do Thoth.', textStartX, footerBoxTop + 20);
 
-    doc.setTextColor(100, 116, 139); // slate-500
-    doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    doc.text('Você sabia? Alunos que usam o Thoth economizam em média 15%', 105, 150, { align: 'center' });
-    doc.text('em impressões comparado ao balcão tradicional. Indique um amigo!', 105, 155, { align: 'center' });
-    doc.text('thoth.app.br', 105, 163, { align: 'center' });
+    doc.setFontSize(9);
+    doc.setTextColor(labelColor[0], labelColor[1], labelColor[2]);
+    doc.text('Em caso de dúvida, apresente este comprovante.', textStartX, footerBoxTop + 32);
 
-    // Rodapé
-    doc.setFontSize(8);
-    doc.setTextColor(203, 213, 225); // slate-300
-    doc.text('Este é um documento gerado automaticamente pelo sistema Thoth.', 105, 280, { align: 'center' });
+    doc.text('www.plataformathoth.com.br', textStartX, footerBoxTop + 42);
+
+
+    // --- Bottom Logo ---
+    doc.setFillColor(thothGreen[0], thothGreen[1], thothGreen[2]);
+    // Small bottom bar decoration
+    doc.rect(0, 280, 210, 17, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('thoth', 105, 292, { align: 'center', charSpace: 1 });
 
     if (isCover) {
       return doc.output('arraybuffer');

@@ -401,9 +401,23 @@ const Mensagens: React.FC = () => {
   };
 
   // Lock Body Scroll to prevent UtilityHeader from scrolling
+  // Lock Body Scroll ONLY on Mobile to prevent UtilityHeader from scrolling
   useEffect(() => {
-    document.body.style.overflow = 'hidden';
+    const handleResize = () => {
+      // 1024px is the lg breakpoint used for desktop layout
+      if (window.innerWidth < 1024) {
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = '';
+      }
+    };
+
+    // Initial check
+    handleResize();
+
+    window.addEventListener('resize', handleResize);
     return () => {
+      window.removeEventListener('resize', handleResize);
       document.body.style.overflow = ''; // Re-enable on unmount
     };
   }, []);
@@ -430,7 +444,7 @@ const Mensagens: React.FC = () => {
       </div>
 
       {/* Main Container - Desktop Layout Correction: Locked Top/Bottom to prevent page scroll */}
-      <div className="fixed inset-x-0 bottom-0 top-[138px] z-40 flex flex-col lg:static lg:z-auto lg:bg-transparent lg:flex-1 lg:flex-row lg:gap-4 lg:overflow-hidden lg:min-h-0 pointer-events-auto">
+      <div className="fixed inset-x-0 bottom-0 top-[150px] z-40 flex flex-col lg:static lg:z-auto lg:bg-transparent lg:flex-1 lg:flex-row lg:gap-4 lg:overflow-hidden lg:min-h-0 pointer-events-auto">
 
         {/* Wrapper for Columns - Fills remaining height, Glass effect on mobile */}
         <div className="flex-1 flex flex-col lg:flex-row gap-4 overflow-hidden relative lg:bg-transparent">
@@ -561,7 +575,7 @@ const Mensagens: React.FC = () => {
           </div>
 
           {/* Main Chat Area */}
-          <div className={`flex-1 flex flex-col liquid-glass rounded-t-[24px] lg:rounded-[24px] lg:overflow-hidden lg:shadow-2xl transition-all duration-300 lg:bg-transparent fixed inset-x-0 bottom-0 top-[138px] z-50 lg:static lg:z-auto ${isMobileListVisible ? 'hidden lg:flex' : 'flex'}`}>
+          <div className={`flex-1 flex flex-col liquid-glass rounded-t-[24px] lg:rounded-[24px] lg:overflow-hidden lg:shadow-2xl transition-all duration-300 lg:bg-transparent fixed inset-x-0 bottom-0 top-[150px] z-50 lg:static lg:z-auto ${isMobileListVisible ? 'hidden lg:flex' : 'flex'}`}>
             <div className="px-4 lg:px-6 py-4 border-b border-gray-200/20 dark:border-white/10 flex items-center justify-between lg:bg-white/40 lg:dark:bg-slate-900/20 backdrop-blur-md z-10 shrink-0">
               <div className="flex items-center gap-4">
                 <button onClick={() => setIsMobileListVisible(true)} className="lg:hidden p-2 -ml-2 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300">

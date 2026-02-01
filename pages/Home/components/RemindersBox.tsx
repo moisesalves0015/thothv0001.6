@@ -341,7 +341,7 @@ const RemindersBox: React.FC = () => {
         <div className="flex items-center justify-between mb-2">
           <div className="flex flex-col">
             <h2 className="text-lg font-black text-slate-900 dark:text-white tracking-tight leading-none">Lembretes</h2>
-            <span className="text-[10px] uppercase tracking-[0.2em] font-black text-[#006c55] mt-1">
+            <span className="text-[11px] uppercase tracking-[0.2em] font-black text-[#006c55] mt-1">
               organização acadêmica
             </span>
           </div>
@@ -476,8 +476,8 @@ const RemindersBox: React.FC = () => {
                     if (!alert || reminder.completed) return null;
                     return (
                       <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md border whitespace-nowrap animate-pulse ${alert.color}`}>
-                        <AlertTriangle size={8} />
-                        <span className="text-[8px] font-bold uppercase tracking-tighter">{alert.text}</span>
+                        <AlertTriangle size={10} />
+                        <span className="text-[10px] font-bold uppercase tracking-tighter">{alert.text}</span>
                       </div>
                     );
                   })()}
@@ -488,23 +488,23 @@ const RemindersBox: React.FC = () => {
                   <div className="flex items-center gap-2">
                     {/* Type Badge */}
                     <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md ${typeConfig.bg} ${typeConfig.border}`}>
-                      <TypeIcon size={8} className={typeConfig.color} />
-                      <span className={`text-[8px] font-black uppercase tracking-tighter ${typeConfig.color}`}>
+                      <TypeIcon size={10} className={typeConfig.color} />
+                      <span className={`text-[10px] font-black uppercase tracking-tighter ${typeConfig.color}`}>
                         {typeConfig.label}
                       </span>
                     </div>
 
                     <div className="flex items-center gap-2 text-slate-400">
                       <div className="flex items-center gap-1">
-                        <CalendarIcon size={10} className="text-[#006c55]" />
-                        <span className="text-[9px] font-bold uppercase tracking-tight">
+                        <CalendarIcon size={12} className="text-[#006c55]" />
+                        <span className="text-[10px] font-bold uppercase tracking-tight">
                           {reminder.date ? reminder.date.split('-').reverse().slice(0, 2).join('/') : 'Hoje'}
                         </span>
                       </div>
-                      <span className="text-[8px] text-slate-300">•</span>
+                      <span className="text-[10px] text-slate-300">•</span>
                       <div className="flex items-center gap-1">
-                        <Clock size={10} className="text-[#006c55]" />
-                        <span className="text-[9px] font-bold uppercase tracking-tight">{reminder.time || '--:--'}</span>
+                        <Clock size={12} className="text-[#006c55]" />
+                        <span className="text-[10px] font-bold uppercase tracking-tight">{reminder.time || '--:--'}</span>
                       </div>
                     </div>
                   </div>
@@ -528,10 +528,10 @@ const RemindersBox: React.FC = () => {
         <div className="absolute inset-0 z-[60] bg-gradient-to-br from-white to-white/95 dark:from-slate-900 dark:to-slate-800 p-6 flex flex-col animate-in slide-in-from-right duration-300">
           <div className="flex justify-between items-center mb-6">
             <div className="flex flex-col">
-              <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">
+              <h3 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-tight">
                 {editingReminderId ? 'Editar Lembrete' : 'Novo Lembrete'}
               </h3>
-              <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-[#006c55] mt-1 opacity-80">
+              <span className="text-[9px] uppercase tracking-[0.2em] font-bold text-[#006c55] mt-0.5 opacity-80">
                 {editingReminderId ? 'atualize sua rotina' : 'organize sua rotina'}
               </span>
             </div>
@@ -575,7 +575,7 @@ const RemindersBox: React.FC = () => {
                 placeholder="Ex: Entrega de Projeto"
                 value={newTitle}
                 onChange={e => handleTitleChange(e.target.value)}
-                className="w-full h-12 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl px-4 font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#006c55]/20 focus:border-[#006c55] transition-all"
+                className="w-full h-12 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl px-4 font-bold text-base text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#006c55]/20 focus:border-[#006c55] transition-all"
               />
             </div>
 
@@ -585,7 +585,7 @@ const RemindersBox: React.FC = () => {
                 placeholder="Detalhes do lembrete..."
                 value={newText}
                 onChange={e => handleTextChange(e.target.value)}
-                className="w-full h-28 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl p-4 font-medium text-slate-600 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#006c55]/20 focus:border-[#006c55] transition-all resize-none"
+                className="w-full h-28 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl p-4 font-medium text-base text-slate-600 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#006c55]/20 focus:border-[#006c55] transition-all resize-none"
               />
             </div>
 
@@ -596,7 +596,7 @@ const RemindersBox: React.FC = () => {
                   type="date"
                   value={newDate}
                   onChange={e => setNewDate(e.target.value)}
-                  className="w-full h-12 bg-white border border-slate-100 rounded-xl px-4 font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#006c55]/20 focus:border-[#006c55] transition-all"
+                  className="w-full h-12 bg-white border border-slate-100 rounded-xl px-4 font-bold text-base text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#006c55]/20 focus:border-[#006c55] transition-all"
                 />
               </div>
               <div className="space-y-2">
@@ -605,7 +605,7 @@ const RemindersBox: React.FC = () => {
                   type="time"
                   value={newTime}
                   onChange={e => setNewTime(e.target.value)}
-                  className="w-full h-12 bg-white border border-slate-100 rounded-xl px-4 font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#006c55]/20 focus:border-[#006c55] transition-all"
+                  className="w-full h-12 bg-white border border-slate-100 rounded-xl px-4 font-bold text-base text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#006c55]/20 focus:border-[#006c55] transition-all"
                 />
               </div>
             </div>
@@ -614,9 +614,9 @@ const RemindersBox: React.FC = () => {
           <button
             onClick={addReminder}
             disabled={!newTitle.trim()}
-            className="w-full h-14 bg-gradient-to-r from-[#006c55] via-[#007a62] to-[#00876a] text-white rounded-xl font-black text-[11px] uppercase tracking-widest shadow-xl shadow-[#006c55]/20 hover:shadow-2xl hover:shadow-[#006c55]/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all mt-4 flex items-center justify-center gap-2"
+            className="w-full h-10 bg-gradient-to-r from-[#006c55] via-[#007a62] to-[#00876a] text-white rounded-xl font-black text-[9px] uppercase tracking-widest shadow-xl shadow-[#006c55]/20 hover:shadow-2xl hover:shadow-[#006c55]/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all mt-4 flex items-center justify-center gap-2"
           >
-            {editingReminderId ? <Check size={16} /> : <Plus size={16} />}
+            {editingReminderId ? <Check size={14} /> : <Plus size={14} />}
             <span>{editingReminderId ? 'Salvar Alterações' : 'Adicionar Lembrete'}</span>
           </button>
         </div>
@@ -631,21 +631,21 @@ const RemindersBox: React.FC = () => {
                 onClick={(e) => toggleStar(selectedReminder.id, e as any)}
                 className={`${selectedReminder.isStarred ? 'text-amber-400' : 'text-slate-300'} transition-colors`}
               >
-                <Star size={24} fill={selectedReminder.isStarred ? 'currentColor' : 'none'} strokeWidth={3} />
+                <Star size={22} fill={selectedReminder.isStarred ? 'currentColor' : 'none'} strokeWidth={3} />
               </button>
               <button
                 onClick={() => {
                   startEdit(selectedReminder);
                   setSelectedReminder(null);
                 }}
-                className="w-10 h-10 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center hover:bg-slate-200 transition-all active:scale-95"
+                className="w-9 h-9 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center hover:bg-slate-200 transition-all active:scale-95"
                 title="Editar lembrete"
               >
-                <Pencil size={18} />
+                <Pencil size={16} />
               </button>
             </div>
             <button onClick={() => setSelectedReminder(null)} className="p-2 text-slate-400 hover:text-slate-900 transition-colors">
-              <X size={24} />
+              <X size={22} />
             </button>
           </div>
 
@@ -666,7 +666,7 @@ const RemindersBox: React.FC = () => {
               })()}
             </div>
 
-            <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-4 leading-tight">{selectedReminder.title}</h3>
+            <h3 className="text-xl font-black text-slate-900 dark:text-white mb-4 leading-tight">{selectedReminder.title}</h3>
 
             <div className="flex flex-wrap gap-3 mb-6">
               <div className="flex items-center gap-2 bg-gradient-to-r from-slate-50 to-white px-4 py-2 rounded-xl border border-slate-100 text-[12px] font-bold text-slate-700">
@@ -688,17 +688,17 @@ const RemindersBox: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={() => shareReminder(selectedReminder, 'internal')}
-                  className="h-14 rounded-xl bg-white border border-slate-200 text-slate-600 font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all hover:bg-slate-50"
+                  className="h-10 rounded-xl bg-white border border-slate-200 text-slate-600 font-black text-[9px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all hover:bg-slate-50"
                 >
-                  <Share2 size={16} />
+                  <Share2 size={14} />
                   <span>Thoth Rede</span>
                 </button>
                 <button
                   onClick={() => shareReminder(selectedReminder, 'external')}
-                  className="h-14 rounded-xl bg-gradient-to-r from-emerald-50 to-emerald-100 text-emerald-600 border border-emerald-100 font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all hover:from-emerald-100 hover:to-emerald-50"
+                  className="h-10 rounded-xl bg-gradient-to-r from-emerald-50 to-emerald-100 text-emerald-600 border border-emerald-100 font-black text-[9px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all hover:from-emerald-100 hover:to-emerald-50"
                 >
-                  <MessageCircle size={16} />
-                  <span>Menu Nativo</span>
+                  <MessageCircle size={14} />
+                  <span>Nativo</span>
                 </button>
               </div>
             </div>
@@ -706,9 +706,9 @@ const RemindersBox: React.FC = () => {
 
           <button
             onClick={() => setDeleteConfirmId(selectedReminder.id)}
-            className="h-14 w-full rounded-xl bg-gradient-to-r from-red-50 to-red-50/50 text-red-500 hover:bg-red-500 hover:text-white transition-all font-black uppercase text-[10px] tracking-widest mt-6 flex items-center justify-center gap-2 border border-red-100"
+            className="h-10 w-full rounded-xl bg-gradient-to-r from-red-50 to-red-50/50 text-red-500 hover:bg-red-500 hover:text-white transition-all font-black uppercase text-[9px] tracking-widest mt-4 flex items-center justify-center gap-2 border border-red-100"
           >
-            <Trash2 size={16} />
+            <Trash2 size={14} />
             <span>Excluir Lembrete</span>
           </button>
         </div>

@@ -43,7 +43,7 @@ interface PostCardProps {
 }
 
 const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggle, onDelete, onRepostSuccess }) => {
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
   const navigate = useNavigate();
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
@@ -502,7 +502,14 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
                     setIsProfileModalOpen(true);
                   }}
                 >
-                  {displayAuthor.username?.startsWith('@') ? displayAuthor.username : `@${displayAuthor.username}`}
+                  {/* Username Logic: Se for eu, usa meu userProfile.username (live). Se não, usa do post. */}
+                  {(() => {
+                    const isMe = user?.uid === displayAuthor.id;
+                    const rawUsername = isMe ? (userProfile?.username || displayAuthor.username) : displayAuthor.username;
+                    const username = rawUsername || 'usuario';
+                    const display = username.startsWith('@') ? username : `@${username}`;
+                    return display;
+                  })()}
                 </span>
                 {/* Data sempre visível agora - Se for repost, tenta mostrar a data original se disponível no post, senão mostra timestamp do post atual mesmo (fallback) */}
                 <div className="flex items-center gap-1 mt-0.5 opacity-70">
@@ -647,26 +654,29 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
             </button>
           </div>
         </div>
-      </div>
-      {modalData && <ImageModal images={modalData.images} initialIndex={modalData.index} onClose={() => setModalData(null)} />}
+      </div >
+      {modalData && <ImageModal images={modalData.images} initialIndex={modalData.index} onClose={() => setModalData(null)} />
+      }
 
       {/* Edit Modal */}
-      {isEditModalOpen && (
-        <NewPost
-          isOpen={isEditModalOpen}
-          onClose={() => setIsEditModalOpen(false)}
-          mode="edit"
-          initialData={post}
-          onPostUpdated={() => {
-            // Recarregar feed (ou update otimista mais complexo). 
-            // O ideal seria passar onPostUpdated como prop para o pai fazer refresh.
-            // Para MVP, damos reload simples chamando onRepostSuccess (se ele for refresh)
-            // Ou apenas toast.
-            toast.success("Publicação atualizada com sucesso!");
-            if (onRepostSuccess) onRepostSuccess();
-          }}
-        />
-      )}
+      {
+        isEditModalOpen && (
+          <NewPost
+            isOpen={isEditModalOpen}
+            onClose={() => setIsEditModalOpen(false)}
+            mode="edit"
+            initialData={post}
+            onPostUpdated={() => {
+              // Recarregar feed (ou update otimista mais complexo). 
+              // O ideal seria passar onPostUpdated como prop para o pai fazer refresh.
+              // Para MVP, damos reload simples chamando onRepostSuccess (se ele for refresh)
+              // Ou apenas toast.
+              toast.success("Publicação atualizada com sucesso!");
+              if (onRepostSuccess) onRepostSuccess();
+            }}
+          />
+        )
+      }
 
       {/* Profile Preview Modal */}
       <ProfilePreviewModal
