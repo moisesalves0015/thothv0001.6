@@ -37,7 +37,7 @@ const BadgeSystemBox: React.FC<BadgeSystemBoxProps> = ({ userId, isOwner = true 
         </div>
         {isOwner && (
           <button
-            onClick={() => navigate('/badges/create')}
+            onClick={() => navigate('/badges')}
             className="w-9 h-9 rounded-full bg-white/60 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 hover:text-[#006c55] dark:hover:text-emerald-400 hover:bg-white dark:hover:bg-slate-700 transition-all border border-white/90 dark:border-white/10 shadow-sm active:scale-95 flex items-center justify-center"
             title="Novo Emblema"
           >

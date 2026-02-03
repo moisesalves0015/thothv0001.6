@@ -41,6 +41,8 @@ const Notificacoes = lazy(() => import('./pages/Notificacoes/Notificacoes'));
 const Onboarding = lazy(() => import('./pages/Auth/Onboarding'));
 const AdminPortal = lazy(() => import('./pages/Admin/AdminPortal'));
 const Calendario = lazy(() => import('./pages/Calendario/Calendario'));
+const Comunidades = lazy(() => import('./pages/Comunidades/Comunidades'));
+const CommunityDetail = lazy(() => import('./pages/Comunidades/CommunityDetail'));
 
 const MainLayout: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -163,6 +165,9 @@ const AppRoutes: React.FC = () => {
             <Route path="/badges" element={<BadgesPage />} />
             <Route path="/badges/create" element={<BadgeCreator />} />
             <Route path="/perfil" element={<Profile />} />
+            <Route path="/comunidades" element={<Comunidades />} />
+            <Route path="/comunidades/:id" element={<CommunityDetail />} />
+
             {/* Rota dinâmica para perfis de usuário (ex: thoth.com/moises) */}
             <Route path="/:username" element={<Profile />} />
 
@@ -171,6 +176,7 @@ const AppRoutes: React.FC = () => {
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/configuracoes" element={<Settings />} />
             <Route path="/suporte" element={<Support />} />
+            <Route path="/calendario" element={<Calendario />} />
             <Route path="/calendario" element={<Calendario />} />
           </Route>
           <Route path="*" element={<Navigate to="/home" replace />} />

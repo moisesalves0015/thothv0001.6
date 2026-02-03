@@ -12,7 +12,8 @@ import {
     ChevronRight,
     Printer,
     GraduationCap,
-    MessageCircle
+    MessageCircle,
+    Globe
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { PrinterService } from '../../modules/print/printer.service';
@@ -51,6 +52,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
         { icon: Users, label: 'Conexões', path: '/conexoes' },
         { icon: Calendar, label: 'Eventos', path: '/eventos' },
         { icon: Search, label: 'Pesquisas', path: '/pesquisas' },
+        { icon: Globe, label: 'Comunidades', path: '/comunidades' },
         { icon: Briefcase, label: 'Vagas', path: '/vagas' },
     ];
 

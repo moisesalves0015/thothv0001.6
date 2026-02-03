@@ -14,7 +14,8 @@ import {
   Briefcase,
   GraduationCap,
   MessageCircle,
-  Bell
+  Bell,
+  Globe
 } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../firebase/index';
@@ -121,6 +122,7 @@ const Topbar = () => {
     { icon: Users, label: 'Conexões', path: '/conexoes' },
     { icon: Calendar, label: 'Eventos', path: '/eventos' },
     { icon: Search, label: 'Pesquisas', path: '/pesquisas' },
+    { icon: Globe, label: 'Comunidades', path: '/comunidades' },
     { icon: Briefcase, label: 'Vagas', path: '/vagas' },
   ];
 
@@ -199,7 +201,8 @@ const Topbar = () => {
                     location.pathname.includes('/perfil') ? 'Perfil' :
                       location.pathname.includes('/configuracoes') ? 'Configurações' :
                         location.pathname.includes('/notificacoes') ? 'Notificações' :
-                          location.pathname.includes('/calendario') ? 'Calendário' : '')}
+                          location.pathname.includes('/calendario') ? 'Calendário' :
+                            location.pathname.includes('/badges') ? 'Emblemas' : '')}
               </span>
             )}
           </button>

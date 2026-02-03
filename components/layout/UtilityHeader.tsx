@@ -130,6 +130,16 @@ const UtilityHeader: React.FC = () => {
             <Plus size={20} />
           </button>
         )}
+
+        {location.pathname === '/badges' && (
+          <button
+            onClick={() => navigate('/badges/create')}
+            className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full liquid-glass text-slate-700 dark:text-slate-300 hover:bg-[#006c55] hover:text-white dark:hover:bg-[#006c55] dark:hover:text-white transition-all active:scale-90 shadow-sm border border-white/40 dark:border-white/5"
+            title="Criar Novo Emblema"
+          >
+            <Plus size={20} />
+          </button>
+        )}
       </div>
 
       <div className="flex-1 h-10 md:h-12 relative min-w-0">
