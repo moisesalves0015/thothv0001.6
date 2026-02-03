@@ -135,7 +135,10 @@ const SidebarFeed: React.FC<SidebarConfig> = ({ title = "Feed do Conhecimento", 
   };
 
   return (
-    <div className="relative h-full min-h-[550px] flex flex-col liquid-glass rounded-[24px] px-0 pt-5 pb-0 overflow-hidden shadow-2xl">
+    <div className="relative h-full min-h-[550px] flex flex-col liquid-glass rounded-[24px] px-0 pt-5 pb-0 overflow-hidden shadow-2xl group/feed">
+      {/* Decorative Accent */}
+      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-[#006c55] to-emerald-500 opacity-0 group-hover/feed:opacity-100 transition-opacity duration-300" />
+
       {/* Header Section */}
       <div className="flex flex-col flex-shrink-0 z-10 pb-2 px-5">
         <div className="flex items-center justify-between mb-2">
@@ -271,7 +274,7 @@ const SidebarFeed: React.FC<SidebarConfig> = ({ title = "Feed do Conhecimento", 
       {/* Grid de Cards */}
       <div
         ref={scrollContainerRef}
-        className="flex items-stretch gap-[30px] overflow-x-auto px-0 py-6 snap-x snap-mandatory no-scrollbar flex-1 bg-transparent scroll-smooth min-h-0"
+        className="flex items-stretch gap-[30px] overflow-x-auto px-0 pt-0 pb-6 snap-x snap-mandatory no-scrollbar flex-1 bg-transparent scroll-smooth min-h-0"
       >
         {loading ? (
           <div className="w-full flex justify-center items-center">

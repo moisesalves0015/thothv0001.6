@@ -34,6 +34,9 @@ import { PostService } from '../../modules/post/post.service';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'sonner';
 
+import { useUserProfile } from '../../hooks/useUserProfile';
+import { usePost } from '../../hooks/usePost';
+
 interface PostCardProps {
   post: Post;
   onBookmarkToggle?: (postId: string, bookmarked: boolean) => void;
@@ -45,6 +48,41 @@ interface PostCardProps {
 const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggle, onDelete, onRepostSuccess }) => {
   const { user, userProfile } = useAuth();
   const navigate = useNavigate();
+
+  // 1. Identification of Repost vs Original
+  const isRepost = !!post.originalPostId;
+  const originalPostId = post.originalPostId; // For reposts, this is the key ID
+
+  // 2. Fetch LIVE data for the *Content* Source
+  // If it's a repost, we fetch the original to get the latest text/images AND latest author profile of that original
+  // If it's a regular post, we skip this hook (id undefined)
+  const { post: liveOriginalPost, loading: loadingOriginal, error: originalError } = usePost(originalPostId);
+
+  // 3. Determine Display Data
+  // If repost: use liveOriginalPost (if loaded), else fallback to post (snapshot) - but if error, handle it.
+  // If normal: use post.
+
+  // MERGED POST OBJECT for display rendering
+  // We prioritize the live fetched original post for content.
+  // The 'post' prop still governs the "wrapper" (who reposted, timestamp of repost)
+  const displayPost = isRepost ? (liveOriginalPost || post) : post;
+
+  // 4. Content Availability Check for Reposts
+  const isOriginalDeleted = isRepost && !loadingOriginal && originalError === 'Post not found';
+
+  // 5. Author to display in the Main Header (not the small repost header)
+  // For Repost: It's the Original Post's author.
+  // For Normal: It's the Post's author.
+  // We use displayPost.author because if liveOriginalPost is loaded, it has the snapshot of author *at that time* or we can trust the 'latest' fetch if 'usePost' included author.
+  // Actually, 'usePost' returns the Firestore doc. The author field in Firestore might be a snapshot.
+  // We already have 'useUserProfile' from previous step to fix the avatar. Let's combine them.
+
+  const displayAuthor = displayPost.originalPostId && displayPost.originalAuthor ? displayPost.originalAuthor : displayPost.author;
+
+  // Fetch live profile for the displayed author (already implemented)
+  const isAuthorSelf = user?.uid === displayAuthor.id;
+  const { profile: authorProfile } = useUserProfile(isAuthorSelf ? undefined : displayAuthor.id);
+
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -53,36 +91,30 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
   const [modalData, setModalData] = useState<{ images: string[], index: number } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const [likeCount, setLikeCount] = useState(post.likes || 0);
-  const [shareCount, setShareCount] = useState(post.repostedBy?.length || 0);
+  const [likeCount, setLikeCount] = useState(displayPost.likes || 0);
+  const [shareCount, setShareCount] = useState(displayPost.repostedBy?.length || 0);
   const [isReposting, setIsReposting] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
-  // Helper para obter o avatar mais atualizado do usuário logado
-  // Isso garante que se você mudar sua foto, seus posts antigos atualizem imediatamente para você
+  // Helper para obter o avatar mais atualizado
   const getAuthorAvatar = (authorId: string, currentAvatar: string) => {
-    // Se o usuário estiver logado e for o autor deste conteúdo
     if (user && user.uid === authorId) {
-      // Prioriza a foto atual do perfil (do Firebase Auth)
       if (user.photoURL) return user.photoURL;
-
-      // Se não tiver foto, usa o avatar padrão gerado (igual ao Topbar)
-      // Isso evita mostrar uma foto antiga "congelada" no post se o usuário removeu a foto
       return `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.displayName || 'Thoth'}`;
     }
-
-    // Se não for o usuário logado, mostra a foto salva no post (snapshot do momento da criação)
+    if (authorProfile && authorProfile.uid === authorId && authorProfile.photoURL) {
+      return authorProfile.photoURL;
+    }
     return currentAvatar;
   };
 
-  // Sincronizar estado com dados do post
+  // Sync internal state with Display Post changes (e.g. if original post likes change)
   useEffect(() => {
     if (user) {
-      setIsLiked(post.likedBy?.includes(user.uid) || false);
-
+      setIsLiked(displayPost.likedBy?.includes(user.uid) || false);
       const checkBookmark = async () => {
         try {
-          const bookmarked = await PostService.isPostBookmarked(user.uid, post.id);
+          const bookmarked = await PostService.isPostBookmarked(user.uid, displayPost.id);
           setIsBookmarked(bookmarked);
         } catch (e) {
           console.error("Error checking bookmark:", e);
@@ -90,14 +122,105 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
       };
       checkBookmark();
     }
-    // Sincronizar contadores quando o post mudar (ex: atualização vinda do feed)
-    setLikeCount(post.likes || 0);
-    setShareCount(post.repostedBy?.length || 0);
-  }, [user, post.id, post.likedBy, post.likes, post.repostedBy]);
+    setLikeCount(displayPost.likes || 0);
+    setShareCount(displayPost.repostedBy?.length || 0);
+  }, [user, displayPost.id, displayPost.likedBy, displayPost.likes, displayPost.repostedBy]);
 
   const openModal = (idx: number) => {
-    setModalData({ images: post.images, index: idx });
+    setModalData({ images: displayPost.images, index: idx });
   };
+
+
+
+  // --- HANDLERS (Update to use displayPost.id for interactions like Like, but post.id for Deleting the repost itself) ---
+
+  // Liking: When liking a Repost, usually you are liking the ORIGINAL content. 
+  // Thoth Logic: The 'Post' interface has 'likes'. 
+  // If I see a Repost B (of A), and I like it, does B get a like or A?
+  // Usually platforms show A's metrics. 
+  // Let's assume we interact with the ID of the content being displayed (displayPost.id).
+  // If displayPost IS the original (because we swapped it), we are liking the original.
+
+  const handleLike = async () => {
+    if (!user) return;
+    const newLikedState = !isLiked;
+    setIsLiked(newLikedState);
+    setLikeCount(prev => newLikedState ? prev + 1 : prev - 1);
+
+    try {
+      await PostService.toggleLike(displayPost.id, user.uid, newLikedState);
+      if (onLikeToggle) onLikeToggle(displayPost.id, newLikedState);
+    } catch (e) {
+      console.error("Error toggling like:", e);
+      setIsLiked(!newLikedState);
+      setLikeCount(prev => !newLikedState ? prev + 1 : prev - 1);
+    }
+  };
+
+  const handleBookmark = async () => {
+    if (!user) return;
+    const newBookmarkedState = !isBookmarked;
+    setIsBookmarked(newBookmarkedState);
+    try {
+      // Bookmark the content visible (displayPost)
+      await PostService.toggleBookmark(user.uid, displayPost, newBookmarkedState);
+      if (onBookmarkToggle) {
+        onBookmarkToggle(displayPost.id, newBookmarkedState);
+      }
+    } catch (e) {
+      console.error("Error toggling bookmark:", e);
+      setIsBookmarked(!newBookmarkedState);
+    }
+  };
+
+  // ... (Reposters specific logic needed? Reposting a Repost usually reposts the Original)
+  const handleRepost = async () => {
+    if (!user || isReposting) return;
+    // We always repost the ORIGINAL content, not the repost wrapper
+    const contentToRepost = isRepost ? displayPost : post;
+
+    setIsReposting(true);
+    try {
+      const currentUser = {
+        id: user.uid,
+        name: user.displayName || 'Estudante',
+        username: user.email?.split('@')[0] || 'estudante',
+        avatar: user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}`
+      };
+      await PostService.repost(contentToRepost, currentUser);
+      setShareCount(prev => prev + 1);
+      toast.success('Publicação repostada com sucesso!');
+      if (onRepostSuccess) onRepostSuccess();
+    } catch (e) {
+      console.error("Error reposting:", e);
+      toast.error('Erro ao repostar publicação.');
+    } finally {
+      setIsReposting(false);
+      setIsMenuOpen(false);
+    }
+  };
+
+  // Deleting: If I am the author of THIS card (post.author), I can delete.
+  // If it's a repost, I am deleting the Repost Wrapper (post.id), NOT the original (displayPost.id).
+  const handleDelete = async () => {
+    if (!user || isDeleting || post.author.id !== user.uid) return;
+    if (!window.confirm("Tem certeza que deseja apagar esta publicação? Esta ação é irreversível.")) return;
+
+    setIsDeleting(true);
+    try {
+      await PostService.deletePost(post.id); // Delete the wrapper
+      if (onDelete) onDelete(post.id);
+      setIsMenuOpen(false);
+      toast.success("Publicação apagada.");
+    } catch (e) {
+      console.error("Error deleting post:", e);
+      toast.error("Erro ao apagar publicação.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // ... rest of hooks ...
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -124,62 +247,43 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
     return type && configs[type as keyof typeof configs] ? configs[type as keyof typeof configs] : configs.general;
   };
 
-  const handleBookmark = async () => {
-    if (!user) return;
-    const newBookmarkedState = !isBookmarked;
-    setIsBookmarked(newBookmarkedState);
-    try {
-      await PostService.toggleBookmark(user.uid, post, newBookmarkedState);
-      if (onBookmarkToggle) {
-        onBookmarkToggle(post.id, newBookmarkedState);
-      }
-    } catch (e) {
-      console.error("Error toggling bookmark:", e);
-      setIsBookmarked(!newBookmarkedState);
+  // ... handleAction uses post.id for Hiding/Reporting (the wrapper), but Bookmarking uses displayPost (above).
+  const handleAction = async (action: string) => {
+    setIsMenuOpen(false);
+    switch (action) {
+      case 'copy':
+        try {
+          const link = `${window.location.origin}/post/${displayPost.id}`; // Link to CONTENT
+          await navigator.clipboard.writeText(link);
+          toast.success('Link copiado para a área de transferência!');
+        } catch (err) {
+          toast.error('Erro ao copiar link.');
+        }
+        break;
+      case 'report':
+        toast.success('Denúncia recebida. Analisaremos o conteúdo em breve.');
+        break;
+      case 'hide':
+        toast.info('Esta publicação não será mais exibida para você.');
+        if (onDelete) onDelete(post.id); // Hide THIS card
+        break;
+      case 'edit':
+        // Cannot edit a Repost wrapper content, only delete.
+        // If displayPost author is me, maybe I can edit original? 
+        // For simplicity: Edit button only if post.active matches user (wrapper edit? Reposts usually don't have body)
+        // OR if displayPost.author matches user (edit original).
+        // Current logic: handleEdit checks post.author.id. 
+        if (post.author.id === user?.uid && !isRepost) handleEdit();
+        break;
+      case 'bookmark':
+        handleBookmark();
+        break;
+      default:
+        console.log(`Action ${action} not implemented`);
     }
   };
 
-  const handleLike = async () => {
-    if (!user) return;
-    const newLikedState = !isLiked;
-    setIsLiked(newLikedState);
-    setLikeCount(prev => newLikedState ? prev + 1 : prev - 1);
-
-    try {
-      await PostService.toggleLike(post.id, user.uid, newLikedState);
-      if (onLikeToggle) onLikeToggle(post.id, newLikedState);
-    } catch (e) {
-      console.error("Error toggling like:", e);
-      // Revert optimistic update
-      setIsLiked(!newLikedState);
-      setLikeCount(prev => !newLikedState ? prev + 1 : prev - 1);
-    }
-  };
-
-  const handleRepost = async () => {
-    if (!user || isReposting) return;
-    setIsReposting(true);
-    try {
-      const currentUser = {
-        id: user.uid,
-        name: user.displayName || 'Estudante',
-        username: user.email?.split('@')[0] || 'estudante',
-        avatar: user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}`
-      };
-      await PostService.repost(post, currentUser);
-      setShareCount(prev => prev + 1);
-      toast.success('Publicação repostada com sucesso!');
-      if (onRepostSuccess) onRepostSuccess();
-    } catch (e) {
-      console.error("Error reposting:", e);
-      toast.error('Erro ao repostar publicação.');
-    } finally {
-      setIsReposting(false);
-      setIsMenuOpen(false);
-    }
-  };
-
-  // State for edit modal
+  // State for edit modal (Original Post Only for now)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const handleEdit = async () => {
@@ -188,87 +292,22 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
     setIsMenuOpen(false);
   };
 
-  const handleDelete = async () => {
-    if (!user || isDeleting || post.author.id !== user.uid) return;
-    if (!window.confirm("Tem certeza que deseja apagar esta publicação? Esta ação é irreversível.")) return;
-
-    setIsDeleting(true);
-    try {
-      await PostService.deletePost(post.id);
-      if (onDelete) onDelete(post.id);
-      setIsMenuOpen(false);
-      toast.success("Publicação apagada.");
-    } catch (e) {
-      console.error("Error deleting post:", e);
-      toast.error("Erro ao apagar publicação.");
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  const handleAction = async (action: string) => {
-    setIsMenuOpen(false);
-
-    switch (action) {
-      case 'copy':
-        try {
-          const link = `${window.location.origin}/post/${post.id}`;
-          await navigator.clipboard.writeText(link);
-          toast.success('Link copiado para a área de transferência!');
-        } catch (err) {
-          toast.error('Erro ao copiar link.');
-        }
-        break;
-
-      case 'report':
-        toast.success('Denúncia recebida. Analisaremos o conteúdo em breve.');
-        break;
-
-      case 'hide':
-        toast.info('Esta publicação não será mais exibida para você.');
-        if (onDelete) onDelete(post.id);
-        break;
-
-      case 'edit':
-        handleEdit();
-        break;
-
-      case 'bookmark':
-        handleBookmark();
-        break;
-
-      default:
-        console.log(`Action ${action} not implemented`);
-    }
-  };
-
+  // Format Timestamp
   const formatTimestamp = (timestamp: any) => {
-    // console.log('formatTimestamp called with:', timestamp, 'type:', typeof timestamp);
     if (!timestamp) return '';
-
     let date: Date;
-
-    // Handle Firestore Timestamp or similar objects with seconds
     if (timestamp && typeof timestamp === 'object' && 'seconds' in timestamp) {
       date = new Date(timestamp.seconds * 1000);
     } else {
       date = new Date(timestamp);
     }
-
-    // Check if valid date
-    if (isNaN(date.getTime())) {
-      console.log('Invalid date from timestamp:', timestamp);
-      return '';
-    }
-
+    if (isNaN(date.getTime())) return '';
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
     if (diffInSeconds < 60) return 'agora mesmo';
     if (diffInSeconds < 3600) return `há ${Math.floor(diffInSeconds / 60)} min`;
     if (diffInSeconds < 86400) return `há ${Math.floor(diffInSeconds / 3600)} h`;
     if (diffInSeconds < 604800) return `há ${Math.floor(diffInSeconds / 86400)} dias`;
-
     return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
@@ -276,13 +315,25 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
     navigate(`/explorar?q=${encodeURIComponent('#' + tag)}`);
   };
 
-  const renderCollage = () => {
-    const imgCount = post.images?.length || 0;
-    if (imgCount === 0) return null;
+  // Render Helpers use 'displayPost' instead of 'post'
+  const hasImages = (displayPost.images?.length || 0) > 0;
+  const safeContent = displayPost.content || "";
 
-    const typeConfig = getPostTypeConfig(post.postType);
+  // ... renderCollage, renderLinkAttachment, renderFileAttachment need to be updated to use displayPost inside them or pass post as arg
+  // Since they are defined inside component closure and capture 'post', we need to redefine them or make them use displayPost.
+  // Ideally, re-write them to use 'displayPost'.
+
+  // To avoid massive rewrite of render functions in this block, I will alias post -> displayPost variable names
+  // BUT 'post' is prop. I can't reassign.
+  // I will have to update the render functions references.
+
+  const renderCollage = () => {
+    const imgCount = displayPost.images?.length || 0;
+    if (imgCount === 0) return null;
+    const typeConfig = getPostTypeConfig(displayPost.postType);
     const containerHeight = 'h-full';
 
+    // ... Copy implementation but use displayPost ...
     const Wrapper = ({ children, onClick }: any) => (
       <div className="relative w-full h-full cursor-pointer overflow-hidden group transition-all duration-300" onClick={onClick}>
         {children}
@@ -292,7 +343,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
     if (imgCount === 1) {
       return (
         <Wrapper onClick={() => openModal(0)}>
-          <img src={post.images[0]} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" alt="Publicação" />
+          <img src={displayPost.images[0]} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" alt="Publicação" />
           <div className="absolute top-3 left-3">
             <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg ${typeConfig.bg} ${typeConfig.border} border backdrop-blur-sm shadow-sm`}>
               {React.createElement(typeConfig.icon, { size: 12, className: typeConfig.color })}
@@ -302,11 +353,11 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
         </Wrapper>
       );
     }
-
+    // ... Implement 2, 3, 4, 5+ logic same as before but using displayPost.images ...
     if (imgCount === 2) {
       return (
         <div className="grid grid-cols-2 gap-1 w-full h-full">
-          {post.images.slice(0, 2).map((img, idx) => (
+          {displayPost.images.slice(0, 2).map((img, idx) => (
             <Wrapper key={idx} onClick={() => openModal(idx)}>
               <img src={img} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt={`Img ${idx}`} />
             </Wrapper>
@@ -319,10 +370,10 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
       return (
         <div className={`grid grid-cols-3 gap-2 mb-4 ${containerHeight} overflow-hidden rounded-2xl flex-shrink-0 relative transition-all duration-300`}>
           <div className="col-span-2 relative h-full cursor-pointer overflow-hidden group" onClick={() => openModal(0)}>
-            <img src={post.images[0]} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Principal" />
+            <img src={displayPost.images[0]} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Principal" />
           </div>
           <div className="grid grid-rows-2 gap-2 h-full">
-            {post.images.slice(1, 3).map((img, idx) => (
+            {displayPost.images.slice(1, 3).map((img, idx) => (
               <div key={idx} className="relative h-full cursor-pointer overflow-hidden group" onClick={() => openModal(idx + 1)}>
                 <img src={img} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt={`Imagem ${idx}`} />
               </div>
@@ -336,10 +387,10 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
       return (
         <div className={`flex flex-col gap-2 mb-4 ${containerHeight} overflow-hidden rounded-2xl flex-shrink-0 relative transition-all duration-300`}>
           <div className="h-2/3 relative cursor-pointer overflow-hidden group" onClick={() => openModal(0)}>
-            <img src={post.images[0]} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Principal" />
+            <img src={displayPost.images[0]} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Principal" />
           </div>
           <div className="h-1/3 grid grid-cols-3 gap-2">
-            {post.images.slice(1, 4).map((img, idx) => (
+            {displayPost.images.slice(1, 4).map((img, idx) => (
               <div key={idx} className="relative h-full cursor-pointer overflow-hidden group" onClick={() => openModal(idx + 1)}>
                 <img src={img} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt={`Imagem ${idx}`} />
               </div>
@@ -353,10 +404,10 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
     return (
       <div className={`grid grid-cols-2 gap-2 mb-4 ${containerHeight} overflow-hidden rounded-2xl flex-shrink-0 relative transition-all duration-300`}>
         <div className="relative h-full cursor-pointer overflow-hidden group" onClick={() => openModal(0)}>
-          <img src={post.images[0]} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="Principal" />
+          <img src={displayPost.images[0]} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="Principal" />
         </div>
         <div className="grid grid-cols-2 grid-rows-2 gap-2 h-full">
-          {post.images.slice(1, 5).map((img, idx) => (
+          {displayPost.images.slice(1, 5).map((img, idx) => (
             <div key={idx} className="relative h-full cursor-pointer overflow-hidden group" onClick={() => openModal(idx + 1)}>
               <img src={img} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt={`Imagem ${idx}`} />
               {idx === 3 && imgCount > 5 && (
@@ -372,31 +423,31 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
   };
 
   const renderLinkAttachment = () => {
-    if (!post.externalLink) return null;
+    if (!displayPost.externalLink) return null;
     return (
-      <a href={post.externalLink.url} target="_blank" rel="noopener noreferrer" className="flex items-start gap-3 p-3 rounded-xl border-2 border-blue-100 bg-gradient-to-r from-blue-50/60 to-blue-50/30 mb-3 hover:bg-blue-50 transition-all duration-300 group" onClick={(e) => e.stopPropagation()}>
+      <a href={displayPost.externalLink.url} target="_blank" rel="noopener noreferrer" className="flex items-start gap-3 p-3 rounded-xl border-2 border-blue-100 bg-gradient-to-r from-blue-50/60 to-blue-50/30 mb-3 hover:bg-blue-50 transition-all duration-300 group" onClick={(e) => e.stopPropagation()}>
         <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm flex-shrink-0 border border-blue-100 group-hover:scale-105 transition-transform"><Globe size={16} className="text-blue-500" /></div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1"><span className="text-[10px] font-black text-blue-600 uppercase tracking-wider">Recurso Externo</span><ExternalLink size={10} className="text-blue-400" /></div>
-          <h5 className="text-[12px] font-bold text-slate-900 truncate leading-tight mb-1">{post.externalLink.title}</h5>
-          <p className="text-[10px] text-blue-500 truncate font-medium">{post.externalLink.url.replace('https://', '').replace('http://', '').split('/')[0]}</p>
+          <h5 className="text-[12px] font-bold text-slate-900 truncate leading-tight mb-1">{displayPost.externalLink.title}</h5>
+          <p className="text-[10px] text-blue-500 truncate font-medium">{displayPost.externalLink.url.replace('https://', '').replace('http://', '').split('/')[0]}</p>
         </div>
       </a>
     );
   };
 
   const renderFileAttachment = () => {
-    if (!post.attachmentFile) return null;
+    if (!displayPost.attachmentFile) return null;
     return (
       <div className="flex items-start gap-3 p-3 rounded-xl border-2 border-[#006c55]/10 bg-gradient-to-r from-[#006c55]/5 to-[#006c55]/3 mb-3">
         <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm flex-shrink-0 border border-[#006c55]/10"><Paperclip size={16} className="text-[#006c55]" /></div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-1">
             <span className="text-[10px] font-black text-[#006c55] uppercase tracking-wider">Arquivo Anexado</span>
-            <a href={post.attachmentFile.url} download className="p-1.5 text-slate-400 hover:text-[#006c55] transition-colors" onClick={(e) => e.stopPropagation()}><Download size={12} /></a>
+            <a href={displayPost.attachmentFile.url} download className="p-1.5 text-slate-400 hover:text-[#006c55] transition-colors" onClick={(e) => e.stopPropagation()}><Download size={12} /></a>
           </div>
           <div className="flex items-center justify-between">
-            <div className="min-w-0 flex-1"><h5 className="text-[12px] font-bold text-slate-900 truncate leading-tight">{post.attachmentFile.name}</h5><span className="text-[10px] text-[#006c55] font-black uppercase tracking-wider">{post.attachmentFile.size}</span></div>
+            <div className="min-w-0 flex-1"><h5 className="text-[12px] font-bold text-slate-900 truncate leading-tight">{displayPost.attachmentFile.name}</h5><span className="text-[10px] text-[#006c55] font-black uppercase tracking-wider">{displayPost.attachmentFile.size}</span></div>
             <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center border border-[#006c55]/10 flex-shrink-0 ml-2"><FileText size={14} className="text-[#006c55]" /></div>
           </div>
         </div>
@@ -412,17 +463,19 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
       const el = textRef.current;
       setIsOverflowing(el.scrollHeight > el.clientHeight);
     }
-  }, [post.content, isExpanded, post.images]);
+  }, [displayPost.content, isExpanded, displayPost.images]);
 
-  const displayAuthor = post.originalPostId && post.originalAuthor ? post.originalAuthor : post.author;
-  const isRepost = !!post.originalPostId;
-  const hasImages = (post.images?.length || 0) > 0;
-  const safeContent = post.content || "";
 
   const [areTagsExpanded, setAreTagsExpanded] = useState(false);
   const MAX_VISIBLE_TAGS = 5;
-  const visibleTags = post.tags ? (areTagsExpanded ? post.tags : post.tags.slice(0, MAX_VISIBLE_TAGS)) : [];
-  const remainingTags = (post.tags?.length || 0) - MAX_VISIBLE_TAGS;
+  const visibleTags = displayPost.tags ? (areTagsExpanded ? displayPost.tags : displayPost.tags.slice(0, MAX_VISIBLE_TAGS)) : [];
+  const remainingTags = (displayPost.tags?.length || 0) - MAX_VISIBLE_TAGS;
+
+  if (isOriginalDeleted) {
+    return null;
+  }
+
+
 
   return (
     <>
@@ -556,17 +609,17 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
         </div>
 
         {/* Conteúdo Principal Flexível */}
-        <div className="flex-1 flex flex-col min-h-0 relative">
+        <div className="flex-1 flex flex-col min-h-0 relative overflow-y-auto no-scrollbar">
           {/* Imagem (flex-1) */}
           {hasImages && (
-            <div className="flex-1 min-h-0 w-full rounded-2xl overflow-hidden mb-3 border border-slate-100/50 bg-slate-50">
+            <div className="flex-1 min-h-0 w-full rounded-2xl overflow-hidden mb-3 border border-slate-100/50 bg-slate-50 flex-shrink-0">
               {renderCollage()}
             </div>
           )}
 
           {/* Texto (flex-none, max 5 lines) */}
           {safeContent && (
-            <div className={`flex-shrink-0 w-full mb-2 ${!hasImages ? 'flex-1 overflow-y-auto no-scrollbar' : ''}`}>
+            <div className={`flex-shrink-0 w-full mb-2`}>
               <div className="relative">
                 <p
                   ref={textRef}
@@ -575,9 +628,9 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
                   {safeContent}
                 </p>
                 {hasImages && isOverflowing && (
-                  <div className={`${isExpanded ? 'mt-1' : 'absolute bottom-0 right-0 bg-gradient-to-l from-white via-white to-transparent pl-8'}`}>
-                    <button onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }} className="text-[11px] font-black text-[#006c55] hover:underline uppercase tracking-tighter">
-                      {isExpanded ? 'Ver menos' : '...Mais'}
+                  <div className={`${isExpanded ? 'mt-1' : 'absolute bottom-0 right-0 bg-transparent'}`}>
+                    <button onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }} className="text-[11px] font-black text-[#006c55] hover:underline uppercase tracking-tighter bg-white/90 dark:bg-slate-900/90 px-1 rounded-sm backdrop-blur-sm">
+                      {isExpanded ? 'Ver menos' : 'ver mais'}
                     </button>
                   </div>
                 )}
@@ -685,6 +738,10 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
         isOpen={isProfileModalOpen}
         onClose={() => setIsProfileModalOpen(false)}
       />
+      <style>{`
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      `}</style>
     </>
   );
 };

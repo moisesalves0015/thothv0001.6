@@ -486,7 +486,10 @@ const PrintHistoryBox: React.FC = () => {
     });
 
   return (
-    <div className="w-full lg:w-[315px] h-[437px] lg:h-[350px] liquid-glass rounded-[24px] flex flex-col shadow-lg relative overflow-hidden border border-white/40 dark:border-white/10">
+    <div className="w-full lg:w-[315px] h-[437px] lg:h-[350px] liquid-glass rounded-[24px] flex flex-col shadow-lg relative overflow-hidden border border-white/40 dark:border-white/10 group">
+      {/* Decorative Accent */}
+      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-[#006c55] to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
       {/* Header Padronizado */}
       <div className="flex flex-col px-6 pt-6 pb-2 flex-shrink-0 z-10">
         <div className="flex items-center justify-between mb-2">

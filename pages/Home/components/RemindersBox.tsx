@@ -335,7 +335,10 @@ const RemindersBox: React.FC = () => {
   ];
 
   return (
-    <div className="w-full lg:w-[315px] h-[475px] lg:h-[380px] flex flex-col liquid-glass rounded-[24px] overflow-hidden shadow-2xl relative border border-white/40 dark:border-white/10">
+    <div className="w-full lg:w-[315px] h-[475px] lg:h-[380px] flex flex-col liquid-glass rounded-[24px] overflow-hidden shadow-2xl relative border border-white/40 dark:border-white/10 group">
+      {/* Decorative Accent */}
+      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-[#006c55] to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
       {/* Header */}
       <div className="flex flex-col px-6 pt-6 pb-2 flex-shrink-0 z-10">
         <div className="flex items-center justify-between mb-2">

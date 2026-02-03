@@ -2,7 +2,8 @@ import React from 'react';
 import SidebarFeed from '../../components/shared/SidebarFeed';
 import ConnectionSuggestions from './components/ConnectionSuggestions';
 import RemindersBox from './components/RemindersBox';
-import BadgeSystemBox from '../../components/shared/BadgeSystemBox';
+import EventSuggestionsBox from './components/EventSuggestionsBox';
+import ResearchSuggestionsBox from './components/ResearchSuggestionsBox';
 import PrintHistoryBox from './components/PrintHistoryBox';
 import { auth } from '../../firebase';
 import { useEffect, useState } from 'react';
@@ -87,8 +88,9 @@ const Home: React.FC = () => {
       </div>
 
       <div className="flex flex-col lg:flex-row gap-[30px] w-full">
-        <div className="w-full lg:w-[660px]">
-          <BadgeSystemBox />
+        <div className="w-full lg:w-[660px] flex flex-col gap-6">
+          <EventSuggestionsBox />
+          <ResearchSuggestionsBox />
         </div>
         <div className="w-full lg:w-[315px]">
           <PrintHistoryBox />

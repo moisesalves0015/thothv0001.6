@@ -4,13 +4,21 @@ import {
     query,
     where,
     orderBy,
-    limit,
     getDocs,
-    Timestamp,
     startAfter,
-    DocumentSnapshot,
+    limit,
+    doc,
+    updateDoc,
+    arrayUnion,
+    arrayRemove,
+    serverTimestamp,
+    getDoc,
     deleteDoc,
-    setDoc
+    writeBatch,
+    Timestamp,
+    DocumentSnapshot,
+    setDoc,
+    increment
 } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { Post, Author } from '../../types';
@@ -18,7 +26,6 @@ import { ConnectionService } from '../connection/connection.service';
 
 const POSTS_COLLECTION = 'posts';
 const FEED_LIMIT = 50;
-import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, increment } from 'firebase/firestore';
 
 export const PostService = {
     /**

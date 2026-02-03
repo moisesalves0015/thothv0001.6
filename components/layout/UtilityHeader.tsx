@@ -43,23 +43,34 @@ const UtilityHeader: React.FC = () => {
   const userName = user?.displayName || "Estudante";
 
   useEffect(() => {
-    if (!user) return;
+    if (!user?.uid) return;
 
-    // Subscribe to Message Count
-    const unsubMessages = ChatService.subscribeToUnreadCount(user.uid, (count) => {
-      setMessagesCount(count);
-    });
+    let unsubMessages: (() => void) | undefined;
+    let unsubNotifs: (() => void) | undefined;
 
-    // Subscribe to Notification Count
-    const unsubNotifs = NotificationService.subscribeToUnreadCount(user.uid, (count) => {
-      setNotificationsCount(count);
-    });
+    try {
+      // Subscribe to Message Count
+      unsubMessages = ChatService.subscribeToUnreadCount(user.uid, (count) => {
+        setMessagesCount(count);
+      });
+
+      // Subscribe to Notification Count
+      unsubNotifs = NotificationService.subscribeToUnreadCount(user.uid, (count) => {
+        setNotificationsCount(count);
+      });
+    } catch (error) {
+      console.error("Error setting up subscriptions:", error);
+    }
 
     return () => {
-      unsubMessages();
-      unsubNotifs();
+      try {
+        if (unsubMessages) unsubMessages();
+        if (unsubNotifs) unsubNotifs();
+      } catch (error) {
+        console.error("Error unsubscribing:", error);
+      }
     };
-  }, [user]);
+  }, [user?.uid]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

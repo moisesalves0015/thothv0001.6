@@ -204,7 +204,7 @@ const ConnectionSuggestions: React.FC = () => {
       {/* Connection Cards */}
       <div
         ref={scrollRef}
-        className="flex items-center gap-3 overflow-x-auto overflow-y-hidden py-4 px-0 snap-x snap-mandatory no-scrollbar scroll-smooth flex-1 touch-pan-x bg-transparent"
+        className="flex items-center gap-3 overflow-x-auto overflow-y-hidden pt-0 pb-4 px-0 snap-x snap-mandatory no-scrollbar scroll-smooth flex-1 touch-pan-x bg-transparent"
         onScroll={() => setIsFilterOpen(false)}
       >
         {filteredSuggestions.length === 0 ? (
