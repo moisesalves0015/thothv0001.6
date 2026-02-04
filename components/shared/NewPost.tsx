@@ -44,6 +44,7 @@ interface NewPostProps {
 }
 
 const NewPost: React.FC<NewPostProps> = ({ isOpen, onClose, onPostCreated, mode = 'create', initialData, onPostUpdated }) => {
+  const { user, userProfile } = useAuth();
   const [text, setText] = useState('');
   const [hashtags, setHashtags] = useState<string[]>([]);
   const [currentTagInput, setCurrentTagInput] = useState('');
@@ -254,7 +255,7 @@ const NewPost: React.FC<NewPostProps> = ({ isOpen, onClose, onPostCreated, mode 
       alert("Por favor, escreva algo ou adicione uma mídia!");
       return;
     }
-    const { user, userProfile } = useAuth();
+
     if (!user) {
       alert("Você precisa estar logado.");
       return;
