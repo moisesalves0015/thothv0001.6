@@ -108,6 +108,20 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
     return currentAvatar;
   };
 
+  const currentDisplayUsername = (() => {
+    // If self, use context profile. if other, use hook profile.
+    const live = isAuthorSelf ? userProfile : authorProfile;
+    // Prefer live username, fallback to snapshot
+    return live?.username || displayAuthor.username;
+  })();
+
+  const currentDisplayName = (() => {
+    const live = isAuthorSelf ? userProfile : authorProfile;
+    // Helper to get name from raw profile (context) or normalized profile (hook)
+    // Hook returns 'displayName', raw Firestore might have 'displayName' or 'fullName'
+    return live?.displayName || live?.fullName || displayAuthor.name;
+  })();
+
   // Sync internal state with Display Post changes (e.g. if original post likes change)
   useEffect(() => {
     if (user) {
@@ -527,9 +541,9 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
             <div className="relative flex-shrink-0">
               <ClickableAvatar
                 userId={displayAuthor.id}
-                username={displayAuthor.username}
+                username={currentDisplayUsername}
                 photoURL={getAuthorAvatar(displayAuthor.id, displayAuthor.avatar)}
-                displayName={displayAuthor.name}
+                displayName={currentDisplayName}
                 size="lg"
               />
               {displayAuthor.verified && <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-gradient-to-r from-[#006c55] to-[#00876a] rounded-full flex items-center justify-center border-2 border-white dark:border-slate-800"><CheckCircle size={8} className="text-white" fill="white" /></div>}
@@ -543,7 +557,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
                     setIsProfileModalOpen(true);
                   }}
                 >
-                  {displayAuthor.name}
+                  {currentDisplayName}
                 </h4>
                 {displayAuthor.verified && <span className="text-[8px] font-black text-[#006c55] dark:text-emerald-400 bg-[#006c55]/10 dark:bg-emerald-400/10 px-1.5 py-0.5 rounded-md uppercase tracking-tighter flex-shrink-0">V</span>}
               </div>
@@ -557,11 +571,8 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
                 >
                   {/* Username Logic: Se for eu, usa meu userProfile.username (live). Se não, usa do post. */}
                   {(() => {
-                    const isMe = user?.uid === displayAuthor.id;
-                    const rawUsername = isMe ? (userProfile?.username || displayAuthor.username) : displayAuthor.username;
-                    const username = rawUsername || 'usuario';
-                    const display = username.startsWith('@') ? username : `@${username}`;
-                    return display;
+                    const username = currentDisplayUsername || 'usuario';
+                    return username.startsWith('@') ? username : `@${username}`;
                   })()}
                 </span>
                 {/* Data sempre visível agora - Se for repost, tenta mostrar a data original se disponível no post, senão mostra timestamp do post atual mesmo (fallback) */}
@@ -734,7 +745,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
       {/* Profile Preview Modal */}
       <ProfilePreviewModal
         userId={displayAuthor.id}
-        username={displayAuthor.username}
+        username={currentDisplayUsername}
         isOpen={isProfileModalOpen}
         onClose={() => setIsProfileModalOpen(false)}
       />
