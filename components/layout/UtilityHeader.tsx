@@ -39,7 +39,7 @@ const UtilityHeader: React.FC = () => {
     if (q) setSearchQuery(q);
   }, [searchParams]);
 
-  const userAvatar = user?.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.displayName || 'Thoth'}`;
+  const userAvatar = user?.photoURL || `https://api.dicebear.com/7.x/initials/svg?seed=${user?.displayName || 'Thoth'}`;
   const userName = user?.displayName || "Estudante";
 
   useEffect(() => {

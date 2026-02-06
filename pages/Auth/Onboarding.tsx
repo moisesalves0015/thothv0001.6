@@ -91,7 +91,7 @@ const Onboarding: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [role, setRole] = useState('');
     const [course, setCourse] = useState('');
-    const [photoURL, setPhotoURL] = useState(user?.photoURL || `https://api.dicebear.com/7.x/initials/svg?seed=${user?.displayName || 'Thoth'}`);
+    const [photoURL, setPhotoURL] = useState(user?.photoURL || '');
     const [bio, setBio] = useState('');
     const [interests, setInterests] = useState<string[]>([]);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -360,7 +360,7 @@ const Onboarding: React.FC = () => {
                             <div className="flex flex-col items-center">
                                 <div className="relative group mb-3">
                                     <div className="w-32 h-32 rounded-[40px] overflow-hidden border-4 border-white dark:border-slate-800 shadow-2xl bg-white dark:bg-slate-800 transition-transform group-hover:scale-105">
-                                        <img src={photoURL} alt="Profile Preview" className="w-full h-full object-cover" />
+                                        <img src={photoURL || `https://api.dicebear.com/7.x/initials/svg?seed=${user?.displayName || 'User'}`} alt="Profile Preview" className="w-full h-full object-cover" />
                                     </div>
                                     <input
                                         type="file"
@@ -400,7 +400,7 @@ const Onboarding: React.FC = () => {
                             {/* Profile Preview */}
                             <div className="p-4 bg-gradient-to-br from-slate-50 to-white dark:from-slate-800 dark:to-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm">
                                 <div className="flex items-center gap-3 mb-3">
-                                    <img src={photoURL} className="w-12 h-12 rounded-xl border-2 border-white dark:border-slate-700 shadow-sm" alt="Preview" />
+                                    <img src={photoURL || `https://api.dicebear.com/7.x/initials/svg?seed=${user?.displayName || 'User'}`} className="w-12 h-12 rounded-xl border-2 border-white dark:border-slate-700 shadow-sm" alt="Preview" />
                                     <div>
                                         <h4 className="text-sm font-black text-slate-900 dark:text-white">{user?.displayName || 'Usuário Thoth'}</h4>
                                         <div className="flex items-center gap-1.5">

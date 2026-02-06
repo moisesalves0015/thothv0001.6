@@ -100,7 +100,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
   const getAuthorAvatar = (authorId: string, currentAvatar: string) => {
     if (user && user.uid === authorId) {
       if (user.photoURL) return user.photoURL;
-      return `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.displayName || 'Thoth'}`;
+      return `https://api.dicebear.com/7.x/initials/svg?seed=${user.displayName || 'Thoth'}`;
     }
     if (authorProfile && authorProfile.uid === authorId && authorProfile.photoURL) {
       return authorProfile.photoURL;
@@ -199,7 +199,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onBookmarkToggle, onLikeToggl
         id: user.uid,
         name: user.displayName || 'Estudante',
         username: user.email?.split('@')[0] || 'estudante',
-        avatar: user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}`
+        avatar: user.photoURL || `https://api.dicebear.com/7.x/initials/svg?seed=${user.uid}`
       };
       await PostService.repost(contentToRepost, currentUser);
       setShareCount(prev => prev + 1);
