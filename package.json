@@ -11,6 +11,7 @@
   "dependencies": {
     "canvas-confetti": "^1.9.4",
     "firebase": "10.8.0",
+    "framer-motion": "^12.35.2",
     "jspdf": "^2.5.1",
     "lucide-react": "^0.475.0",
     "pdf-lib": "^1.17.1",

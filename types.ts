@@ -107,6 +107,10 @@ export interface PrintRequest {
   paymentMethod: 'paid' | 'on_pickup';
   priority: 'normal' | 'urgent';
   queuePosition?: number;
+  nUp?: 1 | 2 | 4;
+  binding?: 'none' | 'spiral' | 'thermal' | 'hardcover';
+  finishing?: ('none' | 'stapled' | 'punched')[];
+  additionalServices?: string[];
 }
 
 /**
