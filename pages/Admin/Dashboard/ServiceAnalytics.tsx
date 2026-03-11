@@ -61,72 +61,72 @@ const ServiceAnalytics: React.FC<ServiceAnalyticsProps> = ({ orders }) => {
     }, [orders]);
 
     return (
-        <div className="space-y-6 animate-in fade-in duration-500 delay-200">
+        <div className="space-y-10 animate-in fade-in duration-700 delay-200">
             {/* KPI Row */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <KpiCardSmall label="Total Páginas Impressas" value={metrics.totalPages.toLocaleString()} color="emerald" />
-                <KpiCardSmall label="Média Páginas/Doc" value="12" trend="-0.5%" color="blue" />
-                <KpiCardSmall label="Docs Coloridos" value={((metrics.colorData[1].value / (orders.length || 1)) * 100).toFixed(0) + '%'} color="amber" />
-                <KpiCardSmall label="Economia Papel (Duplex)" value={((metrics.duplexData[1].value / (orders.length || 1)) * 100).toFixed(0) + '%'} trend="+5%" color="green" />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <KpiCardSmall label="Total Páginas" value={metrics.totalPages.toLocaleString()} color="emerald" />
+                <KpiCardSmall label="Páginas/Doc" value="12.4" trend="-0.5%" color="blue" />
+                <KpiCardSmall label="Taxa de Cores" value={((metrics.colorData[1].value / (orders.length || 1)) * 100).toFixed(0) + '%'} color="amber" />
+                <KpiCardSmall label="Adoção Duplex" value={((metrics.duplexData[1].value / (orders.length || 1)) * 100).toFixed(0) + '%'} trend="+5%" color="green" />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {/* FILE TYPES */}
-                <div className="bg-white/5 border border-white/10 rounded-3xl p-6 flex flex-col items-center">
-                    <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2 mb-6 w-full">
-                        <FileText size={16} className="text-red-500" />
-                        Tipos de Arquivo
+                <div className="bg-white dark:bg-slate-800/40 border border-slate-100 dark:border-white/5 rounded-[40px] p-8 md:p-10 flex flex-col items-center shadow-sm">
+                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-10 w-full text-center">
+                        <FileText size={14} className="text-red-500" />
+                        Formatos de Origem
                     </h3>
                     <DonutChart data={metrics.topFileTypes} />
                 </div>
 
                 {/* COLOR MODE */}
-                <div className="bg-white/5 border border-white/10 rounded-3xl p-6 flex flex-col items-center">
-                    <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2 mb-6 w-full">
-                        <Palette size={16} className="text-amber-500" />
-                        Cor vs P&B
+                <div className="bg-white dark:bg-slate-800/40 border border-slate-100 dark:border-white/5 rounded-[40px] p-8 md:p-10 flex flex-col items-center shadow-sm">
+                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-10 w-full text-center">
+                        <Palette size={14} className="text-amber-500" />
+                        Espectro de Cores
                     </h3>
                     <DonutChart data={metrics.colorData} />
                 </div>
 
                 {/* DUPLEX MODE */}
-                <div className="bg-white/5 border border-white/10 rounded-3xl p-6 flex flex-col items-center">
-                    <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2 mb-6 w-full">
-                        <Layers size={16} className="text-emerald-500" />
-                        Modo de Impressão
+                <div className="bg-white dark:bg-slate-800/40 border border-slate-100 dark:border-white/5 rounded-[40px] p-8 md:p-10 flex flex-col items-center shadow-sm">
+                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-10 w-full text-center">
+                        <Layers size={14} className="text-emerald-500" />
+                        Arquitetura de Folha
                     </h3>
                     <DonutChart data={metrics.duplexData} />
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* PAGE COUNT HISTOGRAM */}
-                <div className="bg-white/5 border border-white/10 rounded-3xl p-6">
-                    <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2 mb-6">
-                        <Scissors size={16} className="text-slate-400" />
-                        Tamanho dos Documentos (Páginas)
+                <div className="bg-white dark:bg-slate-800/40 border border-slate-100 dark:border-white/5 rounded-[40px] p-8 md:p-10 shadow-sm">
+                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-10">
+                        <Scissors size={14} className="text-slate-400" />
+                        Nível de Densidade de Conteúdo
                     </h3>
-                    <BarChart data={metrics.pageBuckets} color="bg-slate-500" />
+                    <BarChart data={metrics.pageBuckets} color="slate" />
                 </div>
 
                 {/* SERVICE EFFICIENCY */}
-                <div className="bg-white/5 border border-white/10 rounded-3xl p-6">
-                    <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2 mb-6">
-                        <Printer size={16} className="text-indigo-500" />
-                        Eficiência de Serviço
+                <div className="bg-white dark:bg-slate-800/40 border border-slate-100 dark:border-white/5 rounded-[40px] p-8 md:p-10 shadow-sm">
+                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-10">
+                        <Printer size={14} className="text-indigo-500" />
+                        Logística Operacional
                     </h3>
                     <div className="space-y-4">
-                        <div className="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-white/5">
-                            <span className="text-xs font-bold text-slate-400">Tempo Médio de Impressão</span>
-                            <span className="text-sm font-black text-white">45s / pág</span>
+                        <div className="flex justify-between items-center p-5 bg-slate-50 dark:bg-white/5 rounded-3xl border border-slate-100 dark:border-white/5 group hover:border-indigo-200 transition-all">
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Lead Time Médio</span>
+                            <span className="text-xs font-black text-slate-900 dark:text-white">45s <span className="text-[9px] text-slate-400 ml-1">/ PÁGINA</span></span>
                         </div>
-                        <div className="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-white/5">
-                            <span className="text-xs font-bold text-slate-400">Taxa de Falha</span>
-                            <span className="text-sm font-black text-emerald-500">0.2%</span>
+                        <div className="flex justify-between items-center p-5 bg-emerald-50/30 dark:bg-white/5 rounded-3xl border border-emerald-100/30 dark:border-white/5 group hover:border-emerald-200 transition-all">
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Success Rate</span>
+                            <span className="text-xs font-black text-emerald-600">99.8%</span>
                         </div>
-                        <div className="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-white/5">
-                            <span className="text-xs font-bold text-slate-400">Pico de Utilização</span>
-                            <span className="text-sm font-black text-amber-500">14:00 - 16:00</span>
+                        <div className="flex justify-between items-center p-5 bg-amber-50/30 dark:bg-white/5 rounded-3xl border border-amber-100/30 dark:border-white/5 group hover:border-amber-200 transition-all">
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Pico de Demanda</span>
+                            <span className="text-xs font-black text-slate-900 dark:text-white uppercase">14:00 - 16:00</span>
                         </div>
                     </div>
                 </div>

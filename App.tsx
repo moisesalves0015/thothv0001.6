@@ -43,6 +43,7 @@ const AdminPortal = lazy(() => import('./pages/Admin/AdminPortal'));
 const Calendario = lazy(() => import('./pages/Calendario/Calendario'));
 const Comunidades = lazy(() => import('./pages/Comunidades/Comunidades'));
 const CommunityDetail = lazy(() => import('./pages/Comunidades/CommunityDetail'));
+const ExternalOrderPage = lazy(() => import('./pages/Printers/ExternalOrderPage'));
 
 const MainLayout: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -141,6 +142,7 @@ const AppRoutes: React.FC = () => {
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/pd/:stationId" element={<ExternalOrderPage />} />
           <Route path="/printers/login" element={<PrinterLogin />} />
           <Route path="/printers/dashboard" element={<PrinterDashboard />} />
           <Route

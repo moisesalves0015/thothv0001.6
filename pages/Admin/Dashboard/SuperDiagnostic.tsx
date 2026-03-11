@@ -87,89 +87,91 @@ const SuperDiagnostic: React.FC = () => {
 
             recentOrders.docs.forEach(d => {
                 const data = d.data();
-                if (!data.userId) {
-                    addLog(`[ALERTA] Pedido ${d.id} sem userId vinculado!`);
+                // FIX: Use customerId instead of userId as per types.ts
+                if (!data.customerId) {
+                    addLog(`[ALERTA] Pedido ${d.id} sem identificador de cliente (customerId)!`);
                     anomalyCount++;
                 }
                 if (data.totalPrice === undefined) {
-                    addLog(`[ALERTA] Pedido ${d.id} sem campo totalPrice!`);
+                    addLog(`[ALERTA] Pedido ${d.id} sem campo de precificação (totalPrice)!`);
                     anomalyCount++;
                 }
             });
 
             if (anomalyCount === 0) {
-                addLog('Integridade Referencial: 100% (Nenhuma anomalia na amostra)');
+                addLog('Integridade Referencial: 100% (Consistência validada)');
             } else {
-                addLog(`Integridade Comprometida: ${anomalyCount} anomalias detectadas.`);
+                addLog(`Anomalias Detectadas: ${anomalyCount}. Recomenda-se auditoria manual.`);
                 healthScore -= (anomalyCount * 5);
             }
 
             // 5. Client Environment
-            addLog(`Ambiente Cliente: ${clientInfo.platform} | Cores: ${clientInfo.cores}`);
-            if (clientInfo.userAgent.includes('Edg')) addLog('Navegador: Edge (Chromium)');
-            else if (clientInfo.userAgent.includes('Chrome')) addLog('Navegador: Chrome');
-            else addLog('Navegador: Genérico');
+            addLog(`Ambiente Cliente: ${clientInfo.platform} | Performance: ${clientInfo.cores} Cores`);
+            if (clientInfo.userAgent.includes('Edg')) addLog('Navegador: Microsoft Edge (Optimized)');
+            else if (clientInfo.userAgent.includes('Chrome')) addLog('Navegador: Google Chrome (Stable)');
+            else addLog('Navegador: UserAgent Analysis Active');
 
         } catch (error: any) {
-            addLog(`[ERRO CRÍTICO] Falha no teste: ${error.message}`);
+            addLog(`[ERRO CRÍTICO] Falha na execução do protocolo: ${error.message}`);
             healthScore -= 50;
         }
 
-        setStats(s => ({ ...s, dbHealth: Math.max(0, healthScore) }));
-        addLog(`DIAGNÓSTICO CONCLUÍDO. Health Score: ${healthScore}/100`);
+        const finalScore = Math.max(0, healthScore);
+        setStats(s => ({ ...s, dbHealth: finalScore }));
+        addLog(`PROTOCOLO FINALIZADO. Pontuação de Saúde: ${finalScore}/100`);
         setRunning(false);
     };
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in duration-500">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 animate-in fade-in slide-in-from-bottom-6 duration-1000">
             {/* Control Panel */}
-            <div className="lg:col-span-1 space-y-6">
+            <div className="lg:col-span-1 space-y-8">
                 {/* Main Status Card */}
-                <div className="bg-[#0A0A0A] border border-white/5 rounded-[32px] p-8 relative overflow-hidden text-center group">
-                    <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 to-transparent"></div>
+                <div className="bg-white dark:bg-slate-800/40 border border-slate-100 dark:border-white/5 rounded-[40px] p-10 relative overflow-hidden text-center group shadow-sm">
+                    <div className="absolute inset-0 bg-gradient-to-b from-[#006c55]/5 to-transparent"></div>
                     <div className="relative z-10 flex flex-col items-center">
-                        <div className={`w-24 h-24 rounded-full flex items-center justify-center mb-6 transition-all duration-700 ${running ? 'bg-blue-500/20 text-blue-400 animate-pulse' :
-                            stats.dbHealth > 80 ? 'bg-emerald-500/10 text-emerald-500' :
-                                'bg-red-500/10 text-red-500'
+                        <div className={`w-32 h-32 rounded-full flex items-center justify-center mb-8 transition-all duration-1000 ring-8 ${running ? 'bg-blue-50 text-blue-500 ring-blue-50 animate-pulse' :
+                            stats.dbHealth > 80 ? 'bg-emerald-50 text-[#006c55] ring-emerald-50' :
+                                'bg-red-50 text-red-500 ring-red-50'
                             }`}>
-                            <Activity size={48} strokeWidth={1.5} />
+                            <Activity size={56} strokeWidth={1} />
                         </div>
-                        <h2 className="text-3xl font-black text-white mb-2">{stats.dbHealth}%</h2>
-                        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Health Score do Sistema</p>
+                        <h2 className="text-5xl font-black text-slate-900 dark:text-white mb-3 tracking-tighter">{stats.dbHealth}%</h2>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Health Index Alpha</p>
 
                         <button
                             onClick={runDiagnostic}
                             disabled={running}
-                            className="mt-8 px-8 py-4 bg-white text-black rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-all disabled:opacity-50 disabled:scale-100 flex items-center gap-2"
+                            className={`mt-10 w-full py-5 rounded-[24px] font-black text-xs uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 shadow-xl hover:translate-y-[-2px] ${
+                                running 
+                                ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                                : 'bg-slate-900 text-white hover:shadow-2xl active:scale-95'
+                            }`}
                         >
-                            {running ? <RefreshCw className="animate-spin" size={16} /> : <Play size={16} />}
-                            {running ? 'Executando...' : 'Iniciar Scan Total'}
+                            {running ? <RefreshCw className="animate-spin" size={16} /> : <Play size={16} fill="currentColor" />}
+                            {running ? 'Relatório em Curso' : 'Deep System Scan'}
                         </button>
                     </div>
                 </div>
 
                 {/* Environment Info */}
-                <div className="bg-[#0A0A0A] border border-white/5 rounded-[32px] p-8">
-                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2">
-                        <Cpu size={14} /> Ambiente do Cliente
+                <div className="bg-white dark:bg-slate-800/40 border border-slate-100 dark:border-white/5 rounded-[40px] p-10 shadow-sm relative overflow-hidden group">
+                     <div className="absolute top-0 right-0 w-40 h-40 bg-slate-50 dark:bg-white/[0.02] rounded-full blur-[50px] -mr-10 -mt-10 transition-all duration-700 group-hover:bg-[#006c55]/5"></div>
+                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-8 flex items-center gap-3">
+                        <Cpu size={14} className="text-[#006c55]" /> Architecture Spec
                     </h3>
-                    <div className="space-y-4">
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-slate-400">OS/Plataforma</span>
-                            <span className="font-mono text-white text-xs bg-white/5 px-2 py-1 rounded">{clientInfo.platform || 'N/A'}</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-slate-400">Resolução</span>
-                            <span className="font-mono text-white text-xs bg-white/5 px-2 py-1 rounded">{clientInfo.screen || 'N/A'}</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-slate-400">CPU Cores</span>
-                            <span className="font-mono text-white text-xs bg-white/5 px-2 py-1 rounded">{clientInfo.cores}</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-slate-400">Memória Device</span>
-                            <span className="font-mono text-white text-xs bg-white/5 px-2 py-1 rounded">{clientInfo.memory}</span>
-                        </div>
+                    <div className="space-y-6">
+                        {[
+                            { label: 'OS Plateform', value: clientInfo.platform },
+                            { label: 'Viewport', value: clientInfo.screen },
+                            { label: 'Compute Cores', value: clientInfo.cores },
+                            { label: 'Virtual Memory', value: clientInfo.memory }
+                        ].map((item, idx) => (
+                            <div key={idx} className="flex justify-between items-center group/row">
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{item.label}</span>
+                                <span className="font-mono text-[10px] font-bold text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-900/50 px-3 py-1.5 rounded-xl border border-slate-100 dark:border-white/5 group-hover/row:border-[#006c55]/30 transition-all">{item.value || 'N/A'}</span>
+                            </div>
+                        ))}
                     </div>
                 </div>
             </div>
@@ -177,73 +179,80 @@ const SuperDiagnostic: React.FC = () => {
             {/* Metrics & Terminal */}
             <div className="lg:col-span-2 space-y-8">
                 {/* Real Metrics Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="bg-[#0A0A0A] border border-white/5 p-4 rounded-2xl">
-                        <span className="text-[10px] uppercase text-slate-500 font-bold block mb-1">Latência</span>
-                        <div className="flex items-end gap-2">
-                            <span className={`text-xl font-black ${stats.latency < 200 ? 'text-emerald-500' : 'text-amber-500'}`}>{stats.latency}ms</span>
-                            <Wifi size={14} className="text-slate-600 mb-1" />
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    {[
+                        { label: 'Latency', value: `${stats.latency}ms`, icon: Wifi, color: stats.latency < 200 ? 'text-emerald-500' : 'text-amber-500' },
+                        { label: 'Users', value: stats.totalUsers, icon: Users, color: 'text-slate-900 dark:text-white' },
+                        { label: 'Orders', value: stats.totalOrders, icon: Database, color: 'text-slate-900 dark:text-white' },
+                        { label: 'Data Vol', value: stats.storageEst, icon: Server, color: 'text-blue-500' }
+                    ].map((m, i) => (
+                        <div key={i} className="bg-white dark:bg-slate-800/40 border border-slate-100 dark:border-white/5 p-6 rounded-[32px] shadow-sm hover:translate-y-[-2px] transition-all">
+                            <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest block mb-2">{m.label}</span>
+                            <div className="flex items-end justify-between">
+                                <span className={`text-xl font-black ${m.color} tracking-tighter`}>{m.value}</span>
+                                <m.icon size={16} className="text-slate-300 mb-1" />
+                            </div>
                         </div>
-                    </div>
-                    <div className="bg-[#0A0A0A] border border-white/5 p-4 rounded-2xl">
-                        <span className="text-[10px] uppercase text-slate-500 font-bold block mb-1">Usuários</span>
-                        <div className="flex items-end gap-2">
-                            <span className="text-xl font-black text-white">{stats.totalUsers}</span>
-                            <Users size={14} className="text-slate-600 mb-1" />
-                        </div>
-                    </div>
-                    <div className="bg-[#0A0A0A] border border-white/5 p-4 rounded-2xl">
-                        <span className="text-[10px] uppercase text-slate-500 font-bold block mb-1">Pedidos</span>
-                        <div className="flex items-end gap-2">
-                            <span className="text-xl font-black text-white">{stats.totalOrders}</span>
-                            <Database size={14} className="text-slate-600 mb-1" />
-                        </div>
-                    </div>
-                    <div className="bg-[#0A0A0A] border border-white/5 p-4 rounded-2xl">
-                        <span className="text-[10px] uppercase text-slate-500 font-bold block mb-1">Est. Dados</span>
-                        <div className="flex items-end gap-2">
-                            <span className="text-xl font-black text-blue-500">{stats.storageEst}</span>
-                            <Server size={14} className="text-slate-600 mb-1" />
-                        </div>
-                    </div>
+                    ))}
                 </div>
 
                 {/* Latency Graph (If history exists) */}
                 {latencyHistory.length > 2 && (
-                    <div className="bg-[#0A0A0A] border border-white/5 rounded-3xl p-6 h-48 relative overflow-hidden">
-                        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4 absolute top-6 left-6 z-10">Conectividade em Tempo Real</h3>
-                        <div className="absolute inset-0 pt-12 px-2">
-                            <AreaChart data={latencyHistory} color="cyan" height="h-full" />
+                    <div className="bg-white dark:bg-slate-800/40 border border-slate-100 dark:border-white/5 rounded-[40px] p-8 h-56 relative overflow-hidden shadow-sm shadow-emerald-500/5">
+                        <div className="flex justify-between items-center mb-8 relative z-10">
+                            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Fluxo de Conectividade</h3>
+                            <div className="flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Ativo</span>
+                            </div>
+                        </div>
+                        <div className="absolute inset-0 pt-16 px-4">
+                            <AreaChart data={latencyHistory} color="emerald" height="h-full" />
                         </div>
                     </div>
                 )}
 
                 {/* Terminal */}
-                <div className="bg-black border border-white/10 rounded-[24px] overflow-hidden flex flex-col h-[400px] shadow-2xl">
-                    <div className="bg-white/5 px-6 py-3 border-b border-white/5 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <Terminal size={14} className="text-emerald-500" />
-                            <span className="text-xs font-mono font-bold text-slate-400">SYSTEM_ROOT // DIAGNOSTIC_TOOL</span>
+                <div className="bg-slate-900 border border-slate-800 rounded-[40px] overflow-hidden flex flex-col h-[450px] shadow-2xl relative">
+                    {/* Glass Overlay on Terminal Header */}
+                    <div className="bg-white/5 backdrop-blur-md px-8 py-5 border-b border-white/5 flex items-center justify-between relative z-20">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-emerald-500/10 rounded-xl">
+                                <Terminal size={14} className="text-emerald-500" />
+                            </div>
+                            <span className="text-[10px] font-black font-mono tracking-widest text-slate-300">THOTH-MONITOR.sh</span>
                         </div>
-                        <div className="flex gap-1.5">
-                            <div className="w-2.5 h-2.5 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center text-[6px]">✖</div>
-                            <div className="w-2.5 h-2.5 rounded-full bg-amber-500/20 text-amber-500 flex items-center justify-center text-[6px]">−</div>
-                            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center text-[6px]">sw</div>
+                        <div className="flex gap-2">
+                             <div className="w-3 h-3 rounded-full bg-white/5 flex items-center justify-center cursor-pointer hover:bg-red-500/40 transition-all border border-white/5"></div>
+                             <div className="w-3 h-3 rounded-full bg-white/5 flex items-center justify-center cursor-pointer hover:bg-amber-500/40 transition-all border border-white/5"></div>
+                             <div className="w-3 h-3 rounded-full bg-white/10 flex items-center justify-center cursor-pointer hover:bg-emerald-500/40 transition-all border border-white/5"></div>
                         </div>
                     </div>
-                    <div className="p-6 font-mono text-xs overflow-y-auto flex-1 custom-scrollbar space-y-2">
+                    <div className="p-10 font-mono text-[11px] overflow-y-auto flex-1 no-scrollbar space-y-4 relative z-10 bg-[#0c111a]">
                         {logs.length === 0 && (
-                            <div className="text-slate-700 italic">Aguardando inicialização do protocolo de diagnóstico...</div>
+                            <div className="flex flex-col items-center justify-center h-full opacity-20 transform translate-y-[-20px]">
+                                <RefreshCw size={40} className="mb-4 animate-spin-slow" />
+                                <p className="text-[10px] font-black uppercase tracking-[0.4em]">Initialize Deep Scan</p>
+                            </div>
                         )}
                         {logs.map((log, i) => (
-                            <div key={i} className="flex gap-3 text-slate-300 border-l-2 border-white/5 pl-3 hover:border-emerald-500/50 hover:bg-white/[0.02] transition-colors py-0.5">
-                                <span className="opacity-30 select-none">{i.toString().padStart(3, '0')}</span>
-                                <span>{log}</span>
+                            <div key={i} className="flex gap-5 text-slate-400 group animate-in slide-in-from-left-2 duration-300">
+                                <span className="opacity-20 select-none font-black text-[10px] w-8">{i.toString().padStart(3, '0')}</span>
+                                <span className={`flex-1 ${
+                                    log.includes('[ERRO]') ? 'text-red-400' : 
+                                    log.includes('[ALERTA]') ? 'text-amber-400' : 
+                                    log.includes('CONCLUÍDO') ? 'text-emerald-400 font-black' :
+                                    'text-slate-300'
+                                }`}>
+                                    <span className="opacity-40 mr-2 text-[10px]">{log.split(']')[0]}]</span>
+                                    {log.split(']')[1]}
+                                </span>
                             </div>
                         ))}
                         {running && (
-                            <div className="flex gap-2">
-                                <span className="animate-pulse text-emerald-500">▋</span>
+                            <div className="flex items-center gap-3 py-2 pl-12 text-[#006c55]">
+                                <div className="w-2 h-2 bg-[#006c55] rounded-full animate-ping"></div>
+                                <span className="text-[10px] font-black uppercase tracking-[0.3em]">Querying Cluster Data...</span>
                             </div>
                         )}
                     </div>

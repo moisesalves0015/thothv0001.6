@@ -210,7 +210,7 @@ const UtilityHeader: React.FC = () => {
             onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
             className="flex items-center gap-2 p-1 pr-3 rounded-full hover:bg-white/50 dark:hover:bg-slate-800 transition-all active:scale-95"
           >
-            <img src={userAvatar} className="w-9 h-9 rounded-full border-2 border-white dark:border-slate-700 shadow-sm" alt="Perfil" />
+            <img src={userAvatar} className="w-9 h-9 rounded-full border-2 border-white dark:border-slate-700 shadow-sm object-cover" alt="Perfil" />
             <span className="text-sm font-black text-slate-900 dark:text-white truncate max-w-[100px]">{userName}</span>
             <ChevronDown size={14} className={`text-slate-400 transition-transform ${profileDropdownOpen ? 'rotate-180' : ''}`} />
           </button>

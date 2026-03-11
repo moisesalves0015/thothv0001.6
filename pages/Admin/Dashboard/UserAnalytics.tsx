@@ -58,62 +58,75 @@ const UserAnalytics: React.FC<UserAnalyticsProps> = ({ users, timeRange }) => {
     }, [users]);
 
     return (
-        <div className="space-y-6 animate-in fade-in duration-500">
+        <div className="space-y-10 animate-in fade-in duration-700">
             {/* KPI Row */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <KpiCardSmall label="Total Usuários" value={metrics.total.toString()} trend="+5.2%" />
-                <KpiCardSmall label="Novos (Período)" value={users.length.toString()} trend="+12%" color="blue" />
-                <KpiCardSmall label="Professores" value={metrics.roleData.find(r => r.label === 'Professores')?.value.toString() || '0'} color="indigo" />
-                <KpiCardSmall label="Retenção" value="88%" trend="+1.2%" color="rose" />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <KpiCardSmall label="Base de Usuários" value={metrics.total.toString()} trend="+5.2%" />
+                <KpiCardSmall label="Aquisições (30d)" value={users.length.toString()} trend="+12%" color="blue" />
+                <KpiCardSmall label="Corpo Docente" value={metrics.roleData.find(r => r.label === 'Professores')?.value.toString() || '0'} color="indigo" />
+                <KpiCardSmall label="Engajamento" value="88%" trend="+1.2%" color="emerald" />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* TOP COURSES - Requested */}
-                <div className="bg-white/5 border border-white/10 rounded-3xl p-6">
-                    <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2 mb-6">
-                        <BookOpen size={16} className="text-emerald-500" />
-                        Top Cursos
+                <div className="bg-white dark:bg-slate-800/40 border border-slate-100 dark:border-white/5 rounded-[40px] p-8 md:p-10 shadow-sm">
+                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-10">
+                        <BookOpen size={14} className="text-[#006c55]" />
+                        Top Hubs Acadêmicos (Cursos)
                     </h3>
-                    <HorizontalBarChart data={metrics.topCourses} color="bg-emerald-500" />
+                    <HorizontalBarChart data={metrics.topCourses} color="emerald" />
                 </div>
 
                 {/* TOP UNIVERSITIES */}
-                <div className="bg-white/5 border border-white/10 rounded-3xl p-6">
-                    <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2 mb-6">
-                        <GraduationCap size={16} className="text-amber-500" />
-                        Top Universidades
+                <div className="bg-white dark:bg-slate-800/40 border border-slate-100 dark:border-white/5 rounded-[40px] p-8 md:p-10 shadow-sm">
+                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-10">
+                        <GraduationCap size={14} className="text-amber-500" />
+                        Distribuição por Instituição
                     </h3>
-                    <HorizontalBarChart data={metrics.topUnis} color="bg-amber-500" />
+                    <HorizontalBarChart data={metrics.topUnis} color="amber" />
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {/* ROLE DISTRIBUTION */}
-                <div className="bg-white/5 border border-white/10 rounded-3xl p-6 flex flex-col items-center">
-                    <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2 mb-6 w-full">
-                        <Briefcase size={16} className="text-blue-500" />
-                        Perfil Demográfico
+                <div className="bg-white dark:bg-slate-800/40 border border-slate-100 dark:border-white/5 rounded-[40px] p-8 md:p-10 flex flex-col items-center shadow-sm">
+                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-10 w-full text-center">
+                        <Briefcase size={14} className="text-blue-500" />
+                        Perfil de Permissões
                     </h3>
                     <DonutChart data={metrics.roleData} />
                 </div>
 
                 {/* ENGAGEMENT MOCK */}
-                <div className="md:col-span-2 bg-white/5 border border-white/10 rounded-3xl p-6">
-                    <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2 mb-6">
-                        <UserCheck size={16} className="text-purple-500" />
-                        Atividade por Horário (Heatmap Mock)
+                <div className="md:col-span-2 bg-white dark:bg-slate-800/40 border border-slate-100 dark:border-white/5 rounded-[40px] p-8 md:p-10 shadow-sm">
+                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-10">
+                        <UserCheck size={14} className="text-purple-500" />
+                        Densidade de Interação (Beta)
                     </h3>
-                    <div className="grid grid-cols-12 gap-1 h-32">
-                        {Array.from({ length: 24 * 3 }).map((_, i) => (
-                            <div
-                                key={i}
-                                className={`rounded-sm ${Math.random() > 0.7 ? 'bg-purple-500' :
-                                        Math.random() > 0.4 ? 'bg-purple-500/40' :
-                                            'bg-white/5'
+                    <div className="grid grid-cols-12 gap-1.5 h-32">
+                        {Array.from({ length: 24 * 3 }).map((_, i) => {
+                            const rand = Math.random();
+                            return (
+                                <div
+                                    key={i}
+                                    className={`rounded-[2px] transition-all duration-700 hover:scale-125 hover:z-20 ${
+                                        rand > 0.8 ? 'bg-[#006c55] shadow-[0_0_10px_rgba(0,108,85,0.4)]' :
+                                        rand > 0.5 ? 'bg-emerald-500/20' :
+                                        'bg-slate-100 dark:bg-white/5'
                                     }`}
-                                title="Atividade"
-                            ></div>
-                        ))}
+                                    title="Atividade registrada"
+                                ></div>
+                            );
+                        })}
+                    </div>
+                    <div className="mt-8 flex items-center justify-between text-[8px] font-black text-slate-400 uppercase tracking-widest">
+                        <span>Low Activity</span>
+                        <div className="flex gap-1">
+                            <div className="w-2 h-2 rounded-sm bg-slate-100 dark:bg-white/5"></div>
+                            <div className="w-2 h-2 rounded-sm bg-emerald-500/20"></div>
+                            <div className="w-2 h-2 rounded-sm bg-[#006c55]"></div>
+                        </div>
+                        <span>Peak Activity</span>
                     </div>
                 </div>
             </div>

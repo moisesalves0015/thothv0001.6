@@ -131,6 +131,7 @@ import { PrintChatService } from '../../modules/print/print-chat.service';
 import { PrinterService, PrinterStation } from '../../modules/print/printer.service';
 import { PrintRequest, Message, PrintRequestMessage } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
+import { toast } from 'sonner';
 
 interface ServiceItem {
   id: string;
@@ -527,9 +528,23 @@ const PrinterDashboard: React.FC = () => {
                   <PrinterIcon className="text-emerald-600 dark:text-emerald-400" size={24} />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-black text-slate-900 dark:text-white">
-                    {currentStation?.name || 'Gráfica'}
-                  </h1>
+                  <div className="flex items-center gap-2">
+                    <h1 className="text-2xl font-black text-slate-900 dark:text-white">
+                      {currentStation?.name || 'Gráfica'}
+                    </h1>
+                    <button 
+                      onClick={() => {
+                        if (!currentStation?.stationId) return;
+                        const url = `${window.location.origin}/#/pd/${currentStation.stationId}`;
+                        navigator.clipboard.writeText(url);
+                        toast.success('Link da loja copiado!');
+                      }}
+                      className="p-1.5 text-slate-400 hover:text-[#006c55] hover:bg-[#006c55]/10 rounded-lg transition-all"
+                      title="Copiar Link da Loja"
+                    >
+                      <Copy size={16} />
+                    </button>
+                  </div>
                   <p className="text-sm text-slate-500 dark:text-slate-400">
                     Dashboard de Gerenciamento
                   </p>

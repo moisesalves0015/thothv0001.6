@@ -68,48 +68,73 @@ const GeneralOverview: React.FC<GeneralOverviewProps> = ({ orders, users, statio
     }, [stations, selectedStation, metrics]);
 
     return (
-        <div className="space-y-6 animate-in fade-in duration-500">
+        <div className="space-y-10 animate-in fade-in duration-700">
             {/* KPI GRID */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 <KpiCardSmall label="Fluxo de Caixa" value={`R$ ${metrics.revenue.toFixed(2)}`} trend="+12.5%" />
                 <KpiCardSmall label="Pedidos Realizados" value={metrics.orderCount.toString()} color="blue" />
-                <KpiCardSmall label="Novos Usuários" value={metrics.newUsers.toString()} color="indigo" />
+                <KpiCardSmall label="Novos Membros" value={metrics.newUsers.toString()} color="indigo" />
                 <KpiCardSmall label="Saúde da Rede" value={`${metrics.activeStations}/${metrics.totalStations}`} color="rose" />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 bg-[#0A0A0A] border border-white/5 rounded-[24px] p-8 relative overflow-hidden group">
+                <div className="lg:col-span-2 bg-white dark:bg-slate-800/40 border border-slate-100 dark:border-white/5 rounded-[40px] p-8 md:p-10 relative overflow-hidden group shadow-sm">
                     {/* Background Glow */}
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-[#006c55]/5 rounded-full blur-[80px] pointer-events-none group-hover:bg-[#006c55]/10 transition-all duration-1000"></div>
+                    <div className="absolute top-0 right-0 w-80 h-80 bg-[#006c55]/5 rounded-full blur-[100px] pointer-events-none group-hover:bg-[#006c55]/10 transition-all duration-1000"></div>
 
-                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-8 z-10 relative">
-                        <Activity size={14} className="text-[#006c55]" />
-                        Tendência de Receita ({timeRange})
-                    </h3>
-                    <AreaChart data={revenueChart} color="emerald" height="h-72" />
+                    <div className="relative z-10">
+                        <div className="flex justify-between items-center mb-10">
+                            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                <Activity size={14} className="text-[#006c55]" />
+                                Volatilidade de Receita ({timeRange})
+                            </h3>
+                            <div className="px-3 py-1 bg-emerald-50 text-[#006c55] rounded-xl text-[9px] font-black uppercase tracking-widest border border-emerald-100">
+                                Realtime
+                            </div>
+                        </div>
+                        <AreaChart 
+                           data={revenueChart} 
+                           color="emerald" 
+                           height="h-80" 
+                           formatValue={(v) => `R$ ${v.toFixed(2)}`} 
+                        />
+                    </div>
                 </div>
 
-                <div className="bg-[#0A0A0A] border border-white/5 rounded-[24px] p-8 overflow-hidden flex flex-col relative">
-                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500/0 via-red-500/50 to-red-500/0 opacity-20"></div>
-
-                    <div className="flex justify-between items-center mb-8">
-                        <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                <div className="bg-white dark:bg-slate-800/40 border border-slate-100 dark:border-white/5 rounded-[40px] p-8 md:p-10 overflow-hidden flex flex-col relative shadow-sm">
+                    <div className="flex justify-between items-center mb-10">
+                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
                             <Bell size={14} className="text-red-500" />
-                            Feed de Alertas
+                            Security Feed
                         </h3>
-                        {alerts.length > 0 && <span className="bg-red-500/10 text-red-500 border border-red-500/20 text-[9px] font-black px-2 py-0.5 rounded-full">{alerts.length}</span>}
+                        {alerts.length > 0 && (
+                            <div className="w-2 h-2 rounded-full bg-red-500 animate-ping"></div>
+                        )}
                     </div>
-                    <div className="space-y-3 overflow-y-auto flex-1 custom-scrollbar">
-                        {alerts.length === 0 ? <div className="text-center text-slate-600 text-[10px] font-bold uppercase mt-10">Sem alertas</div> :
+                    
+                    <div className="space-y-4 overflow-y-auto flex-1 no-scrollbar max-h-[400px]">
+                        {alerts.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-20 opacity-30">
+                                <AlertTriangle size={32} className="mb-4" />
+                                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Ambiente Estável</p>
+                            </div>
+                        ) : (
                             alerts.map((a, i) => (
-                                <div key={i} className="bg-white/5 p-3 rounded-xl border border-white/5 flex gap-3">
-                                    <AlertTriangle size={14} className={a.type === 'critical' ? 'text-red-500' : 'text-blue-500'} />
+                                <div key={i} className="bg-slate-50 dark:bg-white/5 p-5 rounded-3xl border border-slate-100 dark:border-white/5 flex gap-4 group hover:border-red-200 transition-all">
+                                    <div className={`p-3 rounded-2xl shrink-0 ${a.type === 'critical' ? 'bg-red-50 text-red-500' : 'bg-blue-50 text-blue-500'}`}>
+                                        <AlertTriangle size={18} />
+                                    </div>
                                     <div>
-                                        <p className="text-xs font-bold text-white leading-tight">{a.msg}</p>
-                                        <span className="text-[9px] text-slate-500">{a.time}</span>
+                                        <p className="text-xs font-black text-slate-900 dark:text-white leading-tight mb-1 uppercase tracking-tight">{a.msg}</p>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{a.time}</span>
+                                            <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                                            <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Urgent</span>
+                                        </div>
                                     </div>
                                 </div>
-                            ))}
+                            ))
+                        )}
                     </div>
                 </div>
             </div>

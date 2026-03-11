@@ -36,7 +36,7 @@ const PrintOrdersAdmin: React.FC = () => {
     const [orders, setOrders] = useState<PrintRequest[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
-    const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'processing' | 'completed' | 'cancelled'>('all');
+    const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'printing' | 'ready' | 'cancelled'>('all');
     const [archivedFilter, setArchivedFilter] = useState<'all' | 'active' | 'archived'>('active');
     const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
     const [stationFilter, setStationFilter] = useState<string>('all');
@@ -244,6 +244,7 @@ const PrintOrdersAdmin: React.FC = () => {
             status: order.status,
             stationId: order.stationId,
             printerName: order.printerName,
+            stationOwnerEmail: order.stationOwnerEmail,
             totalPrice: order.totalPrice,
             archived: order.archived
         });
@@ -380,11 +381,11 @@ const PrintOrdersAdmin: React.FC = () => {
     };
 
     const getStatusBadge = (status: string) => {
-        const configs = {
-            pending: { icon: Clock, text: 'Pendente', class: 'bg-amber-500/10 text-amber-600 border-amber-200' },
-            processing: { icon: RefreshCw, text: 'Processando', class: 'bg-blue-500/10 text-blue-600 border-blue-200' },
-            completed: { icon: CheckCircle2, text: 'Concluído', class: 'bg-emerald-500/10 text-emerald-600 border-emerald-200' },
-            cancelled: { icon: XCircle, text: 'Cancelado', class: 'bg-red-500/10 text-red-600 border-red-200' }
+        const configs: Record<string, { icon: any, text: string, class: string }> = {
+            pending: { icon: Clock, text: 'Pendente', class: 'bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20' },
+            printing: { icon: RefreshCw, text: 'Imprimindo', class: 'bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20' },
+            ready: { icon: CheckCircle2, text: 'Pronto', class: 'bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20' },
+            cancelled: { icon: XCircle, text: 'Cancelado', class: 'bg-red-50 text-red-600 border-red-100 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20' }
         };
 
         const config = configs[status as keyof typeof configs] || configs.pending;
@@ -428,11 +429,11 @@ const PrintOrdersAdmin: React.FC = () => {
     };
 
     const stats = {
-        total: orders.length,
-        pending: orders.filter(o => o.status === 'pending' && !o.archived).length,
-        processing: orders.filter(o => o.status === 'processing').length,
-        completed: orders.filter(o => o.status === 'completed').length,
-        archived: orders.filter(o => o.archived).length
+        total: orders.filter(o => !o.archived && (stationFilter === "all" || o.stationId === stationFilter)).length,
+        pending: orders.filter(o => !o.archived && (!o.status || o.status === "pending") && (stationFilter === "all" || o.stationId === stationFilter)).length,
+        printing: orders.filter(o => !o.archived && o.status === "printing" && (stationFilter === "all" || o.stationId === stationFilter)).length,
+        ready: orders.filter(o => !o.archived && o.status === "ready" && (stationFilter === "all" || o.stationId === stationFilter)).length,
+        cancelled: orders.filter(o => !o.archived && o.status === "cancelled" && (stationFilter === "all" || o.stationId === stationFilter)).length
     };
 
     return (
@@ -470,25 +471,25 @@ const PrintOrdersAdmin: React.FC = () => {
 
             {/* Stats */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
-                    <div className="text-2xl font-black text-slate-900 dark:text-white">{stats.total}</div>
-                    <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total</div>
+                <div className="bg-white dark:bg-slate-800/40 rounded-2xl p-5 border border-slate-100 dark:border-white/5 shadow-sm transition-all hover:shadow-md group">
+                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1 group-hover:text-slate-600 transition-colors">Ativos</div>
+                    <div className="text-2xl font-black text-slate-900 dark:text-white leading-none">{stats.total}</div>
                 </div>
-                <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-4 border border-amber-200 dark:border-amber-800">
-                    <div className="text-2xl font-black text-amber-600">{stats.pending}</div>
-                    <div className="text-xs font-bold text-amber-600 uppercase tracking-wider">Pendentes</div>
+                <div className="bg-white dark:bg-slate-800/40 rounded-2xl p-5 border border-slate-100 dark:border-white/5 shadow-sm transition-all hover:shadow-md group">
+                    <div className="text-[10px] font-black text-amber-500/60 uppercase tracking-[0.15em] mb-1 group-hover:text-amber-500 transition-colors">Pendentes</div>
+                    <div className="text-2xl font-black text-amber-600 dark:text-amber-400 leading-none">{stats.pending}</div>
                 </div>
-                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800">
-                    <div className="text-2xl font-black text-blue-600">{stats.processing}</div>
-                    <div className="text-xs font-bold text-blue-600 uppercase tracking-wider">Processando</div>
+                <div className="bg-white dark:bg-slate-800/40 rounded-2xl p-5 border border-slate-100 dark:border-white/5 shadow-sm transition-all hover:shadow-md group">
+                    <div className="text-[10px] font-black text-blue-500/60 uppercase tracking-[0.15em] mb-1 group-hover:text-blue-500 transition-colors">Imprimindo</div>
+                    <div className="text-2xl font-black text-blue-600 dark:text-blue-400 leading-none">{stats.printing}</div>
                 </div>
-                <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-4 border border-emerald-200 dark:border-emerald-800">
-                    <div className="text-2xl font-black text-emerald-600">{stats.completed}</div>
-                    <div className="text-xs font-bold text-emerald-600 uppercase tracking-wider">Concluídos</div>
+                <div className="bg-white dark:bg-slate-800/40 rounded-2xl p-5 border border-slate-100 dark:border-white/5 shadow-sm transition-all hover:shadow-md group">
+                    <div className="text-[10px] font-black text-emerald-500/60 uppercase tracking-[0.15em] mb-1 group-hover:text-emerald-500 transition-colors">Prontos</div>
+                    <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 leading-none">{stats.ready}</div>
                 </div>
-                <div className="bg-slate-50 dark:bg-slate-900/20 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
-                    <div className="text-2xl font-black text-slate-600">{stats.archived}</div>
-                    <div className="text-xs font-bold text-slate-600 uppercase tracking-wider">Arquivados</div>
+                <div className="bg-white dark:bg-slate-800/40 rounded-2xl p-5 border border-slate-100 dark:border-white/5 shadow-sm transition-all hover:shadow-md group">
+                    <div className="text-[10px] font-black text-red-500/60 uppercase tracking-[0.15em] mb-1 group-hover:text-red-500 transition-colors">Cancelados</div>
+                    <div className="text-2xl font-black text-red-600 dark:text-red-400 leading-none">{stats.cancelled}</div>
                 </div>
             </div>
 
@@ -593,14 +594,14 @@ const PrintOrdersAdmin: React.FC = () => {
             {/* Filters and Actions */}
             <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 space-y-4">
                 {/* Search */}
-                <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                <div className="relative group">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#006c55] transition-colors" size={18} />
                     <input
                         type="text"
                         placeholder="Buscar por arquivo, cliente ou ID..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#006c55]"
+                        className="w-full pl-11 pr-4 py-3 bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#006c55]/20 focus:border-[#006c55] transition-all placeholder:text-slate-400 text-sm font-medium"
                     />
                 </div>
 
@@ -613,8 +614,8 @@ const PrintOrdersAdmin: React.FC = () => {
                     >
                         <option value="all">Todos os Status</option>
                         <option value="pending">Pendentes</option>
-                        <option value="processing">Processando</option>
-                        <option value="completed">Concluídos</option>
+                        <option value="printing">Imprimindo</option>
+                        <option value="ready">Prontos</option>
                         <option value="cancelled">Cancelados</option>
                     </select>
 
@@ -624,7 +625,7 @@ const PrintOrdersAdmin: React.FC = () => {
                         className="px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-bold"
                     >
                         <option value="active">Ativos</option>
-                        <option value="archived">Arquivados</option>
+                        <option value="archived">Cancelados</option>
                         <option value="all">Todos</option>
                     </select>
 
@@ -757,7 +758,15 @@ const PrintOrdersAdmin: React.FC = () => {
                                             {editingOrder === order.id ? (
                                                 <select
                                                     value={editForm.stationId}
-                                                    onChange={(e) => setEditForm({ ...editForm, stationId: e.target.value })}
+                                                    onChange={(e) => {
+                                                        const selectedStation = stations.find(s => s.stationId === e.target.value);
+                                                        setEditForm({ 
+                                                            ...editForm, 
+                                                            stationId: e.target.value,
+                                                            printerName: selectedStation?.name || '',
+                                                            stationOwnerEmail: selectedStation?.ownerEmail || ''
+                                                        });
+                                                    }}
                                                     className="px-2 py-1 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded"
                                                 >
                                                     {stations.map(station => (
@@ -780,8 +789,8 @@ const PrintOrdersAdmin: React.FC = () => {
                                                     className="px-2 py-1 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded"
                                                 >
                                                     <option value="pending">Pendente</option>
-                                                    <option value="processing">Processando</option>
-                                                    <option value="completed">Concluído</option>
+                                                    <option value="printing">Imprimindo</option>
+                                                    <option value="ready">Pronto</option>
                                                     <option value="cancelled">Cancelado</option>
                                                 </select>
                                             ) : (
@@ -798,41 +807,52 @@ const PrintOrdersAdmin: React.FC = () => {
                                                     step="0.01"
                                                     value={editForm.totalPrice}
                                                     onChange={(e) => setEditForm({ ...editForm, totalPrice: parseFloat(e.target.value) })}
-                                                    className="w-20 px-2 py-1 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded"
+                                                    className="w-20 px-2 py-1 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded"
                                                 />
                                             ) : (
-                                                <span className="text-sm font-bold text-slate-900 dark:text-white">
-                                                    R$ {order.totalPrice?.toFixed(2) || '0.00'}
+                                                <span className="text-sm font-black text-slate-900 dark:text-white">
+                                                    R$ {order.totalPrice?.toFixed(2)}
                                                 </span>
                                             )}
                                         </td>
                                         <td className="px-4 py-3">
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-1">
                                                 {editingOrder === order.id ? (
-                                                    <>
-                                                        <button
-                                                            onClick={() => saveEdit(order.id)}
-                                                            className="p-1 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded transition-colors"
-                                                            title="Salvar"
-                                                        >
+                                                    <div className="flex items-center gap-1">
+                                                        <button onClick={() => saveEdit(order.id)} className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors" title="Salvar">
                                                             <Save size={16} />
                                                         </button>
-                                                        <button
-                                                            onClick={cancelEditing}
-                                                            className="p-1 text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors"
-                                                            title="Cancelar"
-                                                        >
+                                                        <button onClick={cancelEditing} className="p-1.5 text-slate-400 hover:bg-slate-50 rounded-lg transition-colors" title="Cancelar">
                                                             <X size={16} />
                                                         </button>
-                                                    </>
+                                                    </div>
                                                 ) : (
-                                                    <button
-                                                        onClick={() => startEditing(order)}
-                                                        className="p-1 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
-                                                        title="Editar"
-                                                    >
-                                                        <Edit2 size={16} />
-                                                    </button>
+                                                    <>
+                                                        <button
+                                                            onClick={() => startEditing(order)}
+                                                            className="p-1.5 text-slate-400 hover:text-[#006c55] hover:bg-emerald-50 dark:hover:bg-[#006c55]/10 rounded-lg transition-all"
+                                                            title="Editar"
+                                                        >
+                                                            <Edit2 size={16} />
+                                                        </button>
+                                                        <button
+                                                            onClick={async () => {
+                                                                if (window.confirm('Deseja deletar permanentemente este pedido?')) {
+                                                                    try {
+                                                                        await deleteDoc(doc(db, 'printRequests', order.id));
+                                                                        toast.success('Pedido deletado');
+                                                                        await loadOrders();
+                                                                    } catch (e) {
+                                                                        toast.error('Erro ao deletar');
+                                                                    }
+                                                                }
+                                                            }}
+                                                            className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all"
+                                                            title="Deletar"
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </>
                                                 )}
                                             </div>
                                         </td>
@@ -841,6 +861,67 @@ const PrintOrdersAdmin: React.FC = () => {
                             )}
                         </tbody>
                     </table>
+                </div>
+
+                {/* Mobile Card View */}
+                <div className="md:hidden divide-y divide-slate-100 dark:divide-white/5">
+                    {loading ? (
+                        <div className="p-8 text-center text-slate-500">
+                            <RefreshCw className="animate-spin mx-auto mb-2" size={24} />
+                            <p className="text-xs font-bold uppercase">Carregando...</p>
+                        </div>
+                    ) : filteredOrders.length === 0 ? (
+                        <div className="p-8 text-center text-slate-500">
+                            <p className="text-xs font-bold uppercase">Nenhum pedido encontrado</p>
+                        </div>
+                    ) : (
+                        filteredOrders.map(order => (
+                            <div key={order.id} className={`p-4 space-y-3 ${order.archived ? 'opacity-60 bg-slate-50/50' : 'bg-white dark:bg-slate-800/20'}`}>
+                                <div className="flex items-start justify-between gap-3">
+                                    <div className="flex items-start gap-3 flex-1 min-w-0">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedOrders.has(order.id)}
+                                            onChange={() => handleSelectOrder(order.id)}
+                                            className="mt-1 rounded border-slate-200"
+                                        />
+                                        <div className="flex-1 min-w-0">
+                                            <h4 className="text-sm font-black text-slate-900 dark:text-white truncate">{order.fileName}</h4>
+                                            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-tight">{order.customerName}</p>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="text-sm font-black text-slate-900 dark:text-white leading-none">R$ {order.totalPrice?.toFixed(2)}</div>
+                                        <div className="text-[10px] text-slate-400 font-medium mt-1 uppercase">{new Date(order.timestamp).toLocaleDateString('pt-BR')}</div>
+                                    </div>
+                                </div>
+                                <div className="flex items-center justify-between pt-1">
+                                    <div className="flex items-center gap-2">
+                                        {getStatusBadge(order.status)}
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight truncate max-w-[120px]">
+                                            {order.printerName}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <button 
+                                            onClick={() => startEditing(order)}
+                                            className="p-2 text-slate-400 hover:text-[#006c55] hover:bg-emerald-50 rounded-lg transition-colors"
+                                        >
+                                            <Edit2 size={16} />
+                                        </button>
+                                        <button 
+                                            onClick={() => {
+                                                if(window.confirm('Deletar este pedido?')) deleteDoc(doc(db, 'printRequests', order.id)).then(() => loadOrders());
+                                            }}
+                                            className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        ))
+                    )}
                 </div>
             </div>
         </div>

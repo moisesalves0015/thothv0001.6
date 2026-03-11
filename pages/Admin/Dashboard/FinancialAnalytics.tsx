@@ -52,64 +52,80 @@ const FinancialAnalytics: React.FC<FinancialAnalyticsProps> = ({ orders, station
     }, [orders, stations]);
 
     return (
-        <div className="space-y-6 animate-in fade-in duration-500 delay-100">
+        <div className="space-y-10 animate-in fade-in duration-700 delay-100">
             {/* KPI Row */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                 <KpiCardSmall label="Receita Bruta" value={`R$ ${metrics.totalRevenue.toFixed(2)}`} trend="+8.4%" />
                 <KpiCardSmall label="Ticket Médio" value={`R$ ${metrics.avgOrderValue.toFixed(2)}`} trend="-2.1%" color="blue" />
                 <KpiCardSmall label="Pedidos Pagos" value={orders.length.toString()} trend="+5%" color="indigo" />
-                <KpiCardSmall label="Estornos" value="R$ 0,00" color="rose" />
+                <KpiCardSmall label="Saúde Financeira" value="SAFE" color="emerald" />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* REVENUE BY STATION */}
-                <div className="bg-white/5 border border-white/10 rounded-3xl p-6">
-                    <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2 mb-6">
-                        <ShoppingBag size={16} className="text-emerald-500" />
-                        Receita por Gráfica
+                <div className="bg-white dark:bg-slate-800/40 border border-slate-100 dark:border-white/5 rounded-[40px] p-8 md:p-10 shadow-sm">
+                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-10">
+                        <ShoppingBag size={14} className="text-[#006c55]" />
+                        Top Performance por Local
                     </h3>
-                    <HorizontalBarChart data={metrics.topStations} color="bg-emerald-500" formatValue={(v) => `R$ ${v.toFixed(0)}`} />
+                    <HorizontalBarChart data={metrics.topStations} color="emerald" formatValue={(v) => `R$ ${v.toFixed(0)}`} />
                 </div>
 
                 {/* TICKET SIZE HISTOGRAM */}
-                <div className="bg-white/5 border border-white/10 rounded-3xl p-6">
-                    <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2 mb-6">
-                        <Wallet size={16} className="text-blue-500" />
-                        Distribuição de Ticket (Valor do Pedido)
+                <div className="bg-white dark:bg-slate-800/40 border border-slate-100 dark:border-white/5 rounded-[40px] p-8 md:p-10 shadow-sm">
+                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-10">
+                        <Wallet size={14} className="text-blue-500" />
+                        Segmentação por Transação
                     </h3>
-                    <BarChart data={metrics.ticketSizes} color="bg-blue-500" />
+                    <BarChart data={metrics.ticketSizes} color="blue" />
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {/* PAYMENT METHODS */}
-                <div className="bg-white/5 border border-white/10 rounded-3xl p-6 flex flex-col items-center">
-                    <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2 mb-6 w-full">
-                        <CreditCard size={16} className="text-amber-500" />
-                        Métodos de Pagamento
+                <div className="bg-white dark:bg-slate-800/40 border border-slate-100 dark:border-white/5 rounded-[40px] p-8 md:p-10 flex flex-col items-center shadow-sm">
+                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-10 w-full">
+                        <CreditCard size={14} className="text-amber-500" />
+                        Gateways de Gateway
                     </h3>
                     <DonutChart data={metrics.methods} />
                 </div>
 
                 {/* PROJECTED REVENUE MOCK */}
-                <div className="md:col-span-2 bg-white/5 border border-white/10 rounded-3xl p-6 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-[#006c55]/10 rounded-full blur-3xl pointer-events-none"></div>
-                    <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2 mb-6">
-                        <TrendingUp size={16} className="text-[#006c55]" />
-                        Projeção Financeira (IA Beta)
-                    </h3>
-                    <div className="flex items-center justify-between h-32 px-4">
-                        <div className="space-y-1">
-                            <span className="text-xs text-slate-500 font-bold uppercase">Previsão Mês</span>
-                            <div className="text-4xl font-black text-white">R$ {(metrics.totalRevenue * 1.2).toFixed(2)}</div>
-                            <span className="text-[10px] text-emerald-500 font-black">+20% vs Mês Anterior</span>
+                <div className="md:col-span-2 bg-white dark:bg-slate-800/40 border border-slate-100 dark:border-white/5 rounded-[40px] p-8 md:p-10 relative overflow-hidden shadow-sm">
+                    <div className="absolute top-0 right-0 w-80 h-80 bg-[#006c55]/5 rounded-full blur-[100px] pointer-events-none transition-all duration-1000 group-hover:bg-[#006c55]/10"></div>
+                    
+                    <div className="flex justify-between items-center mb-10 relative z-10">
+                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                            <TrendingUp size={14} className="text-[#006c55]" />
+                            Previsão de Crescimento (Alpha)
+                        </h3>
+                        <div className="px-3 py-1 bg-blue-50 text-blue-600 rounded-xl text-[8px] font-black uppercase tracking-widest border border-blue-100">
+                            IA Powered
                         </div>
-                        <div className="text-right space-y-2">
-                            <div className="text-[10px] text-slate-500 font-mono">Confiança do Modelo</div>
-                            <div className="w-32 h-2 bg-white/10 rounded-full overflow-hidden">
-                                <div className="h-full bg-emerald-500 w-[85%]"></div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-8 relative z-10">
+                        <div className="space-y-2">
+                            <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Estimativa Mensal Próxima</span>
+                            <div className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter">
+                                R$ {(metrics.totalRevenue * 1.25).toFixed(2)}
                             </div>
-                            <div className="text-[10px] text-white font-black">85% HIGH</div>
+                            <div className="flex items-center gap-2">
+                                <span className="text-[9px] text-emerald-500 font-black uppercase tracking-widest bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-100">
+                                    +25.4% Expected
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div className="w-full sm:w-auto text-left sm:text-right space-y-4">
+                            <div>
+                                <div className="text-[9px] text-slate-400 font-black uppercase tracking-widest mb-1">Index de Confiança</div>
+                                <div className="text-lg font-black text-slate-900 dark:text-white">92.4%</div>
+                            </div>
+                            <div className="w-full sm:w-40 h-2 bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden border border-slate-100 dark:border-white/5">
+                                <div className="h-full bg-emerald-500 w-[92%] shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
+                            </div>
                         </div>
                     </div>
                 </div>

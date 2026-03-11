@@ -10,11 +10,13 @@ import {
     Award,
     ExternalLink,
     UserPlus,
-    Loader2
+    Loader2,
+    Printer
 } from 'lucide-react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { useAuth } from '../../contexts/AuthContext';
+import { PrinterService, PrinterStation } from '../../modules/print/printer.service';
 
 interface ProfilePreviewModalProps {
     userId: string;
@@ -33,6 +35,7 @@ const ProfilePreviewModal: React.FC<ProfilePreviewModalProps> = ({
     const { user } = useAuth();
     const [profileData, setProfileData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [station, setStation] = useState<PrinterStation | null>(null);
 
     useEffect(() => {
         if (!isOpen || !userId) return;
@@ -42,7 +45,13 @@ const ProfilePreviewModal: React.FC<ProfilePreviewModalProps> = ({
             try {
                 const userDoc = await getDoc(doc(db, 'users', userId));
                 if (userDoc.exists()) {
-                    setProfileData({ uid: userId, ...userDoc.data() });
+                    const data = userDoc.data();
+                    setProfileData({ uid: userId, ...data });
+                    
+                    if (data.email) {
+                        const stationData = await PrinterService.getStationByOwnerEmail(data.email);
+                        setStation(stationData);
+                    }
                 }
             } catch (error) {
                 console.error('Erro ao carregar perfil:', error);
@@ -208,11 +217,23 @@ const ProfilePreviewModal: React.FC<ProfilePreviewModalProps> = ({
 
                             {/* Actions */}
                             <div className="flex gap-3 pt-5">
+                                {station && (
+                                    <button
+                                        onClick={() => {
+                                            onClose();
+                                            navigate(`/pd/${station.stationId}`);
+                                        }}
+                                        className="flex-1 flex items-center justify-center gap-2 px-5 py-3.5 bg-emerald-500 text-white rounded-xl text-sm font-black hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20 active:scale-95"
+                                    >
+                                        <Printer size={16} />
+                                        <span>Fazer Pedido</span>
+                                    </button>
+                                )}
                                 <button
                                     onClick={handleViewFullProfile}
-                                    className="flex-1 flex items-center justify-center gap-2 px-5 py-3.5 bg-gradient-to-r from-[#006c55] to-[#00876a] dark:from-emerald-500 dark:to-emerald-600 text-white rounded-xl text-sm font-black hover:from-[#005a46] hover:to-[#007a62] dark:hover:from-emerald-600 dark:hover:to-emerald-700 transition-all shadow-lg shadow-[#006c55]/20 dark:shadow-emerald-500/20 active:scale-95"
+                                    className="flex-1 flex items-center justify-center gap-2 px-5 py-3.5 bg-slate-900 dark:bg-slate-800 text-white rounded-xl text-sm font-black hover:bg-slate-800 dark:hover:bg-slate-700 transition-all shadow-lg active:scale-95"
                                 >
-                                    <span>Ver Perfil Completo</span>
+                                    <span>Ver Perfil</span>
                                     <ExternalLink size={16} />
                                 </button>
                                 {!isOwnProfile && (

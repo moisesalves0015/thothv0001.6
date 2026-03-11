@@ -1,9 +1,9 @@
 
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  MessageSquare, 
-  Bell, 
+import {
+  MessageSquare,
+  Bell,
   MoreVertical,
   ChevronRight,
   BookOpen
@@ -85,7 +85,6 @@ const MOCK_SUBJECTS: Subject[] = [
 
 const MySubjectsBox: React.FC = () => {
   const [filter, setFilter] = useState<'Todas' | 'Inscritas' | 'Criadas'>('Todas');
-  const scrollRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
   const filteredSubjects = MOCK_SUBJECTS.filter(s => {
@@ -96,21 +95,20 @@ const MySubjectsBox: React.FC = () => {
   });
 
   return (
-    <div className="w-full bg-transparent overflow-hidden">
+    <div className="w-full bg-transparent">
       {/* Header com Filtros Estilizados */}
-      <div className="flex flex-col md:flex-row md:items-center gap-6 mb-8 px-2">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 px-2">
         <h2 className="text-2xl font-black text-slate-900 tracking-tight dark:text-white">Minhas Disciplinas</h2>
-        
+
         <div className="flex items-center gap-2">
           {['Todas', 'Inscritas', 'Criadas'].map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f as any)}
-              className={`px-5 py-1.5 rounded-full text-[12px] font-black uppercase tracking-widest transition-all ${
-                filter === f 
-                ? 'bg-[#d9f1a2] text-[#006c55] shadow-lg shadow-[#d9f1a2]/20 scale-105' 
+              className={`px-5 py-1.5 rounded-full text-[12px] font-black uppercase tracking-widest transition-all ${filter === f
+                ? 'bg-[#d9f1a2] text-[#006c55] shadow-lg shadow-[#d9f1a2]/20 '
                 : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
-              }`}
+                }`}
             >
               {f}
             </button>
@@ -118,53 +116,50 @@ const MySubjectsBox: React.FC = () => {
         </div>
       </div>
 
-      {/* Grid Horizontal de Disciplinas */}
-      <div 
-        ref={scrollRef}
-        className="flex items-stretch gap-6 overflow-x-auto no-scrollbar pb-6 snap-x px-2"
-      >
+      {/* GRID / FEED DE DISCIPLINAS */}
+      <div className="flex overflow-x-auto md:grid md:grid-cols-2 lg:grid-cols-3 gap-6 px-2 pb-4 no-scrollbar snap-x">
         {filteredSubjects.length === 0 ? (
-          <div className="w-full py-20 flex flex-col items-center justify-center glass-panel rounded-3xl border-2 border-dashed border-slate-200 dark:border-white/10">
+          <div className="col-span-full py-20 flex flex-col items-center justify-center glass-panel rounded-3xl border-2 border-dashed border-slate-200 dark:border-white/10">
             <BookOpen size={48} className="mb-4 text-slate-300 opacity-50" />
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Nenhuma disciplina na grade</p>
           </div>
         ) : (
           filteredSubjects.map((subject) => (
-            <div 
+            <div
               key={subject.id}
-              className="w-[300px] flex-shrink-0 bg-white/95 dark:bg-slate-900/90 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-[2.2rem] overflow-hidden shadow-2xl flex flex-col snap-start transition-all hover:translate-y-[-4px]"
+              className="bg-white/95 dark:bg-slate-900/90 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-[2.2rem] overflow-hidden shadow-xl hover:shadow-2xl flex flex-col transition-all hover:translate-y-[-4px]"
               style={{ borderLeft: `6px solid ${subject.themeColor}` }}
             >
               {/* Header do Card com Padrão de Círculos Thoth */}
               <div className="h-20 relative p-5 overflow-hidden">
-                 {/* Padrão radial sutil */}
-                 <div className="absolute top-0 left-0 w-full h-full opacity-[0.15] pointer-events-none" 
-                      style={{ 
-                        backgroundImage: `radial-gradient(${subject.themeColor} 1.5px, transparent 1.5px), radial-gradient(${subject.themeColor} 1.5px, transparent 1.5px)`,
-                        backgroundSize: '10px 10px',
-                        backgroundPosition: '0 0, 5px 5px'
-                      }}>
-                 </div>
-                 
-                 <div className="relative flex items-center justify-between z-10">
-                    <div className="flex items-center gap-2">
-                      <div className="relative group cursor-pointer">
-                        <div className="w-9 h-9 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center shadow-sm border border-slate-100 dark:border-white/10">
-                          <MessageSquare size={18} className="text-slate-400 group-hover:text-[#006c55] transition-colors" />
-                        </div>
-                        <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-[#d9f1a2] text-[#006c55] text-[9px] font-black rounded-full flex items-center justify-center border-2 border-white dark:border-slate-900">2</span>
+                {/* Padrão radial sutil */}
+                <div className="absolute top-0 left-0 w-full h-full opacity-[0.15] pointer-events-none"
+                  style={{
+                    backgroundImage: `radial-gradient(${subject.themeColor} 1.5px, transparent 1.5px), radial-gradient(${subject.themeColor} 1.5px, transparent 1.5px)`,
+                    backgroundSize: '10px 10px',
+                    backgroundPosition: '0 0, 5px 5px'
+                  }}>
+                </div>
+
+                <div className="relative flex items-center justify-between z-10">
+                  <div className="flex items-center gap-2">
+                    <div className="relative group cursor-pointer">
+                      <div className="w-9 h-9 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center shadow-sm border border-slate-100 dark:border-white/10">
+                        <MessageSquare size={18} className="text-slate-400 group-hover:text-[#006c55] transition-colors" />
                       </div>
-                      <div className="relative group cursor-pointer">
-                        <div className="w-9 h-9 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center shadow-sm border border-slate-100 dark:border-white/10">
-                          <Bell size={18} className="text-slate-400 group-hover:text-[#006c55] transition-colors" />
-                        </div>
-                        <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-[#d9f1a2] text-[#006c55] text-[9px] font-black rounded-full flex items-center justify-center border-2 border-white dark:border-slate-900">2</span>
-                      </div>
+                      <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-[#d9f1a2] text-[#006c55] text-[9px] font-black rounded-full flex items-center justify-center border-2 border-white dark:border-slate-900">2</span>
                     </div>
-                    <button className="w-9 h-9 flex items-center justify-center text-slate-300 hover:text-slate-600 dark:hover:text-white transition-colors">
-                      <MoreVertical size={20} />
-                    </button>
-                 </div>
+                    <div className="relative group cursor-pointer">
+                      <div className="w-9 h-9 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center shadow-sm border border-slate-100 dark:border-white/10">
+                        <Bell size={18} className="text-slate-400 group-hover:text-[#006c55] transition-colors" />
+                      </div>
+                      <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-[#d9f1a2] text-[#006c55] text-[9px] font-black rounded-full flex items-center justify-center border-2 border-white dark:border-slate-900">2</span>
+                    </div>
+                  </div>
+                  <button className="w-9 h-9 flex items-center justify-center text-slate-300 hover:text-slate-600 dark:hover:text-white transition-colors">
+                    <MoreVertical size={20} />
+                  </button>
+                </div>
               </div>
 
               {/* Corpo Principal */}
@@ -175,7 +170,7 @@ const MySubjectsBox: React.FC = () => {
                 </div>
 
                 <div className="mb-6">
-                  <h3 className="text-lg font-black leading-tight text-slate-900 dark:text-white mb-1">{subject.name}</h3>
+                  <h3 className="text-lg font-black leading-tight text-slate-900 dark:text-white mb-1 line-clamp-1">{subject.name}</h3>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{subject.code}</p>
                 </div>
 
@@ -211,7 +206,7 @@ const MySubjectsBox: React.FC = () => {
                 </div>
 
                 {/* Botão de Ação Estilo Thoth */}
-                <button 
+                <button
                   onClick={() => navigate(`/disciplinas/${subject.id}`)}
                   className="mt-auto w-full h-12 bg-slate-50 dark:bg-slate-800/50 hover:bg-[#006c55] hover:text-white rounded-2xl flex items-center justify-between px-5 group transition-all border border-slate-100 dark:border-white/5 active:scale-95"
                 >
@@ -225,11 +220,6 @@ const MySubjectsBox: React.FC = () => {
           ))
         )}
       </div>
-
-      <style>{`
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-      `}</style>
     </div>
   );
 };

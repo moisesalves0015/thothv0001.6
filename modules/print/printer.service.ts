@@ -116,4 +116,33 @@ export class PrinterService {
         }
         return null;
     }
+
+    static async getStationByExternalId(stationId: string): Promise<PrinterStation | null> {
+        const q = query(
+            collection(db, this.collectionName),
+            where('stationId', '==', stationId.trim()),
+            where('status', '==', 'active')
+        );
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+            const doc = querySnapshot.docs[0];
+            return { id: doc.id, ...doc.data() } as PrinterStation;
+        }
+        return null;
+    }
+
+    static async getStationByOwnerEmail(email: string): Promise<PrinterStation | null> {
+        if (!email) return null;
+        const q = query(
+            collection(db, this.collectionName),
+            where('ownerEmail', '==', email.trim().toLowerCase()),
+            where('status', '==', 'active')
+        );
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+            const doc = querySnapshot.docs[0];
+            return { id: doc.id, ...doc.data() } as PrinterStation;
+        }
+        return null;
+    }
 }

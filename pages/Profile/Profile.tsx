@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   User,
   Sparkles,
@@ -11,7 +11,8 @@ import {
   Edit3,
   Share2,
   Settings,
-  Layers
+  Layers,
+  Printer
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import PostCard from '../../components/shared/PostCard';
@@ -20,10 +21,12 @@ import SidebarFeed from '../../components/shared/SidebarFeed';
 import { collection, onSnapshot, query, orderBy, where, doc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { UserService } from '../../modules/user/user.service';
+import { PrinterService, PrinterStation } from '../../modules/print/printer.service';
 import ProfileSidebar from './ProfileSidebar';
 import ProfileTabs from './ProfileTabs';
 
 const Profile: React.FC = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { username } = useParams<{ username?: string }>();
 
@@ -54,6 +57,7 @@ const Profile: React.FC = () => {
       badges: 0
     }
   });
+  const [station, setStation] = useState<PrinterStation | null>(null);
 
   // Efeito principal para carregar dados do perfil
   useEffect(() => {
@@ -87,22 +91,29 @@ const Profile: React.FC = () => {
 
         const userRef = doc(db, 'users', targetUid);
         unsubscribeUser = onSnapshot(userRef, (docSnap) => {
-          if (docSnap.exists()) {
-            const data = docSnap.data();
-            setProfileData({
-              ...data,
-              skills: data.skills || [],
-              interests: data.interests || [],
-              trajectory: data.trajectory || [],
-              certifications: data.certifications || [],
-              stats: {
-                connections: data.stats?.connections || 0,
-                projects: data.stats?.projects || 0,
-                posts: data.stats?.posts || 0,
-                badges: data.stats?.badges || 12
+            if (docSnap.exists()) {
+              const data = docSnap.data();
+              const fullData = {
+                ...data,
+                skills: data.skills || [],
+                interests: data.interests || [],
+                trajectory: data.trajectory || [],
+                certifications: data.certifications || [],
+                stats: {
+                  connections: data.stats?.connections || 0,
+                  projects: data.stats?.projects || 0,
+                  posts: data.stats?.posts || 0,
+                  badges: data.stats?.badges || 12
+                }
+              };
+              setProfileData(fullData);
+
+              // Buscar dados da impressora
+              const email = (fullData as any).email;
+              if (email) {
+                PrinterService.getStationByOwnerEmail(email).then(setStation);
               }
-            });
-          } else {
+            } else {
             setProfileNotFound(true);
           }
           setLoading(false);
@@ -179,6 +190,14 @@ const Profile: React.FC = () => {
 
       {/* Header Actions - Hidden on mobile */}
       <div className="hidden lg:flex justify-end gap-2">
+        {station && (
+          <button
+            onClick={() => navigate(`/pd/${station.stationId}`)}
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-lg active:scale-95"
+          >
+            <Printer size={14} /> Fazer Pedido
+          </button>
+        )}
         {isOwner ? (
           <button
             onClick={() => setIsEditing(true)}
@@ -208,6 +227,7 @@ const Profile: React.FC = () => {
           <ProfileSidebar
             user={user}
             profileData={profileData}
+            station={station}
           />
         </div>
         <div className="w-full lg:w-[660px]">
