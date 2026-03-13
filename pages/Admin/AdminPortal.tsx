@@ -19,7 +19,7 @@ import {
     X
 } from 'lucide-react';
 import { db } from '../../firebase';
-import PrintOrdersAdmin from './PrintOrdersAdmin';
+import PrintShopPage from './PrintShopPage';
 import PrinterStationsAdmin from './PrinterStationsAdmin';
 import UsersAdmin from './UsersAdmin';
 import OverviewAdmin from './OverviewAdmin';
@@ -138,7 +138,7 @@ const AdminPortal: React.FC = () => {
                         {activeTab === 'overview' && <OverviewAdmin />}
                         {activeTab === 'users' && <UsersAdmin />}
                         {activeTab === 'graficas' && <PrinterStationsAdmin />}
-                        {activeTab === 'pedidos' && <PrintOrdersAdmin />}
+                        {activeTab === 'pedidos' && <PrintShopPage />}
 
                         {(activeTab === 'rules' || activeTab === 'logs') && (
                             <div className="h-[500px] bg-white border border-slate-100 rounded-[32px] p-8 flex flex-col items-center justify-center text-center shadow-sm relative overflow-hidden group">
