@@ -278,6 +278,37 @@ export interface Transcription {
  * Event
  * Representa um evento acadêmico ou social na plataforma.
  */
+export interface DisciplineSchedule {
+  day: string;
+  time: string;
+}
+
+/**
+ * Discipline
+ * Representa uma disciplina ou curso na plataforma.
+ */
+export interface Discipline {
+  id: string;
+  name: string;
+  code: string;
+  description: string;
+  semester: string;
+  teacherId: string;
+  teacherName: string;
+  teacherAvatar: string;
+  schedule: DisciplineSchedule[];
+  room?: string;
+  syllabusUrl?: string;
+  themeColor: string;
+  bannerImage?: string;
+  members: string[]; // UIDs dos alunos inscritos
+  status: 'active' | 'archived';
+  type: 'public' | 'private';
+  joinCode?: string | null; // Código de 6 dígitos para entrar em disciplinas privadas
+  createdAt: any;
+  updatedAt: any;
+}
+
 export interface ThothEvent {
   id: string;
   title: string;
