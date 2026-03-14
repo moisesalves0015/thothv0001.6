@@ -26,15 +26,22 @@ export class PrintService {
   }
 
   static async createRequest(data: Partial<PrintRequest>) {
-    return addDoc(collection(db, this.collectionName), {
+    const payload = {
       ...data,
       customerName: auth.currentUser?.displayName || 'Usuário Thoth',
       customerId: auth.currentUser?.uid || 'anonymous',
       timestamp: Date.now(),
-      status: 'pending',
+      status: 'pending' as const,
       archived: false,
       pickupCode: Math.floor(1000 + Math.random() * 9000).toString()
-    });
+    };
+    
+    // Deep strip any invalid Firestore types (undefined, NaN, Proxy, Functions) before network call
+    const cleanPayload = JSON.parse(JSON.stringify(payload));
+    
+    console.log('[PrintService] Sending clean payload to Firestore:', cleanPayload);
+    
+    return addDoc(collection(db, this.collectionName), cleanPayload);
   }
 
   /**

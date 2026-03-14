@@ -244,11 +244,11 @@ const PrintShopPage: React.FC = () => {
 
     // State for shop profile
     const [shopProfile, setShopProfile] = useState({
-        name: 'Gráfica Digital Express',
-        slogan: 'Impressão de qualidade com rapidez e precisão',
+        name: 'PrintMestres - Gráfica e Copiadora Rápida',
+        slogan: 'Há mais de 10 anos entregando qualidade com rapidez que você precisa',
         description: 'Há mais de 10 anos oferecendo serviços de impressão de alta qualidade para empresas e clientes particulares. Tecnologia de ponta e materiais premium para resultados excepcionais.',
-        logo: 'https://via.placeholder.com/150',
-        coverImage: 'https://images.unsplash.com/photo-1562408592-8f9b2b2e7a7a?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80',
+        logo: 'https://images.unsplash.com/photo-1596495578065-6e0763fa1178?w=400&q=80',
+        coverImage: 'https://images.unsplash.com/photo-1629904853716-f0bc54eea481?w=1600&q=80',
         rating: 4.8,
         reviews: 234,
         yearsInBusiness: 10,
@@ -287,11 +287,52 @@ const PrintShopPage: React.FC = () => {
         ]
     });
 
+    const handleShare = async () => {
+        const shareData = {
+            title: shopProfile.name,
+            text: shopProfile.slogan,
+            url: window.location.href
+        };
+
+        if (navigator.share) {
+            try {
+                await navigator.share(shareData);
+            } catch (err) {
+                console.error('Error sharing:', err);
+            }
+        } else {
+            toast.info('Link copiado para a área de transferência!');
+            navigator.clipboard.writeText(window.location.href);
+        }
+    };
+
     // State for services
     const [services, setServices] = useState([
         {
-            id: 'flyers',
-            name: 'Flyers e Panfletos',
+            id: 'simple_print',
+            name: 'Impressão Simples',
+            description: 'Impressões rápidas do dia a dia. Ideal para documentos em geral e arquivos de texto.',
+            icon: FileText,
+            image: 'https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?w=800&q=80',
+            basePrice: 0.50,
+            popular: true,
+            specifications: [
+                'Papel Sulfite 75g',
+                'Preto e Branco ou Colorido básico',
+                'Formatos A4, Ofício',
+                'Envie e imprima no ato'
+            ],
+            priceRules: {
+                minCopies: 1,
+                volumeDiscount: [
+                    { qty: 50, discount: 0.05 },
+                    { qty: 100, discount: 0.10 }
+                ]
+            }
+        },
+        {
+            id: 's1',
+            name: 'Impressão Digital Premium',
             description: 'Perfeito para divulgação de eventos, promoções e campanhas',
             basePrice: 0.50,
             image: 'https://images.unsplash.com/photo-1586075010923-6dd45739d1b4?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
@@ -525,8 +566,10 @@ const PrintShopPage: React.FC = () => {
 
         // Apply multipliers
         const copiesMultiplier = options.copies;
-        const colorMultiplier = options.colorMode === 'color' ? (rules.colorMultiplier || 1) : 0.8;
-        const doubleSidedMultiplier = options.doubleSided ? (rules.doubleSidedMultiplier || 1.5) : 1;
+        
+        // Use realistic strict multipliers without inventing a 1.5x upmark if not double sided
+        const colorMultiplier = options.colorMode === 'color' ? (rules.colorMultiplier || 1) : 1;
+        const doubleSidedMultiplier = options.doubleSided ? (rules.doubleSidedMultiplier || 2) : 1; // 2x cost logically, or rule.
         const pageSizeMultiplier = rules.pageSizes?.[options.pageSize] || 1;
         const paperTypeMultiplier = rules.paperTypes?.[options.paperType] || 1;
 
@@ -545,20 +588,20 @@ const PrintShopPage: React.FC = () => {
                 }
             });
         }
-
-        // Calculate subtotal
+        // Calculate subtotal - Only multiply basePrice by sheetCount and real modifiers
         const subtotal = (basePrice * sheetCount * copiesMultiplier * colorMultiplier * doubleSidedMultiplier * pageSizeMultiplier * paperTypeMultiplier) + bindingPrice + finishingPrice;
 
-        // Tax (10%)
-        const tax = subtotal * 0.1;
-
         // Discount (if applicable)
-        const discount = options.copies > 1000 ? subtotal * 0.15 :
-            options.copies > 500 ? subtotal * 0.1 :
-                options.copies > 100 ? subtotal * 0.05 : 0;
+        const discountRate = shopProfile?.discounts?.active ? (shopProfile.discounts.percentage / 100) : 0;
+        const discountAmount = subtotal * discountRate;
+
+        // Tax (9% Platform)
+        const taxRate = 0.09;
+        const discountedTotal = subtotal - discountAmount;
+        const tax = discountedTotal * taxRate;
 
         // Total
-        const total = subtotal + tax - discount;
+        const total = discountedTotal + tax;
 
         setPriceBreakdown({
             basePrice,
@@ -571,7 +614,7 @@ const PrintShopPage: React.FC = () => {
             finishingPrice,
             subtotal,
             tax,
-            discount,
+            discount: discountAmount,
             total
         });
     };
@@ -626,10 +669,15 @@ const PrintShopPage: React.FC = () => {
                 priceBreakdown,
                 timestamp: Date.now(),
                 status: 'pending',
-                archived: false
+                archived: false,
+                fileName: previewFile.name || 'documento.pdf',
+                customerName: shopProfile.name || 'Cliente Local'
             };
 
-            await addDoc(collection(db, 'printRequests'), orderData);
+            // Deep strip any invalid Firestore types (undefined, NaN, Proxy, Functions) before network call
+            const cleanData = JSON.parse(JSON.stringify(orderData));
+
+            await addDoc(collection(db, 'printRequests'), cleanData);
             toast.success('Pedido enviado com sucesso!');
             setShowFileUpload(false);
             setSelectedService(null);
@@ -678,8 +726,8 @@ const PrintShopPage: React.FC = () => {
                 {/* Shop Info Overlay */}
                 <div className="absolute bottom-0 left-0 right-0 p-8 text-white">
                     <div className="max-w-7xl mx-auto">
-                        <div className="flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8">
-                            <div className="relative z-10">
+                        <div className="flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-8">
+                            <div className="relative mt-2 md:mt-0 z-10">
                                 <div className="w-32 h-32 rounded-2xl bg-white p-2 shadow-2xl">
                                     <img
                                         src={shopProfile.logo}
@@ -692,50 +740,49 @@ const PrintShopPage: React.FC = () => {
                                 </div>
                             </div>
 
-                            <div className="flex-1 pb-4 w-full md:w-auto text-center md:text-left">
-                                <div className="flex flex-col md:flex-row items-center gap-3 mb-2">
-                                    <h1 className="text-3xl md:text-4xl font-black">{shopProfile.name}</h1>
-                                    <div className="flex items-center gap-1 px-3 py-1 bg-white/20 backdrop-blur rounded-full">
-                                        <Star className="text-yellow-400 fill-yellow-400" size={16} />
-                                        <span className="text-sm font-bold">{shopProfile.rating}</span>
-                                        <span className="text-sm text-white/60">({shopProfile.reviews})</span>
-                                    </div>
+                            <div className="flex-1 pb-2 w-full md:w-auto text-center md:text-left">
+                                <div className="flex flex-col md:flex-row items-center gap-3 mb-1">
+                                    <h1 className="text-3xl md:text-4xl font-black whitespace-nowrap">{shopProfile.name}</h1>
                                 </div>
 
-                                <p className="text-xl text-white/90 mb-3">{shopProfile.slogan}</p>
+                                <p className="text-xl text-white/90 mb-2">{shopProfile.slogan}</p>
 
-                                <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-sm text-white/80">
+                                <div className="flex items-center justify-center md:justify-start gap-4 text-sm text-white/80">
                                     <div className="flex items-center gap-1">
-                                        <Award size={16} />
-                                        <span>{shopProfile.yearsInBusiness} anos</span>
+                                        <Star className="text-yellow-400 fill-yellow-400" size={16} />
+                                        <span className="font-bold text-white whitespace-nowrap">{shopProfile.rating} <span className="text-white/80 font-normal">({shopProfile.reviews} avaliações)</span></span>
                                     </div>
                                     <div className="flex items-center gap-1">
                                         <Package size={16} />
-                                        <span>{shopProfile.completedOrders.toLocaleString()} pedidos</span>
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                        <Timer size={16} />
-                                        <span>Resposta {shopProfile.averageResponseTime}</span>
+                                        <span className="whitespace-nowrap">{shopProfile.completedOrders.toLocaleString()} pedidos</span>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="flex flex-wrap justify-center gap-2 pb-4 w-full md:w-auto">
+                            <div className="flex items-center justify-center gap-2 pb-2 w-full md:w-auto">
                                 <motion.button
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
-                                    className="px-6 py-3 bg-white text-slate-900 rounded-xl font-bold hover:bg-slate-100 transition-colors flex items-center gap-2"
+                                    className="px-6 py-2.5 bg-white text-slate-900 rounded-xl font-bold hover:bg-slate-100 transition-colors flex items-center gap-2"
                                 >
-                                    <Heart size={20} />
+                                    <Heart size={18} />
                                     Seguir
                                 </motion.button>
                                 <motion.button
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
-                                    className="px-6 py-3 bg-emerald-500 text-white rounded-xl font-bold hover:bg-emerald-600 transition-colors flex items-center gap-2"
+                                    className="px-6 py-2.5 bg-emerald-500 text-white rounded-xl font-bold hover:bg-emerald-600 transition-colors flex items-center gap-2"
                                 >
-                                    <MessageCircle size={20} />
+                                    <MessageCircle size={18} />
                                     Contato
+                                </motion.button>
+                                <motion.button
+                                    onClick={handleShare}
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="p-2.5 bg-white/20 hover:bg-white/30 text-white rounded-xl backdrop-blur transition-colors"
+                                >
+                                    <Share2 size={18} />
                                 </motion.button>
                             </div>
                         </div>
@@ -746,7 +793,7 @@ const PrintShopPage: React.FC = () => {
             {/* Main Content */}
             <div className="max-w-7xl mx-auto px-4 py-8">
                 {/* Navigation Tabs */}
-                <div className="flex gap-2 mb-8 border-b border-slate-200 dark:border-slate-700 pb-4">
+                <div className="flex gap-2 mb-6 border-b border-slate-200 dark:border-slate-700 pb-4 overflow-x-auto whitespace-nowrap scrollbar-hide">
                     {[
                         { id: 'services', label: 'Serviços', icon: Printer },
                         { id: 'orders', label: 'Meus Pedidos', icon: Package },
@@ -758,12 +805,12 @@ const PrintShopPage: React.FC = () => {
                             whileHover={{ y: -2 }}
                             whileTap={{ y: 0 }}
                             onClick={() => setActiveTab(tab.id as any)}
-                            className={`px-6 py-3 rounded-xl font-bold transition-all flex items-center gap-2 ${activeTab === tab.id
+                            className={`px-5 py-2.5 rounded-xl font-bold transition-all flex items-center gap-2 shrink-0 ${activeTab === tab.id
                                     ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/25'
                                     : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
                                 }`}
                         >
-                            <tab.icon size={20} />
+                            <tab.icon size={18} />
                             {tab.label}
                         </motion.button>
                     ))}
@@ -825,18 +872,14 @@ const PrintShopPage: React.FC = () => {
                                             </div>
 
                                             <div className="p-6">
-                                                <p className="text-slate-600 dark:text-slate-300 text-sm mb-4">
+                                                <p className="text-slate-600 dark:text-slate-300 text-sm mb-4 line-clamp-2">
                                                     {service.description}
                                                 </p>
 
-                                                <div className="space-y-2">
-                                                    {service.specifications.slice(0, 3).map((spec, i) => (
-                                                        <div key={i} className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                                                            <CheckCircle2 size={12} className="text-emerald-500" />
-                                                            {spec}
-                                                        </div>
-                                                    ))}
-                                                </div>
+                                                <button className="w-full py-2.5 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold rounded-xl mt-2 group-hover:bg-emerald-500 group-hover:text-white transition-colors flex items-center justify-center gap-2">
+                                                    <ShoppingCart size={18} />
+                                                    Solicitar Serviço
+                                                </button>
 
                                                 <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700 flex justify-between items-center">
                                                     <span className="text-sm font-bold text-slate-400">Quantidade mínima</span>
@@ -952,44 +995,52 @@ const PrintShopPage: React.FC = () => {
 
                                                             {/* Preview Image / PDF */}
                                                             {previewUrl && (
-                                                                <div className="relative aspect-[3/4] bg-white dark:bg-slate-900 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
-                                                                    {printOptions.pagesPerSheet > 1 ? (
-                                                                        <div className={`absolute inset-0 p-2 grid gap-2 bg-slate-100 dark:bg-slate-800 ${printOptions.pagesPerSheet === 2 ? 'grid-rows-2' : 'grid-cols-2 grid-rows-2'}`}>
-                                                                            {Array.from({ length: printOptions.pagesPerSheet }).map((_, i) => (
-                                                                                <div key={i} className="bg-white dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-700 overflow-hidden relative shadow-sm">
-                                                                                    {/* Block interaction for grid view to prevent scrolling individual panes unnecessarily */}
-                                                                                    <div className="absolute inset-0 z-10 pointer-events-none" />
-                                                                                    {previewFile?.type === 'application/pdf' ? (
-                                                                                        <iframe
-                                                                                            src={`${previewUrl}#page=${i + 1}&view=FitH&toolbar=0&navpanes=0&scrollbar=0`}
-                                                                                            className="w-full h-full border-0 pointer-events-none"
-                                                                                            title={`PDF Preview ${i + 1}`}
-                                                                                        />
-                                                                                    ) : (
-                                                                                        <img
-                                                                                            src={previewUrl}
-                                                                                            alt={`Preview ${i + 1}`}
-                                                                                            className="w-full h-full object-contain"
-                                                                                        />
-                                                                                    )}
-                                                                                </div>
-                                                                            ))}
-                                                                        </div>
-                                                                    ) : (
-                                                                        previewFile?.type === 'application/pdf' ? (
-                                                                            <iframe
-                                                                                src={`${previewUrl}#toolbar=0`}
-                                                                                className="w-full h-full border-0"
-                                                                                title="PDF Preview"
-                                                                            />
+                                                                <div className="relative bg-slate-200 dark:bg-slate-900 rounded-lg overflow-hidden border border-slate-300 dark:border-slate-700 flex items-center justify-center p-4 min-h-[400px]">
+                                                                    
+                                                                    {/* A4 Proportion Container - White Paper Background */}
+                                                                    <div className="relative bg-white shadow-md aspect-[1/1.414] w-full max-w-[300px] overflow-hidden">
+                                                                        
+                                                                        {printOptions.pagesPerSheet > 1 ? (
+                                                                             <div className={`absolute inset-0 grid ${printOptions.pagesPerSheet === 2 ? 'grid-rows-2' : 'grid-cols-2 grid-rows-2'} divide-x divide-y divide-slate-200 dark:divide-slate-700`}>
+                                                                                {Array.from({ length: printOptions.pagesPerSheet }).map((_, i) => (
+                                                                                    <div key={i} className="relative overflow-hidden bg-white w-full h-full flex items-center justify-center">
+                                                                                        <div className="absolute inset-0 z-10 pointer-events-none" />
+                                                                                        
+                                                                                        <div className="w-[200%] h-[200%] origin-top-left scale-50 absolute top-0 left-0">
+                                                                                            {previewFile?.type === 'application/pdf' ? (
+                                                                                                <iframe
+                                                                                                    src={`${previewUrl}#page=${i + 1}&view=FitH&toolbar=0&navpanes=0&scrollbar=0`}
+                                                                                                    className="w-full h-full border-0 pointer-events-none"
+                                                                                                    title={`PDF Preview ${i + 1}`}
+                                                                                                />
+                                                                                            ) : (
+                                                                                                <img
+                                                                                                    src={previewUrl}
+                                                                                                    alt={`Preview ${i + 1}`}
+                                                                                                    className="w-full h-full object-contain"
+                                                                                                />
+                                                                                            )}
+                                                                                        </div>
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
                                                                         ) : (
-                                                                            <img
-                                                                                src={previewUrl}
-                                                                                alt="Preview"
-                                                                                className="w-full h-full object-contain"
-                                                                            />
-                                                                        )
-                                                                    )}
+                                                                            // Single Page Normal Preview
+                                                                            previewFile?.type === 'application/pdf' ? (
+                                                                                <iframe
+                                                                                    src={`${previewUrl}#toolbar=0&view=FitH`}
+                                                                                    className="w-full h-full border-0 absolute inset-0"
+                                                                                    title="PDF Preview"
+                                                                                />
+                                                                            ) : (
+                                                                                <img
+                                                                                    src={previewUrl}
+                                                                                    alt="Preview"
+                                                                                    className="w-full h-full object-contain absolute inset-0"
+                                                                                />
+                                                                            )
+                                                                        )}
+                                                                    </div>
                                                                 </div>
                                                             )}
                                                         </div>
@@ -1296,29 +1347,39 @@ const PrintShopPage: React.FC = () => {
                                                                     >
                                                                         <div className="space-y-2 text-sm">
                                                                             <div className="flex justify-between">
-                                                                                <span className="text-slate-500">Preço base</span>
-                                                                                <span className="font-mono">R$ {priceBreakdown.basePrice.toFixed(2)}</span>
+                                                                                <span className="text-slate-500">Impressões ({preview ? Math.ceil(calculatePagesToPrint(printOptions.pageRange, preview.pages) / printOptions.pagesPerSheet) : 1} {Math.ceil(calculatePagesToPrint(printOptions.pageRange, preview.pages || 1) / printOptions.pagesPerSheet) === 1 ? 'folha' : 'folhas'})</span>
+                                                                                <span className="font-mono">R$ {priceBreakdown.basePrice.toFixed(2)} / un</span>
                                                                             </div>
-                                                                            <div className="flex justify-between">
-                                                                                <span className="text-slate-500">Multiplicador cópias</span>
-                                                                                <span className="font-mono">x{priceBreakdown.copiesMultiplier}</span>
-                                                                            </div>
-                                                                            <div className="flex justify-between">
-                                                                                <span className="text-slate-500">Multiplicador cor</span>
-                                                                                <span className="font-mono">x{priceBreakdown.colorMultiplier.toFixed(2)}</span>
-                                                                            </div>
-                                                                            <div className="flex justify-between">
-                                                                                <span className="text-slate-500">Multiplicador frente/verso</span>
-                                                                                <span className="font-mono">x{priceBreakdown.doubleSidedMultiplier.toFixed(2)}</span>
-                                                                            </div>
-                                                                            <div className="flex justify-between">
-                                                                                <span className="text-slate-500">Multiplicador tamanho</span>
-                                                                                <span className="font-mono">x{priceBreakdown.pageSizeMultiplier.toFixed(2)}</span>
-                                                                            </div>
-                                                                            <div className="flex justify-between">
-                                                                                <span className="text-slate-500">Multiplicador papel</span>
-                                                                                <span className="font-mono">x{priceBreakdown.paperTypeMultiplier.toFixed(2)}</span>
-                                                                            </div>
+                                                                            {priceBreakdown.copiesMultiplier > 1 && (
+                                                                                <div className="flex justify-between">
+                                                                                    <span className="text-slate-500">Cópias</span>
+                                                                                    <span className="font-mono">x{priceBreakdown.copiesMultiplier}</span>
+                                                                                </div>
+                                                                            )}
+                                                                            {priceBreakdown.colorMultiplier !== 1 && (
+                                                                                <div className="flex justify-between">
+                                                                                    <span className="text-slate-500">Adicional Cor</span>
+                                                                                    <span className="font-mono">x{priceBreakdown.colorMultiplier.toFixed(2)}</span>
+                                                                                </div>
+                                                                            )}
+                                                                            {priceBreakdown.doubleSidedMultiplier !== 1 && (
+                                                                                <div className="flex justify-between">
+                                                                                    <span className="text-slate-500">Frente/Verso</span>
+                                                                                    <span className="font-mono">x{priceBreakdown.doubleSidedMultiplier.toFixed(2)}</span>
+                                                                                </div>
+                                                                            )}
+                                                                            {priceBreakdown.pageSizeMultiplier !== 1 && (
+                                                                                <div className="flex justify-between">
+                                                                                    <span className="text-slate-500">Tamanho Especial</span>
+                                                                                    <span className="font-mono">x{priceBreakdown.pageSizeMultiplier.toFixed(2)}</span>
+                                                                                </div>
+                                                                            )}
+                                                                            {priceBreakdown.paperTypeMultiplier !== 1 && (
+                                                                                <div className="flex justify-between">
+                                                                                    <span className="text-slate-500">Papel Especial</span>
+                                                                                    <span className="font-mono">x{priceBreakdown.paperTypeMultiplier.toFixed(2)}</span>
+                                                                                </div>
+                                                                            )}
                                                                             {priceBreakdown.bindingPrice > 0 && (
                                                                                 <div className="flex justify-between">
                                                                                     <span className="text-slate-500">Encadernação</span>
@@ -1464,7 +1525,7 @@ const PrintShopPage: React.FC = () => {
                                                     </div>
                                                     <div>
                                                         <div className="flex items-center gap-3 mb-1">
-                                                            <h4 className="font-bold">{order.fileName}</h4>
+                                                            <h4 className="font-bold truncate max-w-[150px] md:max-w-[300px]">{order.fileName}</h4>
                                                             <span className={`px-2 py-0.5 rounded text-xs font-bold ${order.status === 'ready' ? 'bg-emerald-100 text-emerald-700' :
                                                                     order.status === 'printing' ? 'bg-blue-100 text-blue-700' :
                                                                         order.status === 'cancelled' ? 'bg-red-100 text-red-700' :
@@ -1488,9 +1549,10 @@ const PrintShopPage: React.FC = () => {
                                                 </div>
                                                 <button
                                                     onClick={() => setSelectedOrder(order)}
-                                                    className="px-4 py-2 bg-slate-100 dark:bg-slate-700 rounded-lg text-sm font-bold hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                                                    className="w-10 h-10 flex items-center justify-center bg-slate-100 dark:bg-slate-700 rounded-lg text-sm text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                                                    title="Detalhes do Pedido"
                                                 >
-                                                    Detalhes
+                                                    <FileText size={18} />
                                                 </button>
                                             </div>
                                         </motion.div>
@@ -1518,38 +1580,6 @@ const PrintShopPage: React.FC = () => {
                                 <p className="text-slate-600 dark:text-slate-300 leading-relaxed mb-4">
                                     {shopProfile.description}
                                 </p>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="flex items-start gap-3">
-                                        <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/20 rounded-lg flex items-center justify-center">
-                                            <Award size={20} className="text-emerald-500" />
-                                        </div>
-                                        <div>
-                                            <h4 className="font-bold text-sm">Certificações</h4>
-                                            <div className="flex flex-wrap gap-2 mt-1">
-                                                {shopProfile.certifications.map((cert, i) => (
-                                                    <span key={i} className="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded text-xs">
-                                                        {cert}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-start gap-3">
-                                        <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/20 rounded-lg flex items-center justify-center">
-                                            <Zap size={20} className="text-emerald-500" />
-                                        </div>
-                                        <div>
-                                            <h4 className="font-bold text-sm">Diferenciais</h4>
-                                            <div className="flex flex-wrap gap-2 mt-1">
-                                                {shopProfile.features.map((feature, i) => (
-                                                    <span key={i} className="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded text-xs">
-                                                        {feature}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
                             </div>
 
                             {/* Contact Info */}
@@ -1725,7 +1755,7 @@ const PrintShopPage: React.FC = () => {
                         >
                             {/* Rating Summary */}
                             <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700">
-                                <div className="flex items-center gap-8">
+                                <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8">
                                     <div className="text-center">
                                         <div className="text-5xl font-black text-emerald-500">{shopProfile.rating}</div>
                                         <div className="flex items-center gap-1 mt-2">
@@ -1733,12 +1763,12 @@ const PrintShopPage: React.FC = () => {
                                                 <StarIcon key={star} size={16} className={`${star <= Math.floor(shopProfile.rating) ? 'text-yellow-400 fill-yellow-400' : 'text-slate-300'}`} />
                                             ))}
                                         </div>
-                                        <p className="text-xs text-slate-500 mt-1">{shopProfile.reviews} avaliações</p>
+                                        <p className="text-xs text-slate-500 mt-1 whitespace-nowrap">{shopProfile.reviews} avaliações</p>
                                     </div>
-                                    <div className="flex-1 space-y-2">
+                                    <div className="flex-1 w-full space-y-2">
                                         {[5, 4, 3, 2, 1].map(rating => (
                                             <div key={rating} className="flex items-center gap-2">
-                                                <span className="text-xs font-bold w-8">{rating} estrelas</span>
+                                                <span className="text-xs font-bold w-16 whitespace-nowrap">{rating} estrelas</span>
                                                 <div className="flex-1 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
                                                     <div
                                                         className="h-full bg-emerald-500 rounded-full"

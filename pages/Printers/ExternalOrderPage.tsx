@@ -104,12 +104,18 @@ const ExternalOrderPage: React.FC = () => {
     fetchStation();
   }, [stationId]);
 
-  // Subscribe to station queue when order is complete
+  // Subscribe to the specific user request to track status changes instead of the full queue
   useEffect(() => {
-    if (!orderComplete || !station) return;
-    const unsub = PrintService.subscribeToStationPendingRequests(station.stationId, setStationQueue);
+    if (!orderComplete || !user) return;
+    const unsub = PrintService.subscribeToUserRequests(user.uid, (requests) => {
+      // Find the specific request we just created
+      const req = requests.find(r => r.id === orderComplete);
+      if (req) {
+        setCompletedRequest(req);
+      }
+    });
     return () => unsub();
-  }, [orderComplete, station]);
+  }, [orderComplete, user]);
 
   // Subscribe to chat messages when chat is open
   useEffect(() => {
@@ -247,12 +253,14 @@ const ExternalOrderPage: React.FC = () => {
   };
 
   const calculatePrice = () => {
-    if (!station) return 0;
+    if (!station) return { baseTotal: 0, discountRate: 0, discountAmount: 0, taxAmount: 0, finalTotal: 0 };
+    
+    // 1) Base Price Calculation
     const pricePerPage = isColor ? station.prices?.color || 1.00 : station.prices?.pb || 0.15;
-
     const sheetsUsed = Math.ceil(pages / nUp);
     let baseTotal = sheetsUsed * copies * pricePerPage;
 
+    // 2) Additions
     const bindingPrices = {
       none: 0,
       spiral: 5.00,
@@ -264,7 +272,25 @@ const ExternalOrderPage: React.FC = () => {
     if (finishing.includes('stapled')) baseTotal += 0.50 * copies;
     if (finishing.includes('punched')) baseTotal += 0.20 * copies;
 
-    return baseTotal;
+    // 3) Station Discounts
+    const discountRate = station.discounts?.active ? (station.discounts.percentage / 100) : 0;
+    const discountAmount = baseTotal * discountRate;
+    
+    // 4) Taxes (e.g. platform fee 9%)
+    const taxRate = 0.09;
+    const discountedTotal = baseTotal - discountAmount;
+    const taxAmount = discountedTotal * taxRate;
+    
+    // 5) Final Total
+    const finalTotal = discountedTotal + taxAmount;
+
+    return {
+      baseTotal,
+      discountRate: discountRate * 100,
+      discountAmount,
+      taxAmount,
+      finalTotal
+    };
   };
 
   const handleSubmit = async () => {
@@ -281,34 +307,37 @@ const ExternalOrderPage: React.FC = () => {
       setUploading(false);
 
       const orderData = {
-        fileName: file.name,
-        fileUrl: uploadedUrl,
-        pages,
-        copies,
-        isColor,
-        isDuplex,
-        totalPrice: calculatePrice(),
-        status: 'pending' as any,
-        stationId: station.stationId,
-        printerName: station.name,
-        stationOwnerEmail: station.ownerEmail,
+        fileName: file.name || 'documento_sem_nome.pdf',
+        fileUrl: uploadedUrl || '',
+        pages: String(pages || 1),
+        copies: Number(copies) || 1,
+        isColor: Boolean(isColor),
+        isDuplex: Boolean(isDuplex),
+        totalPrice: Number(calculatePrice().finalTotal) || 0,
+        status: 'pending' as const,
+        stationId: station.stationId || station.id || 'N/A',
+        printerName: station.name || 'Gráfica Parceira',
+        stationOwnerEmail: station.ownerEmail || 'admin@thoth.com',
         paymentMethod: (paymentMethod === 'online' ? 'paid' : 'on_pickup') as 'paid' | 'on_pickup',
-        priority: 'normal' as any,
+        priority: 'normal' as const,
         customerName: user?.displayName || 'Cliente Externo',
         customerId: user?.uid || 'anonymous',
-        nUp,
-        binding,
-        finishing
+        nUp: (nUp as 1 | 2 | 4) || 1,
+        binding: binding || 'none',
+        finishing: Array.isArray(finishing) ? finishing : []
       };
 
-      const docRef = await PrintService.createRequest(orderData);
+      // Ensure absolutely no undefined values, Proxies or NaNs exist by deep freezing to primitive JSON
+      const cleanData = JSON.parse(JSON.stringify(orderData));
+
+      const docRef = await PrintService.createRequest(cleanData);
       const fullRequest = {
         id: docRef.id,
         ...orderData,
         timestamp: Date.now(),
         archived: false,
         pickupCode: Math.floor(1000 + Math.random() * 9000).toString()
-      } as PrintRequest;
+      } as unknown as PrintRequest;
       
       setCompletedRequest(fullRequest);
       setOrderComplete(docRef.id);
@@ -813,7 +842,7 @@ const ExternalOrderPage: React.FC = () => {
               >
                 <div className="flex flex-col items-center text-center space-y-4">
                   <div className="w-20 h-20 rounded-[24px] overflow-hidden bg-slate-100 dark:bg-slate-800 border-2 border-[#006c55]/20 shadow-inner">
-                    {station.logoUrl ? (
+                    {station.logoUrl && !station.logoUrl.includes('placeholder.com') ? (
                       <img src={station.logoUrl} alt={station.name} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
@@ -878,7 +907,7 @@ const ExternalOrderPage: React.FC = () => {
                         <div className="flex items-baseline gap-1">
                           <span className="text-sm font-bold text-slate-400">R$</span>
                           <span className="text-4xl font-bold text-slate-900 dark:text-white tracking-tighter">
-                            {calculatePrice().toFixed(2)}
+                            {calculatePrice().finalTotal.toFixed(2)}
                           </span>
                         </div>
                       </div>
