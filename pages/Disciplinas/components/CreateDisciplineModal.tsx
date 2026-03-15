@@ -46,6 +46,14 @@ const CreateDisciplineModal: React.FC<CreateDisciplineModalProps> = ({ isOpen, o
     const [themeColor, setThemeColor] = useState(THEME_COLORS[0].color);
     const [type, setType] = useState<'public' | 'private'>('public');
     const [schedule, setSchedule] = useState<DisciplineSchedule[]>([{ day: 'Segunda', time: '08:00 - 10:00' }]);
+    
+    // Auto-generate code when modal opens
+    React.useEffect(() => {
+        if (isOpen) {
+            const randomCode = Math.floor(100000 + Math.random() * 900000).toString();
+            setCode(randomCode);
+        }
+    }, [isOpen]);
 
     if (!isOpen) return null;
 
@@ -155,10 +163,10 @@ const CreateDisciplineModal: React.FC<CreateDisciplineModalProps> = ({ isOpen, o
                                     <input 
                                         type="text"
                                         required
+                                        readOnly
                                         value={code}
-                                        onChange={(e) => setCode(e.target.value)}
-                                        placeholder="HBR-254"
-                                        className="w-full h-12 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-white/5 rounded-2xl px-4 text-base dark:text-white focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all"
+                                        placeholder="Gerando código..."
+                                        className="w-full h-12 bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-white/5 rounded-2xl px-4 text-base dark:text-slate-400 focus:outline-none cursor-not-allowed opacity-80"
                                     />
                                 </div>
                                 <div className="space-y-2">

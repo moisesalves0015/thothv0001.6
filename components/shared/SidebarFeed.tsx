@@ -1,4 +1,4 @@
-﻿import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { SidebarConfig } from '../../types';
 import PostCard from './PostCard';
 import NewPost from './NewPost';
@@ -69,11 +69,39 @@ const SidebarFeed: React.FC<SidebarConfig> = ({ title = "Feed do Conhecimento", 
     // Refresh will happen automatically via subscription
   } : feedRefresh;
 
-  // Reset scroll when posts change
+  // Reset scroll and trigger recurring "peek" animation when posts change
   useEffect(() => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTo({ left: 0, behavior: 'smooth' });
-    }
+    if (!scrollContainerRef.current) return;
+
+    // Reset to 0 immediately on posts change
+    scrollContainerRef.current.scrollTo({ left: 0, behavior: 'instant' as ScrollBehavior });
+
+    if (posts.length <= 1) return;
+
+    const triggerPeek = () => {
+      if (scrollContainerRef.current) {
+        // Peek right (increased distance to 240px to show 2nd card)
+        scrollContainerRef.current.scrollTo({ left: 240, behavior: 'smooth' });
+        
+        // Return after a longer pause
+        setTimeout(() => {
+          if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTo({ left: 0, behavior: 'smooth' });
+          }
+        }, 1200);
+      }
+    };
+
+    // Initial peek after short delay
+    const initialTimer = setTimeout(triggerPeek, 1500);
+
+    // Recurring peek every 40 seconds
+    const interval = setInterval(triggerPeek, 40000);
+
+    return () => {
+      clearTimeout(initialTimer);
+      clearInterval(interval);
+    };
   }, [posts]);
 
   useEffect(() => {
