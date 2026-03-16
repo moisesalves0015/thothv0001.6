@@ -283,10 +283,46 @@ export interface DisciplineSchedule {
   time: string;
 }
 
-/**
- * Discipline
- * Representa uma disciplina ou curso na plataforma.
- */
+export interface DisciplineLesson {
+  id: string;
+  title: string;
+  date: string;
+  watched: boolean;
+  order?: number;
+}
+
+export interface DisciplineMaterial {
+  id: string;
+  name: string;
+  type: 'PDF' | 'Slides' | 'Video' | 'Link' | 'Other';
+  date: string;
+  url: string;
+}
+
+export interface DisciplineFAQ {
+  id: string;
+  question: string;
+  answer: string;
+}
+
+export interface DisciplineEvaluation {
+  id: string;
+  title: string;
+  date: string;
+  status: 'Agendada' | 'Pendente' | 'Concluída';
+}
+
+export interface DisciplineAssignment {
+  id: string;
+  title: string;
+  description: string;
+  dueDate: string;
+  dueTime: string;
+  points?: number;
+  status: 'Aberto' | 'Encerrado' | 'Pendente';
+  attachments?: { name: string; url: string }[];
+}
+
 export interface Discipline {
   id: string;
   name: string;
@@ -305,6 +341,7 @@ export interface Discipline {
   status: 'active' | 'archived';
   type: 'public' | 'private';
   joinCode?: string | null; // Código de 6 dígitos para entrar em disciplinas privadas
+  chatId?: string; // ID do grupo de chat da disciplina
   createdAt: any;
   updatedAt: any;
 }

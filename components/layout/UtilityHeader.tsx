@@ -12,7 +12,10 @@ import {
   LifeBuoy,
   LogOut,
   ChevronDown,
-  Plus
+  Plus,
+  Eye,
+  Layout,
+  GraduationCap
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { signOut } from 'firebase/auth';
@@ -23,11 +26,13 @@ import { NotificationService } from '../../modules/notification/notification.ser
 const UtilityHeader: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [viewDropdownOpen, setViewDropdownOpen] = useState(false);
   const [notificationsCount, setNotificationsCount] = useState(0);
   const [messagesCount, setMessagesCount] = useState(0);
 
   const { user } = useAuth();
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const viewDropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
@@ -77,6 +82,9 @@ const UtilityHeader: React.FC = () => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setProfileDropdownOpen(false);
       }
+      if (viewDropdownRef.current && !viewDropdownRef.current.contains(event.target as Node)) {
+        setViewDropdownOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -99,7 +107,7 @@ const UtilityHeader: React.FC = () => {
   };
 
   return (
-    <header className="flex items-center justify-between w-full h-[52px] md:h-[64px] mb-2 md:mb-4 bg-transparent gap-2 md:gap-4 box-border relative utility-header-transparent">
+    <header className="flex items-center justify-between w-full h-[52px] md:h-[64px] mb-2 md:mb-4 bg-transparent gap-2 md:gap-4 box-border relative z-50 utility-header-transparent">
       <style>{`
         @keyframes badge-pulse {
           0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.4); }
@@ -150,6 +158,77 @@ const UtilityHeader: React.FC = () => {
           >
             <Plus size={20} />
           </button>
+        )}
+
+        {location.pathname.startsWith('/disciplinas/') && location.pathname.split('/').length === 3 && (
+          <div className="relative flex items-center h-12" ref={viewDropdownRef}>
+            <button
+              onClick={() => setViewDropdownOpen(!viewDropdownOpen)}
+              className={`w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full transition-all active:scale-90 shadow-sm border border-white/40 dark:border-white/5 group relative ${viewDropdownOpen ? 'bg-[#006c55] text-white shadow-lg shadow-[#006c55]/20' : 'liquid-glass text-slate-700 dark:text-slate-300 hover:bg-[#006c55] hover:text-white'}`}
+              title="Alternar Visão da Disciplina"
+            >
+              <Layout size={20} className={`${viewDropdownOpen ? 'rotate-0' : 'group-hover:rotate-12'} transition-transform`} />
+              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-[#006c55] rounded-full border-2 border-white flex items-center justify-center">
+                <ChevronDown size={8} className={`text-white transition-transform ${viewDropdownOpen ? 'rotate-180' : ''}`} />
+              </div>
+            </button>
+
+            {viewDropdownOpen && (
+              <div className="absolute left-0 top-full mt-2 w-56 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-2xl shadow-2xl py-2 z-[1001] animate-in fade-in slide-in-from-top-2 duration-300 overflow-hidden">
+                <div className="px-4 py-2 mb-1 border-b border-slate-100 dark:border-slate-800">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Modo de Visão</span>
+                </div>
+                
+                <button 
+                  onClick={() => {
+                    window.dispatchEvent(new CustomEvent('thoth:subject-set-view', { detail: 'professor' }));
+                    setViewDropdownOpen(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-[#006c55]/5 hover:text-[#006c55] transition-colors"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                    <Settings size={14} />
+                  </div>
+                  <div className="flex flex-col items-start">
+                    <span>Professor</span>
+                    <span className="text-[9px] opacity-60 font-medium">Gestão Completa</span>
+                  </div>
+                </button>
+
+                <button 
+                  onClick={() => {
+                    window.dispatchEvent(new CustomEvent('thoth:subject-set-view', { detail: 'student' }));
+                    setViewDropdownOpen(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-[#006c55]/5 hover:text-[#006c55] transition-colors"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                    <Eye size={14} />
+                  </div>
+                  <div className="flex flex-col items-start">
+                    <span>Aluno</span>
+                    <span className="text-[9px] opacity-60 font-medium">Prévia de Leitura</span>
+                  </div>
+                </button>
+
+                <button 
+                  onClick={() => {
+                    window.dispatchEvent(new CustomEvent('thoth:subject-set-view', { detail: 'crm' }));
+                    setViewDropdownOpen(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-[#006c55]/5 hover:text-[#006c55] transition-colors"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                    <GraduationCap size={14} />
+                  </div>
+                  <div className="flex flex-col items-start">
+                    <span>Dashboard CRM</span>
+                    <span className="text-[9px] opacity-60 font-medium">Métricas e Alunos</span>
+                  </div>
+                </button>
+              </div>
+            )}
+          </div>
         )}
       </div>
 

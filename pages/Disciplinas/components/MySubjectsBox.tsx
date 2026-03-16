@@ -264,53 +264,65 @@ const MySubjectsBox: React.FC = () => {
                       activeMenuId === subject.id ? 'z-[60] relative' : 'z-10'
                     }`}
                   >
-                    {/* Banner do Card com Gradiente Dinâmico */}
-                    <div className="h-32 relative overflow-hidden">
+                    {/* Banner do Card com Pattern Geométrico Dinâmico */}
+                    <div className="h-24 relative overflow-hidden">
                       <div 
-                        className="absolute inset-0 opacity-20 dark:opacity-40"
+                        className="absolute inset-0 opacity-15"
                         style={{ 
-                          background: `linear-gradient(135deg, ${subject.themeColor}, #ffffff00)`,
+                          backgroundColor: subject.themeColor,
+                          backgroundImage: `radial-gradient(circle at 2px 2px, white 1px, transparent 0)`,
+                          backgroundSize: '12px 12px'
                         }}
                       />
                       <div 
-                        className="absolute inset-0 backdrop-blur-[2px]"
-                        style={{ backgroundColor: `${subject.themeColor}10` }}
+                        className="absolute inset-0 opacity-40 mix-blend-overlay"
+                        style={{ 
+                          background: `linear-gradient(45deg, ${subject.themeColor}, transparent)`
+                        }}
                       />
                       
-                      {/* Pattern Decorativo */}
-                      <div className="absolute top-0 left-0 w-full h-full opacity-[0.05] pointer-events-none">
-                        <div className="absolute top-0 right-0 w-40 h-40 rounded-full border-[20px] border-white -mr-10 -mt-10" />
-                        <div className="absolute bottom-0 left-0 w-20 h-20 rounded-full border-[10px] border-white -ml-5 -mb-5" />
+                      {/* Decorative Pattern - Abstract Shapes */}
+                      <div className="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none overflow-hidden">
+                         <div className="absolute -top-4 -right-4 w-24 h-24 rounded-full border-[12px] border-white" />
+                         <div className="absolute top-8 left-12 w-8 h-8 rounded-full border-4 border-white" />
+                         <div className="absolute -bottom-6 left-1/4 w-16 h-16 rotate-45 border-8 border-white rounded-2xl" />
                       </div>
 
-                      {/* Badges do Canto */}
-                      <div className="absolute top-5 left-6 flex gap-2">
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/90 dark:bg-black/40 backdrop-blur-md border border-white/20 shadow-sm">
-                          <div className={`w-1.5 h-1.5 rounded-full ${isTeacher ? 'bg-amber-400' : 'bg-emerald-400'} shadow-[0_0_8px_rgba(0,0,0,0.1)]`} />
-                          <span className="text-[9px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider">{isTeacher ? 'Criada' : 'Inscrita'}</span>
-                        </div>
-                        {subject.type === 'private' && (
-                          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/20 backdrop-blur-md border border-white/10">
-                            <Lock size={10} className="text-white" />
-                            <span className="text-[9px] font-black text-white hover:text-white uppercase tracking-wider">Privada</span>
+                      {/* Notificações e Chat (Top Left - Estilo Inspiração) */}
+                      <div className="absolute top-4 left-6 flex gap-3">
+                        <div className="relative group/notif cursor-pointer">
+                          <MessageCircle size={20} className="text-white drop-shadow-md" />
+                          <div className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-white rounded-full flex items-center justify-center shadow-sm">
+                             <span className="text-[8px] font-black" style={{ color: subject.themeColor }}>2</span>
                           </div>
-                        )}
+                        </div>
+                        <div className="relative group/notif cursor-pointer">
+                          <Bell size={20} className="text-white drop-shadow-md" />
+                          <div className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-white rounded-full flex items-center justify-center shadow-sm">
+                             <span className="text-[8px] font-black" style={{ color: subject.themeColor }}>2</span>
+                          </div>
+                        </div>
                       </div>
 
-                      {/* Menu do Card */}
-                      <div className="absolute top-5 right-5" ref={activeMenuId === subject.id ? menuRef : null}>
+                      {/* Menu do Card (Top Right) */}
+                      <div className="absolute top-4 right-5" ref={activeMenuId === subject.id ? menuRef : null}>
                         <button 
                           onClick={(e) => {
                             e.stopPropagation();
                             setActiveMenuId(activeMenuId === subject.id ? null : subject.id);
                           }}
-                          className="w-9 h-9 rounded-full bg-white/20 hover:bg-white/40 backdrop-blur-md flex items-center justify-center text-white transition-all active:scale-90"
+                          className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/40 backdrop-blur-md flex items-center justify-center text-white transition-all active:scale-90"
                         >
-                          <MoreVertical size={18} />
+                          <MoreVertical size={16} />
                         </button>
                         {activeMenuId === subject.id && (
                           <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl z-[200] py-2 border border-slate-100 dark:border-white/5 animate-in fade-in zoom-in-95 duration-200">
-                            <button className="w-full text-left px-5 py-3 text-[11px] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">Detalhes da Turma</button>
+                            <button 
+                              onClick={() => navigate(`/disciplinas/${subject.id}`)}
+                              className="w-full text-left px-5 py-3 text-[11px] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
+                            >
+                              Detalhes da Turma
+                            </button>
                             <button className="w-full text-left px-5 py-3 text-[11px] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">Materiais de Apoio</button>
                             <div className="h-px bg-slate-100 dark:bg-white/5 my-1" />
                             <button className="w-full text-left px-5 py-3 text-[11px] font-bold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors">Remover da Grade</button>
@@ -320,108 +332,83 @@ const MySubjectsBox: React.FC = () => {
                     </div>
 
                     {/* Conteúdo do Card */}
-                    <div className="px-8 pt-0 pb-8 flex-1 flex flex-col relative">
+                    <div className="px-7 py-6 flex-1 flex flex-col relative bg-white dark:bg-slate-900 min-h-[340px]">
                       
-                      {/* Avatar do Instrutor (Floating) */}
-                      <div className="relative -mt-10 mb-5 flex items-end justify-between">
-                        <div className="relative group/avatar">
-                          <div className="w-20 h-20 rounded-[2rem] bg-white dark:bg-slate-800 p-1 shadow-2xl transition-transform duration-500 group-hover/avatar:scale-105">
-                            <div className="w-full h-full rounded-[1.8rem] overflow-hidden border border-slate-100 dark:border-white/10 bg-slate-100 dark:bg-slate-700">
-                              <img src={subject.teacherAvatar} className="w-full h-full object-cover" alt="Instrutor" />
-                            </div>
+                      {/* Avatar do Professor (Right - Estilo Inspiração) */}
+                      <div className="absolute right-7 top-6 group/avatar cursor-pointer">
+                        <div className="w-16 h-16 rounded-full bg-white dark:bg-slate-800 p-0.5 shadow-xl transition-transform duration-500 group-hover/avatar:scale-105">
+                          <div className="w-full h-full rounded-full overflow-hidden border border-slate-100 dark:border-white/10">
+                            <img src={subject.teacherAvatar} className="w-full h-full object-cover" alt="Instrutor" />
                           </div>
+                        </div>
+                      </div>
+
+                      {/* Header Section com Título e Código - Flex-1 para empurrar o rodapé */}
+                      <div className="flex-1">
+                        <div className="mb-6 max-w-[70%]">
                           <div 
-                            className="absolute -bottom-1 -right-1 w-7 h-7 bg-white dark:bg-slate-900 rounded-xl border-2 border-slate-50 dark:border-white/10 flex items-center justify-center shadow-lg"
-                            style={{ color: subject.themeColor }}
+                            className="w-1 h-8 rounded-full absolute left-0 top-7"
+                            style={{ backgroundColor: subject.themeColor }}
+                          />
+                          <h3 
+                            onClick={() => navigate(`/disciplinas/${subject.id}`)}
+                            className="text-xl font-black text-slate-900 dark:text-white leading-tight tracking-tight hover:opacity-80 transition-opacity cursor-pointer mb-1"
                           >
-                            <BookOpen size={14} strokeWidth={2.5} />
-                          </div>
+                            {subject.name}
+                          </h3>
+                          <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Cod: {subject.code}</span>
                         </div>
 
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10">
-                            <MessageCircle size={12} className="text-[#006c55] dark:text-emerald-400" />
-                            <span className="text-[10px] font-black text-slate-500 dark:text-slate-400">12</span>
-                          </div>
-                          <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10">
-                            <Bell size={12} className="text-[#006c55] dark:text-emerald-400" />
-                            <span className="text-[10px] font-black text-slate-500 dark:text-slate-400">5</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Texto e Info Principal */}
-                      <div className="space-y-1 mb-6">
-                        <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.25em] block">Cod: {subject.code}</span>
-                        <h3 className="text-2xl font-black text-slate-900 dark:text-white leading-[1.1] tracking-tight hover:text-[#006c55] dark:hover:text-emerald-400 transition-colors cursor-pointer">{subject.name}</h3>
-                      </div>
-
-                      {/* Grade de Horários (Compact Chips - Horizontal Scroll) */}
-                      <div className="group/schedule relative">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Horários</span>
-                          <div className="flex gap-1 opacity-0 group-hover/schedule:opacity-100 transition-opacity">
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const el = document.getElementById(`schedule-${subject.id}`);
-                                el?.scrollBy({ left: -100, behavior: 'smooth' });
-                              }}
-                              className="w-5 h-5 rounded-md bg-slate-100 dark:bg-white/5 flex items-center justify-center hover:bg-[#006c55] hover:text-white transition-all"
-                            >
-                              <ChevronLeft size={10} />
-                            </button>
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const el = document.getElementById(`schedule-${subject.id}`);
-                                el?.scrollBy({ left: 100, behavior: 'smooth' });
-                              }}
-                              className="w-5 h-5 rounded-md bg-slate-100 dark:bg-white/5 flex items-center justify-center hover:bg-[#006c55] hover:text-white transition-all"
-                            >
-                              <ChevronRight size={10} />
-                            </button>
-                          </div>
-                        </div>
-                        <div 
-                          id={`schedule-${subject.id}`}
-                          className="flex flex-nowrap overflow-x-auto no-scrollbar gap-2 mb-8 pb-1 scroll-smooth"
-                        >
+                        {/* Horários */}
+                        <div className="space-y-1.5 mb-6">
                           {subject.schedule.map((item, idx) => (
-                            <div key={idx} className="flex flex-col rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 p-2.5 min-w-[120px] transition-all hover:border-slate-200 dark:hover:border-white/10 flex-shrink-0">
-                              <span className="text-[9px] font-black text-slate-300 dark:text-slate-600 uppercase tracking-widest leading-none mb-1.5">{item.day}</span>
-                              <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 tabular-nums">{item.time}</span>
+                            <div key={idx} className="flex items-center gap-3 text-slate-500 dark:text-slate-400">
+                              <span className="text-[11px] font-black min-w-[60px] uppercase tracking-tighter">{item.day}:</span>
+                              <span className="text-[11px] font-bold tabular-nums">{item.time}</span>
                             </div>
                           ))}
                         </div>
                       </div>
 
-                      {/* Footer App-like */}
-                      <div className="mt-auto pt-6 border-t border-slate-50 dark:border-white/5 flex items-center justify-between">
-                        <div className="flex items-center">
-                          <div className="flex items-center -space-x-2.5 mr-3">
-                            {subject.members.slice(0, 3).map((uid, idx) => (
-                              <div key={idx} className="w-9 h-9 rounded-full overflow-hidden border-2 border-white dark:border-slate-900 shadow-sm bg-slate-100 dark:bg-slate-800 transition-transform hover:-translate-y-1">
+                      {/* Rodapé Fixo (Participantes + Botão) */}
+                      <div className="mt-auto space-y-6 pt-4 border-t border-slate-50 dark:border-white/5">
+                        {/* Participantes */}
+                        <div>
+                          <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Participantes</h4>
+                          <div className="flex items-center -space-x-2">
+                            {subject.members.slice(0, 7).map((uid, idx) => (
+                              <div key={idx} className="w-8 h-8 rounded-full overflow-hidden border-2 border-white dark:border-slate-900 shadow-md bg-slate-100 dark:bg-slate-800 transition-transform hover:-translate-y-1 hover:z-20">
                                 <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${uid}`} alt="Estudante" className="w-full h-full object-cover" />
                               </div>
                             ))}
-                            {subject.members.length > 3 && (
-                              <div className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 border-2 border-white dark:border-slate-900 flex items-center justify-center shadow-sm">
-                                <span className="text-[9px] font-black text-slate-500">+{subject.members.length - 3}</span>
+                            {subject.members.length > 7 && (
+                              <div className="w-8 h-8 rounded-full bg-slate-50 dark:bg-slate-800 border-2 border-white dark:border-slate-900 flex items-center justify-center shadow-md z-10">
+                                <span className="text-[9px] font-black text-slate-400">+{subject.members.length - 7}</span>
                               </div>
                             )}
                           </div>
-                          <div className="flex flex-col">
-                            <span className="text-[10px] font-black text-slate-900 dark:text-white leading-none">Alunos</span>
-                            <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tighter mt-1">{subject.members.length} Inscritos</span>
-                          </div>
                         </div>
 
+                        {/* Footer Action Button (Stylized) */}
                         <button 
-                          onClick={() => navigate(`/disciplinas/${subject.id}`)} 
-                          className="w-11 h-11 rounded-[1.3rem] bg-slate-900 dark:bg-emerald-500 text-white flex items-center justify-center transition-all hover:rotate-6 hover:scale-110 active:scale-95 shadow-xl hover:shadow-emerald-500/25"
+                          onClick={() => navigate(`/disciplinas/${subject.id}`)}
+                          className="w-full h-12 rounded-xl flex items-center justify-center gap-3 transition-all relative overflow-hidden group/btn active:scale-[0.97]"
                         >
-                          <ChevronRight size={20} strokeWidth={3} />
+                          <div 
+                             className="absolute inset-0 opacity-10 transition-opacity group-hover/btn:opacity-15"
+                             style={{ backgroundColor: subject.themeColor }}
+                          />
+                          <div 
+                             className="absolute inset-0 border-2 transition-colors"
+                             style={{ borderColor: `${subject.themeColor}20`, borderRadius: 'inherit' }}
+                          />
+                          <span className="relative text-[13px] font-black tracking-widest uppercase" style={{ color: subject.themeColor }}>Abrir Disciplina</span>
+                          <div 
+                             className="w-7 h-7 rounded-lg flex items-center justify-center text-white shadow-lg transition-all group-hover/btn:translate-x-1"
+                             style={{ backgroundColor: subject.themeColor }}
+                          >
+                            <ChevronRight size={16} strokeWidth={3} />
+                          </div>
                         </button>
                       </div>
                     </div>
