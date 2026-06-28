@@ -371,7 +371,7 @@ const MySubjectsBox: React.FC = () => {
                       </div>
 
                       {/* Rodapé Fixo (Participantes + Botão) */}
-                      <div className="mt-auto space-y-6 pt-4 border-t border-slate-50 dark:border-white/5">
+                      <div className="mt-auto space-y-6 pt-4 border-t border-slate-100/50 dark:border-white/5">
                         {/* Participantes */}
                         <div>
                           <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Participantes</h4>

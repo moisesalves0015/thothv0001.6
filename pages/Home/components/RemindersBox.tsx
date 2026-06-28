@@ -28,7 +28,11 @@ import {
 } from 'lucide-react';
 import { NotificationService } from '../../../modules/notification/notification.service';
 
-const RemindersBox: React.FC = () => {
+interface RemindersBoxProps {
+  className?: string;
+}
+
+const RemindersBox: React.FC<RemindersBoxProps> = ({ className }) => {
   const today = new Date();
   const tomorrow = new Date();
   tomorrow.setDate(today.getDate() + 1);
@@ -335,16 +339,16 @@ const RemindersBox: React.FC = () => {
   ];
 
   return (
-    <div className="w-full lg:w-[315px] h-[475px] lg:h-[380px] flex flex-col liquid-glass rounded-[24px] overflow-hidden shadow-2xl relative border border-white/40 dark:border-white/10 group">
+    <div className={`w-full lg:w-[315px] flex flex-col liquid-glass rounded-[24px] overflow-hidden shadow-2xl relative border border-white/40 dark:border-white/10 group ${className || 'h-auto lg:h-[380px]'}`}>
       {/* Decorative Accent */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-[#006c55] to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
       {/* Header */}
-      <div className="flex flex-col px-6 pt-6 pb-2 flex-shrink-0 z-10">
-        <div className="flex items-center justify-between mb-2">
+      <div className="flex flex-col px-4 pt-4 pb-1.5 flex-shrink-0 z-10">
+        <div className="flex items-center justify-between mb-1.5">
           <div className="flex flex-col">
             <h2 className="text-lg font-black text-slate-900 dark:text-white tracking-tight leading-none">Lembretes</h2>
-            <span className="text-[11px] uppercase tracking-[0.2em] font-black text-[#006c55] mt-1">
+            <span className="text-[11px] uppercase tracking-[0.2em] font-black text-[#006c55] mt-0.5">
               organização acadêmica
             </span>
           </div>
@@ -419,7 +423,7 @@ const RemindersBox: React.FC = () => {
       </div>
 
       {/* Lista de Lembretes */}
-      <div className="flex-1 overflow-y-auto no-scrollbar px-6 pb-6 pt-2 space-y-3 bg-transparent">
+      <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-4 pt-1 space-y-2 bg-transparent">
         {loading ? (
           <div className="flex flex-col items-center justify-center h-full">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#006c55]"></div>
@@ -446,7 +450,7 @@ const RemindersBox: React.FC = () => {
               <div
                 key={reminder.id}
                 onClick={() => setSelectedReminder(reminder)}
-                className={`group relative flex flex-col p-3 rounded-2xl border transition-all duration-300 cursor-pointer animate-in slide-in-from-bottom-2 ${reminder.completed
+                className={`group relative flex flex-col p-2.5 rounded-2xl border transition-all duration-300 cursor-pointer animate-in slide-in-from-bottom-2 ${reminder.completed
                   ? 'bg-slate-50/50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-700 opacity-60'
                   : reminder.isStarred
                     ? 'bg-gradient-to-br from-white to-white/95 dark:from-slate-800 dark:to-slate-900 border-amber-200 dark:border-amber-500/30 shadow-lg shadow-amber-500/5'
@@ -454,7 +458,7 @@ const RemindersBox: React.FC = () => {
                   }`}
               >
                 {/* Title and Completion Checkbox */}
-                <div className="flex items-center justify-between mb-1.5">
+                <div className="flex items-center justify-between mb-0.5">
                   <h4 className={`text-[13px] font-black leading-tight line-clamp-1 ${reminder.completed ? 'text-slate-400 dark:text-slate-600 line-through' : 'text-slate-900 dark:text-white'}`}>
                     {reminder.title}
                   </h4>
@@ -470,7 +474,7 @@ const RemindersBox: React.FC = () => {
                 </div>
 
                 {/* Text and Alert */}
-                <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="flex items-center justify-between gap-2 mb-1.5">
                   <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 line-clamp-1 leading-relaxed">
                     {reminder.text}
                   </p>

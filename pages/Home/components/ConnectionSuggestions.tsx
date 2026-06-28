@@ -1,4 +1,4 @@
-﻿import React, { useRef } from 'react';
+import React, { useRef } from 'react';
 import { useConnectionSuggestions } from '../../../hooks/useConnectionSuggestions';
 import { auth } from '../../../firebase';
 import {
@@ -15,7 +15,11 @@ import {
 import ConnectionCard from '../../../components/shared/ConnectionCard';
 import ConnectionCardSkeleton from '../../../components/shared/ConnectionCardSkeleton';
 
-const ConnectionSuggestions: React.FC = () => {
+interface ConnectionSuggestionsProps {
+  className?: string;
+}
+
+const ConnectionSuggestions: React.FC<ConnectionSuggestionsProps> = ({ className }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const {
     suggestions,
@@ -74,20 +78,20 @@ const ConnectionSuggestions: React.FC = () => {
   }
 
   return (
-    <div className="relative w-full h-[380px] flex flex-col liquid-glass rounded-[24px] px-0 pt-5 pb-0 overflow-hidden shadow-2xl group">
+    <div className={`relative w-full flex flex-col liquid-glass rounded-[24px] px-0 pt-5 pb-0 overflow-hidden shadow-2xl group ${className || 'h-auto lg:h-[345px]'}`}>
       {/* Decorative Accent */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-[#006c55] to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
       {/* Header */}
-      <div className="flex flex-col flex-shrink-0 z-10 pb-2 px-5">
-        <div className="flex items-center justify-between mb-2">
+      <div className="flex flex-col flex-shrink-0 z-10 pb-1 px-4">
+        <div className="flex items-center justify-between mb-1.5">
           <div className="flex flex-col">
             <h2 className="text-lg font-black text-slate-900 dark:text-white tracking-tight leading-none">Conexões Sugeridas</h2>
-            <span className="text-[10px] uppercase tracking-[0.2em] font-black text-[#006c55] mt-1">
+            <span className="text-[10px] uppercase tracking-[0.2em] font-black text-[#006c55] mt-0.5">
               expanda sua rede acadêmica
             </span>
           </div>
-
+ 
           <div className="flex items-center gap-2">
             {/* Refresh Button */}
             <button
@@ -98,7 +102,7 @@ const ConnectionSuggestions: React.FC = () => {
             >
               <RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />
             </button>
-
+ 
             {/* Filter Button */}
             <div className="relative">
               <button
@@ -111,7 +115,7 @@ const ConnectionSuggestions: React.FC = () => {
               >
                 <Filter size={18} />
               </button>
-
+ 
               {isFilterOpen && (
                 <div className="absolute right-0 top-full mt-2 w-48 bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-2xl shadow-2xl z-50 py-2 animate-in fade-in slide-in-from-top-2 duration-200">
                   <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-700">
@@ -154,7 +158,7 @@ const ConnectionSuggestions: React.FC = () => {
                 </div>
               )}
             </div>
-
+ 
             {/* Scroll Controls */}
             <div className="hidden md:flex gap-2">
               <button
@@ -174,12 +178,12 @@ const ConnectionSuggestions: React.FC = () => {
             </div>
           </div>
         </div>
-
+ 
         {/* Search and Active Filter */}
-        <div className="flex items-center gap-3 px-5">
+        <div className="flex items-center gap-3 px-4">
           {/* Search Bar */}
-
-
+ 
+ 
           {/* Active Filter Badge */}
           {activeFilter !== 'all' && (
             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-[#006c55]/10 to-[#006c55]/5 rounded-lg border border-[#006c55]/20">
@@ -200,11 +204,11 @@ const ConnectionSuggestions: React.FC = () => {
           )}
         </div>
       </div>
-
+ 
       {/* Connection Cards */}
       <div
         ref={scrollRef}
-        className="flex items-center gap-3 overflow-x-auto overflow-y-hidden pt-0 pb-4 px-0 snap-x snap-mandatory no-scrollbar scroll-smooth flex-1 touch-pan-x bg-transparent"
+        className="flex items-start gap-2 overflow-x-auto overflow-y-hidden pt-1 pb-2 px-0 snap-x snap-mandatory no-scrollbar scroll-smooth flex-1 touch-pan-x bg-transparent"
         onScroll={() => setIsFilterOpen(false)}
       >
         {filteredSuggestions.length === 0 ? (
@@ -235,7 +239,7 @@ const ConnectionSuggestions: React.FC = () => {
         ) : (
           <>
             {filteredSuggestions.map((author) => (
-              <div key={author.id} className="snap-center h-full flex items-center justify-center first:ml-5">
+              <div key={author.id} className="snap-center h-[260px] flex items-start justify-center first:ml-4">
                 <ConnectionCard
                   author={author}
                   currentUid={auth.currentUser?.uid}

@@ -135,7 +135,7 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
       </div>
 
       {/* Glass Panel Overlay */}
-      <div className="absolute bottom-2 left-2 right-2 p-2 rounded-xl bg-white/10 backdrop-blur-xl border border-white/20 flex flex-col gap-1 shadow-[0_8px_32px_rgba(0,0,0,0.1)] transition-all duration-300">
+      <div className="absolute bottom-1.5 left-1.5 right-1.5 p-1.5 rounded-xl bg-white/10 backdrop-blur-xl border border-white/20 flex flex-col gap-1 shadow-[0_8px_32px_rgba(0,0,0,0.1)] transition-all duration-300">
 
         {/* User Info */}
         <div className="flex flex-col">

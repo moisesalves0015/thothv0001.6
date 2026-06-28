@@ -78,22 +78,22 @@ const Home: React.FC = () => {
         <SidebarFeed title="Feed" />
       </section>
 
-      <div className="flex flex-col lg:flex-row gap-[30px] w-full">
-        <div className="w-full lg:w-[660px]">
-          <ConnectionSuggestions />
+      <div className="flex flex-col lg:flex-row gap-[30px] w-full items-stretch">
+        <div className="w-full lg:w-[660px] flex flex-col">
+          <ConnectionSuggestions className="h-[340px] lg:h-[340px]" />
         </div>
-        <div className="w-full lg:w-[315px]">
-          <RemindersBox />
+        <div className="w-full lg:w-[315px] flex flex-col">
+          <PrintHistoryBox className="h-[345px] lg:h-[340px]" />
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-[30px] w-full">
+      <div className="flex flex-col lg:flex-row gap-[30px] w-full items-stretch">
         <div className="w-full lg:w-[660px] flex flex-col gap-6">
           <EventSuggestionsBox />
           <ResearchSuggestionsBox />
         </div>
-        <div className="w-full lg:w-[315px]">
-          <PrintHistoryBox />
+        <div className="w-full lg:w-[315px] flex flex-col">
+          <RemindersBox className="h-[345px] lg:h-full" />
         </div>
       </div>
     </div>

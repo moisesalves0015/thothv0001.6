@@ -38,7 +38,11 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = PDF_WORKER_URL;
 
 // Retiraremos o PRINTERS_CONFIG hardcoded para usar dados do Firestore
 
-const PrintHistoryBox: React.FC = () => {
+interface PrintHistoryBoxProps {
+  className?: string;
+}
+
+const PrintHistoryBox: React.FC<PrintHistoryBoxProps> = ({ className }) => {
   const { user, userProfile } = useAuth();
   const isAdmin = userProfile?.role === 'admin';
   const [requests, setRequests] = useState<PrintRequest[]>([]);
@@ -486,16 +490,16 @@ const PrintHistoryBox: React.FC = () => {
     });
 
   return (
-    <div className="w-full lg:w-[315px] h-[437px] lg:h-[350px] liquid-glass rounded-[24px] flex flex-col shadow-lg relative overflow-hidden border border-white/40 dark:border-white/10 group">
+    <div className={`w-full lg:w-[315px] liquid-glass rounded-[24px] flex flex-col shadow-lg relative overflow-hidden border border-white/40 dark:border-white/10 group ${className || 'h-auto lg:h-[345px]'}`}>
       {/* Decorative Accent */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-[#006c55] to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
       {/* Header Padronizado */}
-      <div className="flex flex-col px-6 pt-6 pb-2 flex-shrink-0 z-10">
-        <div className="flex items-center justify-between mb-2">
+      <div className="flex flex-col px-4 pt-4 pb-1.5 flex-shrink-0 z-10">
+        <div className="flex items-center justify-between mb-1.5">
           <div className="flex flex-col">
             <h3 className="text-lg font-black text-slate-900 dark:text-white tracking-tight leading-none">Impressões</h3>
-            <span className="text-[11px] uppercase tracking-[0.2em] font-black text-[#006c55] mt-1">
+            <span className="text-[11px] uppercase tracking-[0.2em] font-black text-[#006c55] mt-0.5">
               gestão de arquivos
             </span>
           </div>
@@ -512,7 +516,7 @@ const PrintHistoryBox: React.FC = () => {
         </div>
 
         {/* Tabs Control - Atualizado para Ícones */}
-        <div className="flex items-center gap-6 mt-3 pb-1 border-b border-white/40">
+        <div className="flex items-center gap-6 mt-2 pb-1 border-b border-white/40">
           <button
             onClick={() => setViewTab('active')}
             className={`flex items-center gap-1.5 pb-1 transition-all ${viewTab === 'active' ? 'text-[#006c55] border-b-2 border-[#006c55]' : 'text-slate-400'}`}
@@ -531,7 +535,7 @@ const PrintHistoryBox: React.FC = () => {
       </div>
 
       {/* Lista de Pedidos */}
-      <div className="flex-1 overflow-y-auto no-scrollbar px-6 pb-6 pt-2 space-y-3">
+      <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-4 pt-1 space-y-2">
         {filteredRequests.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center opacity-30">
             {viewTab === 'active' ? <Inbox size={32} /> : <Archive size={32} />}
@@ -545,9 +549,9 @@ const PrintHistoryBox: React.FC = () => {
               <div
                 key={req.id}
                 onClick={() => setSelectedRequest(req)}
-                className={`p-3 rounded-xl bg-gradient-to-br from-white/95 to-white/80 dark:from-slate-800/90 dark:to-slate-900/80 border border-white dark:border-slate-700 hover:shadow-md transition-all group relative cursor-pointer ${isMenuActive ? 'z-[50]' : 'z-auto'} ${req.archived ? 'opacity-70 grayscale-[0.5]' : ''}`}
+                className={`p-2.5 rounded-xl bg-gradient-to-br from-white/95 to-white/80 dark:from-slate-800/90 dark:to-slate-900/80 border border-white dark:border-slate-700 hover:shadow-md transition-all group relative cursor-pointer ${isMenuActive ? 'z-[50]' : 'z-auto'} ${req.archived ? 'opacity-70 grayscale-[0.5]' : ''}`}
               >
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-2">
                   <div
                     className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-400 dark:text-slate-300 cursor-pointer group-hover:bg-[#006c55]/10 group-hover:text-[#006c55]"
                     onClick={() => setSelectedRequest(req)}
